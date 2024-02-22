@@ -10,3 +10,8 @@ which python
 
 # /path/to/soccertrack-v2/.venv/bin/python
 ```
+
+Remember to deactivate before working on other projects!
+```
+deactivate
+```
