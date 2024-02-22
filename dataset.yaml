@@ -1,0 +1,16 @@
+# Path
+path: C:\Users\黒田堅仁\OneDrive\Soccer_Dataset_Creation\player_detection\dataset  # dataset root dir
+train: images/train  # train images (relative to 'path') 
+val: images/valid  # val images (relative to 'path') 
+test: images/test
+
+# Classes
+nc: 2
+names: ['person', 'sports ball']
+
+roboflow:
+  workspace: atom-scott-ix3vx
+  project: soccertrack-v2-pbqrm
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/atom-scott-ix3vx/soccertrack-v2-pbqrm/dataset/3
