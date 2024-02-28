@@ -2,46 +2,33 @@ from IPython import display
 import ultralytics
 from ultralytics import YOLO
 from IPython.display import display, Image
+import json
+import sys
 
-from roboflow import Roboflow
-
-# 学習データ数
-train_dataset = 50
-
-# 学習かテストか
-train = True
 
 def main():
 
-    # train and val
-    if train:
-
-        # Load a model
-        model = YOLO('yolov8x.pt')  # load a pretrained model (recommended for training)
-
-        # Train the model
-        model.train(data="dataset_" + str(train_dataset) + ".yaml", epochs=1, imgsz=32, batch=4, workers=4, degrees=90.0, device="cuda:0")
-
-        # Validate the model
-        metrics = model.val()  # no arguments needed, dataset and settings remembered
-        metrics.box.map    # map50-95
-        metrics.box.map50  # map50
-        metrics.box.map75  # map75
-        map = metrics.box.maps   # a list contains map50-95 of each category
-        print(map)
-        print(type(map))
-
-        # Export the model
-        # model.export(format="torchscript")
-
-    # test
-    else:
+    # the number of the train dataset
+    args = sys.argv
+    # first argument is the number of the train dataset
+    train_dataset = args[1]
     
-        # Load a best model
-        model = YOLO('C:\\Users\\黒田堅仁\\OneDrive - 筑波大学\\ドキュメント\\GitHub\\SoccerTrack-v2\\runs\\detect\\train4\\weights\\best.pt')
-        
-        # test the model
-        # ret = model("/kaggle/input/car-object-detection/data/testing_images",save=True, conf=0.2, iou=0.5)
+    # Load a model
+    model = YOLO('yolov8x.pt')  # load a pretrained model (recommended for training)
+
+    # Train the model
+    model.train(data="datasets\dataset_" + str(train_dataset) + ".yaml", epochs=1000, imgsz=1280, batch=4, workers=4, degrees=90.0, device="cuda:0")
+    
+    # Validate the model
+    det_metrics = model.val()  # no arguments needed, dataset and settings remembered
+    det_metrics_dict = det_metrics.results_dict
+
+    print(det_metrics_dict)
+
+    # Save det_metrics_dict to a JSON file
+    with open('det_metrics_dict' + str(train_dataset) + '.json', 'w') as file:
+        json.dump(det_metrics_dict, file)
+
 
 if __name__ == "__main__":
     main()
