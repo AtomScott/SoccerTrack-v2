@@ -1,4 +1,4 @@
-path: C:\Users\黒田堅仁\OneDrive\Soccer_Dataset_Creation\player_detection\datasets\dataset_10  # dataset root dir
+path: C:\Users\黒田堅仁\OneDrive - 筑波大学\ドキュメント\GitHub\SoccerTrack-v2\datasets\dataset_10  # dataset root dir
 train: train/images  # train images (relative to 'path') 
 val: valid/images  # val images (relative to 'path') 
 

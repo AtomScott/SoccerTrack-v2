@@ -17,7 +17,7 @@ def main():
     model = YOLO('yolov8x.pt')  # load a pretrained model (recommended for training)
 
     # Train the model
-    model.train(data="datasets\dataset_" + str(train_dataset) + ".yaml", epochs=1000, imgsz=1280, batch=4, workers=4, degrees=90.0, device="cuda:0")
+    model.train(data="datasets_yaml\dataset_" + str(train_dataset) + ".yaml", epochs=1, imgsz=32, batch=4, workers=4, degrees=90.0, device="cuda:0")
     
     # Validate the model
     det_metrics = model.val()  # no arguments needed, dataset and settings remembered
@@ -26,7 +26,7 @@ def main():
     print(det_metrics_dict)
 
     # Save det_metrics_dict to a JSON file
-    with open('results_json\det_metrics_dict' + str(train_dataset) + '.json', 'w') as file:
+    with open('results_json\det_metrics_dict_' + str(train_dataset) + '.json', 'w') as file:
         json.dump(det_metrics_dict, file)
 
 
