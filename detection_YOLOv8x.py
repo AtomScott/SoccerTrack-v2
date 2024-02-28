@@ -26,7 +26,7 @@ def main():
     print(det_metrics_dict)
 
     # Save det_metrics_dict to a JSON file
-    with open('det_metrics_dict' + str(train_dataset) + '.json', 'w') as file:
+    with open('results_json\det_metrics_dict' + str(train_dataset) + '.json', 'w') as file:
         json.dump(det_metrics_dict, file)
 
 
