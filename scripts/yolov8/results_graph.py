@@ -13,12 +13,12 @@ def parse_args():
         Namespace: The arguments namespace.
     """
     parser = argparse.ArgumentParser(description='Save the graph on a specific path.')
-    parser.add_argument('--input_10', type=str, required=True, help='Input dataset_10.json file for making graphs')
-    parser.add_argument('--input_50', type=str, required=True, help='Input dataset_50.json file for making graphs')
-    parser.add_argument('--input_100', type=str, required=True, help='Input dataset_100.json file for making graphs')
-    parser.add_argument('--output_all_directory', type=str, required=True, help='Output directory for saving all class graphs')
-    parser.add_argument('--output_person_directory', type=str, required=True, help='Output directory for saving person class graphs')
-    parser.add_argument('--output_ball_directory', type=str, required=True, help='Output directory for saving ball class graphs')
+    parser.add_argument('--input_10', type=str, required=True, help='Input dataset_10.json file for making graphs') # ...\outputs\results.json\dataset_10.json (file path)
+    parser.add_argument('--input_50', type=str, required=True, help='Input dataset_50.json file for making graphs') # ...\outputs\results.json\dataset_50.json (file path)
+    parser.add_argument('--input_100', type=str, required=True, help='Input dataset_100.json file for making graphs') # ...\outputs\results.json\dataset_100.json (file path)
+    parser.add_argument('--output_all_directory', type=str, required=True, help='Output directory for saving all class graphs') # ...\outputs\graph\all_class (directory path)
+    parser.add_argument('--output_person_directory', type=str, required=True, help='Output directory for saving person class graphs') # outputs\graph\person_class (directory path)
+    parser.add_argument('--output_ball_directory', type=str, required=True, help='Output directory for saving ball class graphs') # outputs\graph\ball_class (directory path)
     return parser.parse_args()
 
 
