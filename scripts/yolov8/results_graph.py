@@ -1,9 +1,31 @@
 import numpy as np
 import json
 import matplotlib.pyplot as plt
+import argparse
+import os
+
+
+def parse_args():
+    """
+    Parse command line arguments.
+
+    Returns:
+        Namespace: The arguments namespace.
+    """
+    parser = argparse.ArgumentParser(description='Save the graph on a specific path.')
+    parser.add_argument('--input_10', type=str, required=True, help='Input dataset_10.json file for making graphs')
+    parser.add_argument('--input_50', type=str, required=True, help='Input dataset_50.json file for making graphs')
+    parser.add_argument('--input_100', type=str, required=True, help='Input dataset_100.json file for making graphs')
+    parser.add_argument('--output_all_directory', type=str, required=True, help='Output directory for saving all class graphs')
+    parser.add_argument('--output_person_directory', type=str, required=True, help='Output directory for saving person class graphs')
+    parser.add_argument('--output_ball_directory', type=str, required=True, help='Output directory for saving ball class graphs')
+    return parser.parse_args()
+
 
 def main():
 
+    args = parse_args()
+    
     # dict in json to np
     all_class_np = np.full([3,4], 1.0)
     person_class_np = np.full([3,4], 1.0)
@@ -11,8 +33,9 @@ def main():
 
     for i,dataset in enumerate([10, 50, 100]):
 
-        json_open = open('C:\\Users\\黒田堅仁\\OneDrive\\GitHub\\SoccerTrack-v2\\outputs\\results_json\\dataset_' + str(dataset) + '.json', 'r')
-        results_dict = json.load(json_open)
+        exec("json_open = open(args.input_" + str(dataset) + ", 'r')")
+        results_dict = json.load(eval('json_open'))
+        print(results_dict)
 
         all_class_data_dict = results_dict["all"]
         person_class_data_dict = results_dict["person"]
@@ -33,9 +56,9 @@ def main():
         plt.title(index_name_list[i]) 
         plt.xlabel("train dataset") 
         plt.ylabel(index_name_list[i]) 
-        plt.plot(x, y, color ="red") 
-        plt.show()
-        plt.savefig("C:\\Users\\黒田堅仁\\OneDrive\\GitHub\\SoccerTrack-v2\\outputs\\graph\\all_class\\" + index_name_list[i] + ".json")
+        plt.plot(x, y, color ="red")
+        file_path = os.path.join(args.output_all_directory, str(index_name_list[i]) + ".png")
+        plt.savefig(file_path)
 
     # make results graph from person class np
     for i in range(4):
@@ -44,9 +67,9 @@ def main():
         plt.title(index_name_list[i]) 
         plt.xlabel("train dataset") 
         plt.ylabel(index_name_list[i]) 
-        plt.plot(x, y, color ="red") 
-        plt.show()
-        plt.savefig("C:\\Users\\黒田堅仁\\OneDrive\\GitHub\\SoccerTrack-v2\\outputs\\graph\\person_class\\" + index_name_list[i] + ".json")
+        plt.plot(x, y, color ="red")
+        file_path = os.path.join(args.output_person_directory, str(index_name_list[i]) + ".png")
+        plt.savefig(file_path)
 
     # make results graph from ball class np
     for i in range(4):
@@ -55,9 +78,9 @@ def main():
         plt.title(index_name_list[i]) 
         plt.xlabel("train dataset") 
         plt.ylabel(index_name_list[i]) 
-        plt.plot(x, y, color ="red") 
-        plt.show()
-        plt.savefig("C:\\Users\\黒田堅仁\\OneDrive\\GitHub\\SoccerTrack-v2\\outputs\\graph\\ball_class\\" + index_name_list[i] + ".json")
+        plt.plot(x, y, color ="red")
+        file_path = os.path.join(args.output_ball_directory, str(index_name_list[i]) + ".png")
+        plt.savefig(file_path)
 
 
 if __name__ == "__main__":
