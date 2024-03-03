@@ -38,7 +38,7 @@ def main():
 
     # each class results
     det_metrics_box = det_metrics.box
-    class_output_np = np.full((2,4),0)
+    class_output_np = np.full((2,4),0.0)
     class_output_np[:, 0] = det_metrics_box.p
     class_output_np[:, 1] = det_metrics_box.r
     class_output_np[:, 2] = det_metrics_box.ap50
