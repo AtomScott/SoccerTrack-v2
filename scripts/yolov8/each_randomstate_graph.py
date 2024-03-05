@@ -13,12 +13,13 @@ def parse_args():
         Namespace: The arguments namespace.
     """
     parser = argparse.ArgumentParser(description='Save the graph on a specific path.')
-    parser.add_argument('--input_10', type=str, required=True, help='Input dataset_10.json file for making graphs') # ...\outputs\results.json\dataset_10.json (file path)
-    parser.add_argument('--input_50', type=str, required=True, help='Input dataset_50.json file for making graphs') # ...\outputs\results.json\dataset_50.json (file path)
-    parser.add_argument('--input_100', type=str, required=True, help='Input dataset_100.json file for making graphs') # ...\outputs\results.json\dataset_100.json (file path)
-    parser.add_argument('--output_all_directory', type=str, required=True, help='Output directory for saving all class graphs') # ...\outputs\graph\all_class (directory path)
-    parser.add_argument('--output_person_directory', type=str, required=True, help='Output directory for saving person class graphs') # outputs\graph\person_class (directory path)
-    parser.add_argument('--output_ball_directory', type=str, required=True, help='Output directory for saving ball class graphs') # outputs\graph\ball_class (directory path)
+    parser.add_argument('--input_10', type=str, required=True, help='Input dataset_10.json file for making graphs') # ...\outputs\change_trainset_size\randomstate1\dataset_10.json (file path)
+    parser.add_argument('--input_50', type=str, required=True, help='Input dataset_50.json file for making graphs') # ...\outputs\change_trainset_size\randomstate1\dataset_50.json (file path)
+    parser.add_argument('--input_100', type=str, required=True, help='Input dataset_100.json file for making graphs') # ...\outputs\change_trainset_size\randomstate1\dataset_100.json (file path)
+    parser.add_argument('--output_all_directory', type=str, required=True, help='Output directory for saving all class graphs') # ...\outputs\graph\randomstate1\all_class (directory path)
+    parser.add_argument('--output_person_directory', type=str, required=True, help='Output directory for saving person class graphs') # outputs\graph\randomstate1\person_class (directory path)
+    parser.add_argument('--output_ball_directory', type=str, required=True, help='Output directory for saving ball class graphs') # outputs\graph\randomstate1\ball_class (directory path)
+    parser.add_argument('--output_np', type=str, required=True, help='Output json file for saving all results') # outputs\graph\randomstate1\all_results_np (file path)
     return parser.parse_args()
 
 
@@ -87,6 +88,15 @@ def main():
         plt.plot(x, y, color ="red")
         file_path = os.path.join(args.output_ball_directory, str(index_name_list[i]) + ".png")
         plt.savefig(file_path)
+
+    # make np file including all results to make error bar graph
+    all_results_np = np.full([3,3,4], 1.0)
+    all_results_np[0] = all_class_np
+    all_results_np[1] = person_class_np
+    all_results_np[2] = ball_class_np
+
+    np.save(args.output_np, all_results_np)
+    print(all_results_np)
 
 
 if __name__ == "__main__":
