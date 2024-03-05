@@ -32,10 +32,13 @@ def main():
     ball_class_np = np.full([3,4], 1.0)
 
     for i,dataset in enumerate([10, 50, 100]):
-
+        
         exec("json_open = open(args.input_" + str(dataset) + ", 'r')")
         results_dict = json.load(eval('json_open'))
-        print(results_dict)
+
+        all_class_data_dict = {}
+        person_class_data_dict = {}
+        ball_class_data_dict = {}
 
         all_class_data_dict = results_dict["all"]
         person_class_data_dict = results_dict["person"]
@@ -53,6 +56,7 @@ def main():
     for i in range(4):
         x = [10, 50, 100]
         y = all_class_np[:, i]
+        plt.figure()
         plt.title(index_name_list[i]) 
         plt.xlabel("train dataset") 
         plt.ylabel(index_name_list[i]) 
@@ -64,6 +68,7 @@ def main():
     for i in range(4):
         x = [10, 50, 100]
         y = person_class_np[:, i]
+        plt.figure()
         plt.title(index_name_list[i]) 
         plt.xlabel("train dataset") 
         plt.ylabel(index_name_list[i]) 
@@ -75,6 +80,7 @@ def main():
     for i in range(4):
         x = [10, 50, 100]
         y = ball_class_np[:, i]
+        plt.figure()
         plt.title(index_name_list[i]) 
         plt.xlabel("train dataset") 
         plt.ylabel(index_name_list[i]) 
