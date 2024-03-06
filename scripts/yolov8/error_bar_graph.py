@@ -64,22 +64,20 @@ def main():
     for k in range(3):
         for i in range(4):
             x = [10, 50, 100]
-            y = [mean_np[k,j,i] for j in range(3)]
-            y_err = [sd_np[k,j,i] for j in range(3)]
+            y = [0.0, 0.0, 0.0]
+            y_err = [0.0, 0.0, 0.0]
+            for j in range(3):
+                y[j] = float(mean_np[k,j,i])
+                y_err[j] = float(sd_np[k,j,i])
             plt.figure()
             plt.title(index_name_list[i]) 
             plt.xlabel("train dataset") 
             plt.ylabel(index_name_list[i]) 
-            plt.errorbar(x, y, yerr = y_err, capsize=5, markersize=10, ecolor = 'black', markeredgecolor = "black", color = "black")
-            plt.text(x, y, "str")
+            plt.ylim(0.0, 1.0)
+            plt.errorbar(x, y, yerr = y_err, capsize=5, markersize=10, ecolor = 'black', markeredgecolor = "black", color = "red")
             for j, x_gra in enumerate([10, 50, 100]):
-                x = float(x[j])
-                y = float(y[j])
-                print(y)
-                print(type(y))
-                print(j)
-                plt.text(x_gra, mean_np[k,j,i], str(mean_np[k,j,i]))
-                plt.text(x_gra, sd_np[k,j,i], str(sd_np[k,j,i]))
+                plt.text(x_gra, y[j], str('{:.2f}'.format(y[j])), color = 'red')
+                plt.text(x_gra, y[j] + y_err[j], str('{:.2f}'.format(y_err[j])))
             exec("class_directory = args.output_" + str(class_name_list[k]) + "_directory")
             file_path = os.path.join(eval("class_directory"), str(index_name_list[i]) + ".png")
             plt.savefig(file_path)
