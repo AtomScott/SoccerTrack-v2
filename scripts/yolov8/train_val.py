@@ -31,7 +31,7 @@ def main():
     model.train(data=args.input, epochs=args.epochs, imgsz=args.imgsz, batch=args.batch, workers=args.workers, device=args.device)
     
     # Validate the model
-    det_metrics = model.val()
+    det_metrics = model.val(imgsz=args.imgsz, batch=args.batch, device=args.device)
 
     # all class results
     det_metrics_dict = det_metrics.results_dict
