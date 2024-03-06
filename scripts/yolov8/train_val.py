@@ -85,4 +85,4 @@ if __name__ == "__main__":
     main()
 
 # Example script usage:
-# python detection_YOLOv8x.py --train_dataset 1 --epochs 1 --imgsz 32 --batch 4 --workers 4 --device cuda:0 --output results_json\det_metrics_dict_1.json
+# python --input train_val.py --train_dataset 1 --epochs 1 --imgsz 32 --batch 4 --workers 4 --device cuda:0 --output results_json\det_metrics_dict_1.json
