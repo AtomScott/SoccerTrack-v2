@@ -1,0 +1,30 @@
+[project]
+name = "soccertrack-v2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "deffcode>=0.2.6",
+    "joblib>=1.4.2",
+    "jupyter>=1.1.1",
+    "loguru>=0.7.2",
+    "mplsoccer>=1.4.0",
+    "opencv-python>=4.10.0.84",
+    "pyexiftool>=0.5.6",
+    "setuptools>=75.1.0",
+    "tqdm>=4.66.5",
+    "vidgear>=0.3.3",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
