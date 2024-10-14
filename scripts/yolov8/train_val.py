@@ -2,7 +2,6 @@ import argparse
 from ultralytics import YOLO
 import json
 from loguru import logger
-import numpy as np
 
 def parse_args():
     """
@@ -31,58 +30,17 @@ def main():
     model.train(data=args.input, epochs=args.epochs, imgsz=args.imgsz, batch=args.batch, workers=args.workers, device=args.device)
     
     # Validate the model
-    det_metrics = model.val(imgsz=args.imgsz, batch=args.batch, device=args.device)
-
-    # all class results
+    det_metrics = model.val()
     det_metrics_dict = det_metrics.results_dict
 
-    # each class results
-    det_metrics_box = det_metrics.box
-    class_output_np = np.full((2,4),0.0)
-    class_output_np[:, 0] = det_metrics_box.p
-    class_output_np[:, 1] = det_metrics_box.r
-    class_output_np[:, 2] = det_metrics_box.ap50
-    class_output_np[:, 3] = det_metrics_box.maps
+    logger.info(det_metrics_dict)
 
-    # name list of validation indexes
-    index_name_list = ['Precision', 'Recall', 'mAP50', 'mAP50-95']
-
-    # remove key not to use
-    del det_metrics_dict['fitness']
-
-    # change the key names of all class dict
-    all_class_dict = dict()
-    for i, key in enumerate(det_metrics_dict.keys()):
-        all_class_dict[index_name_list[i]] = float(det_metrics_dict[key])
-
-
-    # person class to dict
-    person_class_dict = dict()
-    for i in range(4):
-        person_class_dict[index_name_list[i]] = float(class_output_np[0, i])
-
-
-    # sports_ball class to dict
-    ball_class_dict = dict()
-    for i in range(4):
-        ball_class_dict[index_name_list[i]] = float(class_output_np[1, i])
-
-
-    # unity each class dict
-    results_json_dict = {
-        "all":all_class_dict,
-        "person":person_class_dict,
-        "ball":ball_class_dict
-        }
-
-
-    # Save dict to a JSON file
+    # Save det_metrics_dict to a JSON file
     with open(args.output, 'w') as file:
-        json.dump(results_json_dict, file)
-
+        json.dump(det_metrics_dict, file)
 
 if __name__ == "__main__":
     main()
 
 # Example script usage:
-# python --input train_val.py --train_dataset 1 --epochs 1 --imgsz 32 --batch 4 --workers 4 --device cuda:0 --output results_json\det_metrics_dict_1.json
+# python detection_YOLOv8x.py --train_dataset 1 --epochs 1 --imgsz 32 --batch 4 --workers 4 --device cuda:0 --output results_json\det_metrics_dict_1.json
