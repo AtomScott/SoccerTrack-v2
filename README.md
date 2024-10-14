@@ -1,9 +1,5 @@
 # SoccerTrack-V2
 
-![License](https://img.shields.io/github/license/YourUsername/SoccerTrack-V2)
-![GitHub last commit](https://img.shields.io/github/last-commit/YourUsername/SoccerTrack-V2)
-![Stars](https://img.shields.io/github/stars/YourUsername/SoccerTrack-V2?style=social)
-
 ## Table of Contents
 
 - [Overview](#overview)
