@@ -2,11 +2,15 @@
 This script visualizes original and calibrated keypoints on the first frame of a video for a given match ID.
 
 Usage:
-    python keypoints_visualization.py --match_id <match_id> --output_folder <output_folder_path>
+    python keypoints_visualization.py --match_id <match_id>
 
 Arguments:
     --match_id: The ID of the match.
-    --output_folder: Folder to save the images with keypoints plotted.
+
+Output:
+    The script saves two images in the 'data/interim/keypoints_visualization/<match_id>/' directory:
+    - <match_id>_original_keypoints.jpg: Original frame with keypoints
+    - <match_id>_calibrated_keypoints.jpg: Calibrated frame with keypoints
 """
 
 import argparse
@@ -37,7 +41,6 @@ def plot_keypoints(img, keypoints, color=(0, 0, 255)):
 def main():
     parser = argparse.ArgumentParser(description="Keypoints Visualization")
     parser.add_argument("--match_id", required=True, help="The ID of the match")
-    parser.add_argument("--output_folder", required=True, help="Folder to save the images with keypoints plotted")
     args = parser.parse_args()
 
     # Construct the paths
@@ -45,19 +48,22 @@ def main():
     interim_folder = Path("data/interim")
     keypoints_json_path = match_folder / f"{args.match_id}_keypoints.json"
     video_path = match_folder / f"{args.match_id}_panorama.mp4"
-    calibrated_video_path = interim_folder / "calibrated_videos" / f"{args.match_id}_panorama.mp4"
-    calibrated_keypoints_path = interim_folder / "calibrated_keypoints" / f"{args.match_id}_calibrated_keypoints.json"
+    calibrated_video_frame_path = (
+        interim_folder / "calibrated_videos" / f"{args.match_id}" / f"{args.match_id}_panorama.jpg"
+    )
+    calibrated_keypoints_path = (
+        interim_folder / "calibrated_keypoints" / f"{args.match_id}" / f"{args.match_id}_calibrated_keypoints.json"
+    )
 
-    # Check if files exist
-    for file_path in [keypoints_json_path, video_path, calibrated_keypoints_path]:
-        if not file_path.exists():
-            logger.error(f"File not found: {file_path}")
-            return
+    # Set output folder
+    output_folder = interim_folder / "keypoints_visualization" / args.match_id
+    output_folder.mkdir(parents=True, exist_ok=True)
 
     # Load keypoints
     original_keypoints = load_json(str(keypoints_json_path))
     calibrated_keypoints = load_json(str(calibrated_keypoints_path))
 
+    # Read original and calibrated frames
     cap = cv2.VideoCapture(str(video_path))
     ret, frame = cap.read()
     cap.release()
@@ -65,20 +71,11 @@ def main():
         logger.error(f"Failed to read the first frame from {video_path}")
         return
 
-    cap = cv2.VideoCapture(str(calibrated_video_path))
-    ret, calibrated_frame = cap.read()
-    cap.release()
-    if not ret:
-        logger.error(f"Failed to read the first frame from {calibrated_video_path}")
-        return
+    calibrated_frame = cv2.imread(str(calibrated_video_frame_path))
 
     # Plot keypoints on the frames
     original_frame_with_keypoints = plot_keypoints(frame.copy(), original_keypoints, color=(0, 0, 255))
     calibrated_frame_with_keypoints = plot_keypoints(calibrated_frame.copy(), calibrated_keypoints, color=(0, 255, 0))
-
-    # Create output folder if it doesn't exist
-    output_folder = Path(args.output_folder)
-    output_folder.mkdir(parents=True, exist_ok=True)
 
     # Save the resulting images
     cv2.imwrite(str(output_folder / f"{args.match_id}_original_keypoints.jpg"), original_frame_with_keypoints)

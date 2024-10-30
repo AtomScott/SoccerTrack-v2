@@ -59,7 +59,7 @@ def main():
     H = calculate_homography(world_points, image_points)
 
     # Create interim folder if it doesn't exist
-    interim_folder = Path("data/interim") / "homography"
+    interim_folder = Path("data/interim") / "homography" / f"{args.match_id}"
     interim_folder.mkdir(parents=True, exist_ok=True)
 
     # Save homography matrix

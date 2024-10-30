@@ -1,12 +1,25 @@
 """
-This script calibrates a camera using keypoints from a JSON file and a checkerboard pattern video.
-It also calibrates the keypoints and saves them in a specified directory.
+This script calibrates a camera using keypoints from a JSON file and a panorama video.
+It performs the following tasks:
+1. Loads keypoints from a JSON file
+2. Calibrates the camera using fisheye model
+3. Calibrates the keypoints
+4. Saves the calibration results (mapx, mapy, and calibrated keypoints)
 
 Usage:
     python keypoints_calibration.py --match_id <match_id>
 
 Arguments:
-    --match_id: The ID of the match.
+    --match_id: The ID of the match. This is used to locate the input files and name the output files.
+
+Input files (expected in data/raw/<match_id>/):
+    - <match_id>_keypoints.json: JSON file containing keypoints
+    - <match_id>_panorama.mp4: Panorama video file
+
+Output files (saved in /home/atom/SoccerTrack-v2/data/interim/calibrated_keypoints/<match_id>/):
+    - <match_id>_mapx.npy: X-axis mapping for undistortion
+    - <match_id>_mapy.npy: Y-axis mapping for undistortion
+    - <match_id>_calibrated_keypoints.json: Calibrated keypoints
 """
 
 import json
@@ -89,14 +102,16 @@ def main():
     )
     logger.info(f"Calibration RMS error: {retval}")
 
-    new_K, roi = cv2.getOptimalNewCameraMatrix(K, D, (image_width, image_height), alpha=0.98, centerPrincipalPoint=1)
+    new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
+        K, D, (image_width, image_height), np.eye(3), balance=1
+    )
     mapx, mapy = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), new_K, (image_width, image_height), cv2.CV_16SC2)
 
     logger.info("Calibrating keypoints")
     calibrated_keypoints = calibrate_keypoints(imgpoints, K, D, new_K)
 
     # Save the mappings to files
-    save_path = Path("/home/atom/SoccerTrack-v2/data/interim/calibrated_keypoints")
+    save_path = Path(f"/home/atom/SoccerTrack-v2/data/interim/calibrated_keypoints/{args.match_id}")
     save_path.mkdir(parents=True, exist_ok=True)
 
     np.save(save_path / f"{args.match_id}_mapx.npy", mapx)
@@ -111,58 +126,6 @@ def main():
         json.dump(calibrated_keypoints_dict, f, indent=2)
 
     logger.info(f"Saved mapx, mapy, and calibrated keypoints to {save_path}")
-
-
-if __name__ == "__main__":
-    main()
-
-
-def main():
-    # Create the parser
-    parser = argparse.ArgumentParser(description="Calibrate camera using a checkerboard pattern.")
-
-    # Add the arguments
-    parser.add_argument(
-        "--keypoints_json_path", type=str, required=True, help="The path to the JSON file containing keypoints"
-    )
-    parser.add_argument("--input_mp4_path", type=str, required=True, help="The path to the input mp4 file")
-
-    # Parse the arguments
-    args = parser.parse_args()
-    keypoints_json_path = Path(args.keypoints_json_path)
-
-    logger.info("Loading object points and image points")
-    objpoints, imgpoints = load_json(keypoints_json_path)
-    logger.info("Retrieving video dimensions")
-
-    cap = cv2.VideoCapture(args.input_mp4_path)
-    ret, frame = cap.read()
-    image_height, image_width, _ = frame.shape
-    dim = (image_width, image_height)
-
-    logger.info("Starting camera calibration")
-
-    K = np.zeros((3, 3))
-    D = np.zeros((4, 1))
-
-    flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC + cv2.fisheye.CALIB_FIX_SKEW
-
-    retval, K, D, rvecs, tvecs = cv2.fisheye.calibrate(
-        objpoints, imgpoints, (image_width, image_height), K, D, flags=flags
-    )
-
-    new_K, roi = cv2.getOptimalNewCameraMatrix(K, D, (image_width, image_height), alpha=0.98, centerPrincipalPoint=1)
-
-    mapx, mapy = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), new_K, (image_width, image_height), cv2.CV_16SC2)
-
-    logger.info(f"Calibration complete.")
-
-    # Save the mappings to files
-    save_path = keypoints_json_path.parent
-    np.save(save_path / "mapx.npy", mapx)
-    np.save(save_path / "mapy.npy", mapy)
-
-    logger.info(f"Saved mapx and mapy to {save_path}")
 
 
 if __name__ == "__main__":
