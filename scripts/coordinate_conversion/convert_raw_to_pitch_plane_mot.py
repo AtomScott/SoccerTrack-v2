@@ -5,7 +5,7 @@ Usage:
     python coordinate_conversion/convert_raw_to_pitch_plane_mot.py --match_id <match_id>
 
 Example:
-    python coordinate_conversion/convert_raw_to_pitch_plane_mot.py --match_id 117093
+    python scripts/coordinate_conversion/convert_raw_to_pitch_plane_mot.py --match_id 117093
 
 Arguments:
     --match_id: The match identifier to process.
@@ -34,13 +34,25 @@ def parse_xml(xml_path):
 
     for frame in root.findall("frame"):
         frame_number = int(frame.get("frameNumber"))
+        match_time = float(frame.get("matchTime"))
+        event_period = frame.get("eventPeriod")
+        ball_status = frame.get("ballStatus")
+        
         for player in frame.findall("player"):
             player_id = player.get("playerId")
             loc = player.get("loc")
             # Convert loc string to float coordinates
             try:
                 x, y = map(float, loc.strip("[]").split(","))
-                tracking_data.append({"frame": frame_number, "id": player_id, "x": x, "y": y})
+                tracking_data.append({
+                    "frame": frame_number,
+                    "match_time": match_time,
+                    "event_period": event_period,
+                    "ball_status": ball_status,
+                    "id": player_id,
+                    "x": x,
+                    "y": y
+                })
             except ValueError:
                 logger.warning(f"Invalid location format for player {player_id} in frame {frame_number}")
 
@@ -55,7 +67,7 @@ def write_csv(tracking_data, output_csv):
         tracking_data (list of dict): Tracking information.
         output_csv (str): Path to the output CSV file.
     """
-    fieldnames = ["frame", "id", "x", "y"]
+    fieldnames = ["frame", "match_time", "event_period", "ball_status", "id", "x", "y"]
     with open(output_csv, mode="w", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -76,7 +88,14 @@ def main():
     match_id = args.match_id
     repo_root = Path(__file__).parent.parent.parent  # Assuming script is in src/coordinate_conversion/
     input_xml = repo_root / "data" / "raw" / match_id / f"{match_id}_tracker_box_data.xml"
-    output_csv = repo_root / "data" / "interim" / "pitch_plane_coordinates" / f"{match_id}_pitch_plane_coordinates.csv"
+    output_csv = (
+        repo_root
+        / "data"
+        / "interim"
+        / "pitch_plane_coordinates"
+        / f"{match_id}"
+        / f"{match_id}_pitch_plane_coordinates.csv"
+    )
 
     if not input_xml.exists():
         logger.error(f"Input XML file does not exist: {input_xml}")
