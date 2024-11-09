@@ -43,7 +43,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def make_json(raw_data_path: str, translate_event_df: pd.DataFrame, num_class: str, match_id: str) -> None:
+def make_json(translate_event_df: pd.DataFrame, event_df: pd.DataFrame, output_json_path: str) -> None:
     """
     Convert event data from CSV to JSON format for a specific match.
 
@@ -56,10 +56,6 @@ def make_json(raw_data_path: str, translate_event_df: pd.DataFrame, num_class: s
     Returns:
         None: Writes the JSON file to disk.
     """
-    # Read the event data
-    event_path = os.path.join(raw_data_path, match_id, f"{match_id}_player_nodes.csv")
-    event_df = pd.read_csv(event_path)
-    output_json_path = os.path.join(raw_data_path, match_id, f"{match_id}_{num_class}_class_events.json")
 
     # Initialize JSON data structure
     json_data = {"UrlLocal": "", "UrlYoutube": "", "annotations": []}
@@ -111,9 +107,13 @@ if __name__ == "__main__":
     args = parse_arguments()
     match_ids = [str(match_id) for match_id in args.match_id.split(",")]
     num_class = str(args.num_class)
-    raw_data_path = "/home/atom/SoccerTrack-v2/data/raw"
-    translate_csv_path = "/home/atom/SoccerTrack-v2/data/interim/event_frequency.csv"
+    raw_data_path = "data/raw"
+    translate_csv_path = "data/interim/event_frequency.csv"
     translate_event_df = pd.read_csv(translate_csv_path)
 
     for match_id in match_ids:
-        make_json(raw_data_path, translate_event_df, num_class, match_id)
+        # Read the event data
+        event_path = os.path.join(raw_data_path, match_id, f"{match_id}_player_nodes.csv")
+        event_df = pd.read_csv(event_path)
+        output_json_path = os.path.join(raw_data_path, match_id, f"{match_id}_{num_class}_class_events.json")
+        make_json(translate_event_df, event_df, output_json_path)
