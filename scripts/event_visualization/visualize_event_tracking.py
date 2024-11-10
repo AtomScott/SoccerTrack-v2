@@ -75,13 +75,15 @@ def display_label(frame, label):
     """
     cv2.putText(frame, label, (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 3, (128, 0, 0), 1)
 
-def visualize_event_tracking(tracking_df: pd.DataFrame, events_df: pd.DataFrame, output_path: str) -> None:
+def visualize_event_tracking(tracking_df: pd.DataFrame, events_df: pd.DataFrame, nearest_players_df: pd.DataFrame, output_path: str) -> None:
     """
     Process a video and overlay event labels at specified frames based on annotations.
+    Also highlights the player closest to the ball in orange.
 
     Args:
-        video_path (str): Path to the input video file.
-        events_df (dict): Dictionary containing the event annotations.
+        tracking_df (pd.DataFrame): DataFrame containing tracking data.
+        events_df (pd.DataFrame): DataFrame containing event annotations.
+        nearest_players_df (pd.DataFrame): DataFrame containing nearest player data.
         output_path (str): Path to save the processed video.
     """
     # パラメータ設定
@@ -105,52 +107,45 @@ def visualize_event_tracking(tracking_df: pd.DataFrame, events_df: pd.DataFrame,
     for frame_num in range(fps * video_duration_seconds):
         frame_data = tracking_df[tracking_df['match_time'] / 40.0 == frame_num]
         frame = court.copy()  # サッカーコートの背景をコピー
+        # ボールに最も近い選手の情報を取得
+        nearest_info = nearest_players_df[nearest_players_df.index == frame_num]
+        print(frame_num, nearest_players_df[nearest_players_df.index == frame_num])
+        nearest_player_id = nearest_info['nearest_player'].values[0] if not nearest_info.empty else None
 
         for _, row in frame_data.iterrows():
-            x, y = int(row['x_smooth'] * frame_width), int(row['y_smooth'] * frame_height)
-            
+            x, y = int(row['x'] * frame_width), int(row['y'] * frame_height)
             # ボールと選手の描画（ボールは赤、選手は青で描画）
-            cv2.circle(frame, (x, y), 10, (0, 0, 255), -1)  # ボールの位置
-            '''if row['id'] == 'ball':
-                cv2.circle(frame, (x, y), 10, (0, 0, 255), -1)  # ボールの位置
+            if row['id'] == 'ball':
+                cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)  # ボールの位置
             else:
                 color = (255, 0, 0) if row['teamId'] == 9701 else (0, 255, 0)  # チームごとに色分け
-                cv2.circle(frame, (x, y), 5, color, -1)  # 選手の位置'''
-        
-        # Check if the current frame matches any annotation's frame position
+                cv2.circle(frame, (x, y), 5, color, -1)  # 選手の位置
+                # 最も近い選手をオレンジで囲む
+                if row['id'] == nearest_player_id:
+                    cv2.circle(frame, (x, y), 15, (0, 165, 255), 3)  # オレンジ色で囲む
+        # イベントラベルの表示処理
         annotation = annotations[annotation_num]
-        # 誤差補正し、40で四捨五入してポジションを計算
         position = float(annotation['position'])
         remainder = position % 40
-        # remainderが20以下か20以上かで分岐
         if remainder <= 20:
             corrected_position = (position - remainder) / 40.0
         else:
             corrected_position = (position - remainder) / 40.0 + 1
-        # 最終的なポジション
         position = corrected_position
         
-        '''# annotation frame
         if frame_num == position:
             label = annotation['label']
-            # Set frames where the label will be displayed (current + next 15 frames)
             display_label(frame, label)
             annotation_num += 1
             last_annotation_frame = frame_num + 15
-
-        # not annotation frame & current_frame < last_annotation_frame
         elif frame_num < last_annotation_frame:
-            display_label(frame, label)'''
-
+            display_label(frame, label)
         out.write(frame)  # フレームを書き出し
 
-        # frame not needed to display
         if frame_num % 100 == 0:
             print(frame_num)
-
-
     out.release()  # 動画ファイルを保存
-    logger.info(f"Created file: {output_path}")
+    print(f"Created file: {output_path}")
 
 if __name__ == '__main__':
     # Example usage
@@ -163,11 +158,16 @@ if __name__ == '__main__':
         tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_pitch_plane_coordinates.csv' # pitch_plane_coordinates, ball_position
         event_path = f'data/raw/{match_id}/{match_id}_{num_class}_class_events.json'
         detection_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{event_class}_detection.json'
-        output_path = f'data/interim/event_visualization/{match_id}/{match_id}_in_play_detection_tracking.mp4'
+        nearest_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_nearest_player_data.csv'
+        output_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{event_class}_detection.json'
+        output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_nearest_player.mp4'
 
         # ファイルを読み込み
         tracking_df = pd.read_csv(tracking_path)
+        nearest_player_df = pd.read_csv(nearest_player_path)
+        tracking_df.reset_index
+        nearest_player_df.reset_index
         with open(detection_json_path, 'r') as f: # detection_json_path or event_path
             events_df = json.load(f)
         
-        visualize_event_tracking(tracking_df, events_df, output_path)
+        visualize_event_tracking(tracking_df, events_df, nearest_player_df, output_video_path)
