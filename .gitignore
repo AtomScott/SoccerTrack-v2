@@ -1,23 +1,17 @@
 # custom
 # Data folder: Contains raw and processed data files
-# Keeping .gitkeep to maintain the folder structure in the repository
-data/*
-!data/.gitkeep
+data
 
 # Scratch folder: Contains temporary files for development and testing
-scratch/*
-!scratch/.gitkeep
+scratch
 
 # Models folder: Stores trained model files and checkpoints
-# Keeping .gitkeep to maintain the folder structure in the repository
-models/*
-!models/.gitkeep
+models
 
 # Outputs folder: Stores output files from training and evaluation
 # Keeping .gitkeep to maintain the folder structure in the repository
-outputs/*
-!outputs/.gitkeep
-    
+outputs
+
 datasets
 runs
 sh_scripts/abci
