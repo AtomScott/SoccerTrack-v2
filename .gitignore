@@ -1,14 +1,14 @@
 # custom
 # Data folder: Contains raw and processed data files
 # Keeping .gitkeep to maintain the folder structure in the repository
-data/*
+data
 
 # Scratch folder: Contains temporary files for development and testing
 scratch/*
 
 # Models folder: Stores trained model files and checkpoints
 # Keeping .gitkeep to maintain the folder structure in the repository
-models/*
+models
 
 # Outputs folder: Stores output files from training and evaluation
 # Keeping .gitkeep to maintain the folder structure in the repository
