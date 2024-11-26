@@ -8,15 +8,30 @@ dependencies = [
     "deffcode>=0.2.6",
     "joblib>=1.4.2",
     "jupyter>=1.1.1",
+    "lapx>=0.5.11",
     "loguru>=0.7.2",
+    "moviepy>=1.0.3",
     "mplsoccer>=1.4.0",
+    "omegaconf>=2.3.0",
     "numpy>=2.1.1",
     "opencv-python>=4.10.0.84",
+    "openstarlab-preprocessing>=0.1.11",
     "pyexiftool>=0.5.6",
+    "ruff>=0.7.4",
     "setuptools>=75.1.0",
     "tqdm>=4.66.5",
+    "typer-config>=1.4.2",
+    "ultralytics>=8.3.35",
     "vidgear>=0.3.3",
 ]
+
+# Add this section to make the package installable
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.ruff]
 line-length = 120
