@@ -1,0 +1,146 @@
+# SoccerTrack-V2 Project Rules
+
+## Project Structure
+This project follows a specific structure with key directories:
+- `src/`: Core source code and modules
+- `configs/`: Configuration files using OmegaConf
+- `scripts/`: Utility and processing scripts
+- `data/`: Data storage (gitignored except `.gitkeep`)
+- `models/`: Model storage (gitignored except `.gitkeep`)
+- `notebooks/`: Jupyter notebooks for analysis
+
+## Key Components
+1. CLI Application
+   - Uses dynamic command loading from `__all__` in `src/__init__.py`
+   - Main entry point in `src/main.py`
+   - Commands follow pattern: `python -m src.main command=<command-name> [options]`
+
+2. Configuration Management
+   - Uses OmegaConf for configuration
+   - Base configs in `configs/default_config.yaml`
+   - Config inheritance and overrides supported
+   - CLI overrides using OmegaConf syntax
+
+3. Data Processing Pipeline
+   - Modules:
+     - `data_preprocessing/`: Scripts for data cleaning and preprocessing
+     - `feature_extraction/`: Scripts to extract features from data
+     - `matching/`: Scripts for GPS and tracklet matching
+     - `evaluation/`: Evaluation metric implementations
+   - Utilities:
+     - Coordinate conversion
+     - Tracking data processing
+     - Calibration tools
+
+4. Development Guidelines
+   - **Python Version**: Requires Python 3.12+
+   - **Formatting**: Uses [ruff](https://github.com/charliermarsh/ruff) for linting and formatting with a line length of 120 characters
+   - **Type Hints & Docstrings**: Adheres to comprehensive type hinting and detailed docstrings for clarity
+   - **Code Organization**:
+     - Core functionality resides in `src/`
+     - Data processing scripts are maintained in `scripts/`
+   - **Version Control**: Git is used for version control, with `.gitignore` appropriately configured
+
+## Code Style and Best Practices
+- **Type Hints**:
+  - **Modern Syntax**: Utilize Python 3.10+ union types (`|`) instead of `Optional[...]`
+    ```python
+    # Before
+    from typing import Optional
+    
+    def get_fps(video_path: Path) -> Optional[float]:
+        ...
+    
+    # After
+    def get_fps(video_path: Path) -> float | None:
+        ...
+    ```
+  
+  - **Built-in Generics**: Use built-in generic types
+    ```python
+    # Before
+    from typing import List, Dict
+    
+    def load_coordinates(match_id: str) -> Dict[str, List[float]]:
+        ...
+    
+    # After
+    def load_coordinates(match_id: str) -> dict[str, list[float]]:
+        ...
+    ```
+
+- **Command Structure**:
+  - Commands are defined in separate modules and exposed via `__all__`
+  - Example command implementation:
+    ```python:src/commands/plot_coordinates.py
+    def plot_coordinates_on_video(
+        match_id: str,
+        output_path: str | None = None,
+        first_frame_only: bool = False,
+        event_period: str | None = None,
+        colors: dict[str, list] | None = None,
+        point_sizes: dict[str, int] | None = None
+    ) -> None:
+        """Plot coordinates on video frames using configurations from a YAML file."""
+        # Implementation
+    ```
+
+- **Configuration Management**:
+  - Use OmegaConf for configuration handling:
+    ```python:src/main.py
+    def parse_config(config_path: Path, func_name: str | None = None, kwargs: dict | None = None) -> OmegaConf:
+        """Parse and update configuration from file and CLI arguments."""
+        config = OmegaConf.load(config_path)
+        
+        if kwargs:
+            for arg, value in kwargs.items():
+                if func_name:
+                    config[func_name][arg] = value
+                else:
+                    config[arg] = value
+        return config
+    ```
+
+- **Logging**:
+  - Uses Loguru for structured logging
+  - Example usage:
+    ```python
+    from loguru import logger
+    
+    logger.info("Loading configuration from {}", config_path)
+    logger.debug("Processing frame {}", frame_num)
+    logger.error("Failed to process video: {}", e)
+    ```
+
+- **Data Models**:
+  - Use Pydantic for data validation:
+    ```python
+    from pydantic import BaseModel, Field
+    
+    class Player(BaseModel):
+        id: int = Field(alias='@playerId')
+        loc: list[float] | None = Field(
+            None, 
+            alias='@loc', 
+            description="Location of the player on the pitch as [x, y]."
+        )
+    ```
+
+## Command Line Usage
+```bash
+# Basic command execution
+python -m src.main command=plot-coordinates-on-video
+
+# With configuration overrides
+python -m src.main command=plot-coordinates-on-video plot_coordinates_on_video.match_id=117093
+
+# Using different config file
+python -m src.main command=plot-coordinates-on-video config_path=configs/custom_config.yaml
+```
+
+## Additional Best Practices
+- Keep command functions focused and single-purpose
+- Use descriptive variable names and comprehensive docstrings
+- Implement proper error handling and logging
+- Follow the principle of least surprise in API design
+- Use type hints consistently throughout the codebase
