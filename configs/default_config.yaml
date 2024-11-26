@@ -1,0 +1,92 @@
+base_path: "/data/share/SoccerTrack-v2/"
+interim_data_path: "${base_path}/data/interim"
+
+match:
+  id: "117093"
+  first_frame_only: false
+  event_period: FIRST_HALF
+
+pitch_length: 105  # meters
+pitch_width: 68  # meters
+
+visualization:
+  team_colors:
+    9701: [255, 0, 0]    # Red for team 1
+    9834: [0, 0, 255]    # Blue for team 2
+    ball: [0, 255, 0]    # Green for ball
+  track_colors: {}       # Will be populated dynamically
+  point_sizes:
+    player: 5
+    ball: 3
+
+
+video:
+  calibrated_videos: "${interim_data_path}/${match.id}/${match.id}_panorama_test.mp4"
+  homography: "${interim_data_path}/homography/${match.id}/${match.id}_homography.npy"
+  output_folder: "${interim_data_path}/annotated_videos/${match.id}/"
+
+coordinates:
+  path: "${interim_data_path}/pitch_plane_coordinates/${match.id}/${match.id}_pitch_plane_coordinates.csv"
+
+plot_coordinates_on_video:
+  homography_path: ${video.homography}
+  coordinates_path: ${coordinates.path}
+  video_path: ${video.calibrated_videos}
+  match_id: ${match.id}
+  output_path: "${interim_data_path}/annotated_videos/${match.id}/${match.id}_plot_coordinates_on_video.mp4"
+  first_frame_only: ${match.first_frame_only}
+  event_period: ${match.event_period}
+  team_colors: ${visualization.team_colors}
+  track_colors: ${visualization.track_colors}
+  point_sizes: ${visualization.point_sizes}
+  pitch_length: ${pitch_length}
+  pitch_width: ${pitch_width}
+
+plot_bboxes_on_video:
+  video_path: ${video.calibrated_videos}
+  detections_path: "${interim_data_path}/${match.id}/${match.id}_panorama_test_detections.csv"
+  # detections_path: "${interim_data_path}/${match.id}/${match.id}_ground_truth_mot.csv"
+  match_id: ${match.id}
+  output_path: "${interim_data_path}/${match.id}/${match.id}_plot_bboxes_on_video-yolov8.mp4"
+  first_frame_only: ${match.first_frame_only}
+  team_colors: ${visualization.team_colors}
+  track_colors: ${visualization.track_colors}
+
+detect_objects:
+  weights_path: "${base_path}/models/yolov8m.pt"
+  imgsz: 5000
+  conf: 0.4
+  iou: 0.7
+  video_path: ${video.calibrated_videos}
+  output_dir: "${interim_data_path}/${match.id}"
+  tracker_config:
+    tracker_type: "botsort"
+    track_high_thresh: 0.25
+    track_low_thresh: 0.1
+    new_track_thresh: 0.25
+    track_buffer: 30
+    match_thresh: 0.8
+    fuse_score: true
+    gmc_method: "sparseOptFlow"
+    proximity_thresh: 0.5
+    appearance_thresh: 0.25
+    with_reid: false
+
+create_ground_truth_mot:
+  match_id: ${match.id}
+  detections_path: "${interim_data_path}/${match.id}/${match.id}_panorama_test_detections.csv"
+  coordinates_path: ${coordinates.path}
+  homography_path: ${video.homography}
+  event_period: ${match.event_period}
+  output_path: "${interim_data_path}/${match.id}/${match.id}_ground_truth_mot.csv"
+  max_distance: 150.0
+  conf_threshold: 0.3
+  max_interpolation_gap: 10
+  association_window_size: 30
+  max_refinement_iterations: 5
+  error_threshold: 50.0
+  pitch_length: ${pitch_length}
+  pitch_width: ${pitch_width}
+
+log_string:
+  string: "Hello, world!"
