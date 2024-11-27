@@ -16,6 +16,7 @@ import json
 from loguru import logger
 import os
 from collections import defaultdict
+import math
 
 def parse_arguments():
     """
@@ -39,25 +40,15 @@ def main():
         event_path = f'data/raw/{match_id}/{match_id}_{num_class}_class_events.json'
         output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_event_tracking.mp4'
         output_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_event_detection.json'
+        output_ball_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_ball_player.json'
+        output_player_to_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_player_to_player.json'
         # ファイルを読み込み
         tracking_df = pd.read_csv(tracking_path)
         with open(event_path, 'r') as f:
             events_df = json.load(f)
-        set_piece_detection(tracking_df, events_df, output_video_path, output_json_path)
+        detect(tracking_df, output_json_path, output_ball_player_path, output_player_to_player_path)
 
-def set_piece_detection(tracking_df, events_df, output_video_path, output_json_path):
-    """
-    Process tracking data to detect events and overlay events on video.
-
-    Args:
-        tracking_df (pd.DataFrame): Tracking data for players and ball positions.
-        events_df (dict): Event annotations.
-        output_video_path (str): Path to save the processed video.
-        output_json_path (str): Path to save pass detection results in JSON format.
-    """
-    detect(tracking_df, output_json_path)
-
-def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05, min_stationary_duration=50):
+def detect(tracking_df, output_json_path, output_ball_player_path, output_player_to_player_path, frame_rate=25, min_possess_duration=5, ball_possess_threshold = 0.05, min_stationary_duration=50):
     """
     Scripts to detect event excluding PASS and DRIVE.
     First, we detect OUT from ball positional data. 
@@ -75,10 +66,6 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
     Returns:
         dict: A dictionary with annotations in the specified format.
     """
-    # ボールのデータのみを抽出
-    ball_data = tracking_df[tracking_df['id'] == 'ball'][['frame', 'match_time', 'x', 'y']].reset_index(drop=True)
-    # 一番近い選手と距離を取得
-    all_distances_df = ball_dis(tracking_df)
 
     # 停止状態を判定するためのフラグとカウンター
     stationary_stop_frame = None
@@ -88,63 +75,36 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
     after_y_out_stop_frame = None
     stationary_goal_frame = None
     is_in_pitch = True
-    ball_player_id = None
-    ball_lose_frame = None
-    ball_possess_threshold = 0.05
     outputs = []
+
+    # PASS → CROSS, HIGH PASS, SHOT, HEADER
+    print('start detection of (PASS → CROSS, HIGH PASS, SHOT, HEADER)')
+
+    # ボールのデータのみを抽出
+    ball_data = tracking_df[tracking_df['id'] == 'ball'][['frame', 'match_time', 'x', 'y']].reset_index(drop=True)
+    # 全選手のボールとの距離を取得
+    all_distances_df = ball_dis(tracking_df)
+    # ボール保持者
+    ball_player_df = ball_player(tracking_df, all_distances_df, output_ball_player_path)
+    # ボール保持者の移り変わりを記録
+    player_to_player_df = player_to_player(ball_player_df, output_player_to_player_path, frame_rate=25, min_possess_duration=5)
+    for i, row in player_to_player_df.iterrows():
+        # ラベル付け
+        label = 'PASS'
+        outputs.append({
+            "gameTime": format_game_time(row['match_time']),
+            "label": label,
+            "position": str(row['match_time']),
+            "team": "",
+            "confidence": "1.0"
+        })
+    
+    print('start detection of (Out → CK, GK, TI), (FOUL → FK), GOAL')
 
     for i, row in ball_data.iterrows():
         frame = row['frame']
         match_time = row['match_time']
         distances_data = all_distances_df[all_distances_df['match_time'] == match_time].reset_index(drop=True)
-
-        # PASS → CROSS, HIGH PASS, SHOT, HEADER
-        # 誰もまだボールを保持してない
-        for i in range(len(distances_data)):
-            player_data = distances_data[i].reset_index(drop=True)
-            if ball_player_id is None:
-                # 誰か保持
-                print(player_data, type(player_data))
-                if int(player_data['distance_to_ball']) <= ball_possess_threshold:
-                    ball_player_id = player_data['player_id']
-                    ball_team_id = player_data['team_id']
-            # 既に誰かがボールを保持
-            elif player_data['player_id'] == ball_player_id:
-                # ボールを保持し続ける
-                if player_data['distance_to_ball'] <= ball_possess_threshold:
-                    pass
-                    '''# ボールを奪われる
-                    if nearest_player[i] != ball_player_id:
-                        ball_player_id = None'''
-                # ボールを離す
-                else:
-                    # 初めて離した
-                    if ball_lose_frame is None:
-                        # ボールが離れたフレームを記録
-                        ball_lose_frame = frame
-                        ball_lose_time = match_time
-                        ball_lose_x = ball_data.loc[i, 'x']
-                        ball_lose_y = ball_data.loc[i, 'y']
-                    # 既にボールが離れている
-                    else:
-                        for next_player_data in distances_data:
-                            # 誰かのエリアに侵入，誰かが保持
-                            if next_player_data['distance_to_ball'] <= ball_possess_threshold:
-                                # また同じ選手（not PASS）
-                                if next_player_data['player_id'] == ball_player_id:
-                                    pass
-                                # 味方選手 + 相手選手 (PASS)
-                                else:
-                                    label = 'PASS'
-                                    outputs.append({
-                                        "gameTime": format_game_time(ball_lose_time),
-                                        "label": label,
-                                        "position": str(ball_lose_time),
-                                        "team": "",
-                                        "visibility": ""
-                                    })
-                                    ball_lose_frame = None
-                                    ball_player_id = None
 
         # Out → CK, GK, TIの判定
         # まだ外出てない
@@ -163,7 +123,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                     "label": label,
                     "position": str(stationary_out_time),
                     "team": "",
-                    "visibility": ""
+                    "confidence": "1.0"
                 })
         # 外に出てる
         else:
@@ -191,7 +151,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                                 "label": label,
                                 "position": str(match_time),
                                 "team": "",
-                                "visibility": ""
+                                "confidence": "1.0"
                             })
                         after_y_out_stop_frame = None
                         stationary_out_frame = None
@@ -219,7 +179,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                                 "label": label,
                                 "position": str(match_time),
                                 "team": "",
-                                "visibility": ""
+                                "confidence": "1.0"
                             })
                         after_x_out_CK_stop_frame = None
                         stationary_out_frame = None
@@ -246,7 +206,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                                 "label": label,
                                 "position": str(match_time),
                                 "team": "",
-                                "visibility": ""
+                                "confidence": "1.0"
                             })
                         after_x_out_GK_stop_frame = None
                         stationary_out_frame = None
@@ -280,7 +240,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                             "label": label,
                             "position": str(stationary_stop_time),
                             "team": "",
-                            "visibility": ""
+                            "confidence": "1.0"
                         })
                         label = "FREE KICK"
                         outputs.append({
@@ -288,7 +248,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                             "label": label,
                             "position": str(match_time),
                             "team": "",
-                            "visibility": ""
+                            "confidence": "1.0"
                         })
                 # 一定時間経たずに動き出した場合も
                 # 停止状態のリセット
@@ -306,7 +266,7 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
         # 既にゴールの幅を通過
         else:
             # 60秒以内にボールが(0.5,0.5)に
-            if (frame - stationary_goal_frame) >= 60 * sampling_rate:
+            if (frame - stationary_goal_frame) >= 60 * frame_rate:
                 stationary_goal_frame = None
             if (0.49 <= ball_data.loc[i, 'x'] <= 0.51) and (0.49 <= ball_data.loc[i, 'y'] <= 0.51):
                 label = "GOAL"
@@ -315,18 +275,21 @@ def detect(tracking_df, output_json_path, sampling_rate=25, speed_threshold=0.05
                     "label": label,
                     "position": str(stationary_goal_time),
                     "team": "",
-                    "visibility": ""
+                    "confidence": "1.0"
                 })
                 stationary_goal_frame = None
 
-        if i % 1000 == 0:
+        if i % 10000 == 0:
             print(i)
+    
+    # Sort outputs by frame for chronological order
+    outputs.sort(key=lambda x: int(x['position']))
 
     # 結果をJSON形式で保存
     recognition_results = {
         "UrlLocal": "",
         "UrlYoutube": "",
-        "annotations": outputs
+        "predictions": outputs
     }
 
     with open(output_json_path, 'w') as f:
@@ -386,6 +349,8 @@ def ball_dis(tracking_df, fps=25):
                 'match_time': match_time,
                 'player_id': player_id,
                 'team_id': team_id,
+                'x': player_x,
+                'y': player_y,
                 'distance_to_ball': distance
             })
         
@@ -402,6 +367,107 @@ def ball_dis(tracking_df, fps=25):
 
     return all_distances_df.reset_index(drop=True)
 
+def ball_player(tracking_df, all_distances_df, output_ball_player_path, ball_possess_threshold = 0.05):
+
+    # キャッシュファイルが存在する場合は読み込み
+    if os.path.exists(output_ball_player_path):
+        print(f"Loading cached data from {output_ball_player_path}")
+        outputs_ball_player = pd.read_json(output_ball_player_path)
+        return outputs_ball_player.reset_index(drop=True)
+    
+    # ボールのデータのみを抽出
+    ball_data = tracking_df[tracking_df['id'] == 'ball'][['frame', 'match_time', 'x', 'y']].reset_index(drop=True)
+    outputs_ball_player = []
+    
+    for i, row in ball_data.iterrows():
+        frame = row['frame']
+        match_time = row['match_time']
+        distances_data = all_distances_df[all_distances_df['match_time'] == match_time].reset_index(drop=True)
+
+        # 距離が閾値以下の選手をフィルタリング
+        close_players = distances_data[distances_data['distance_to_ball'] <= ball_possess_threshold]
+
+        if close_players.empty:
+            # 該当する選手がいない場合
+            outputs_ball_player.append({"match_time": match_time})
+        else:
+            # 該当する選手がいる場合
+            players_info = close_players[['player_id', 'team_id', 'x', 'y', 'distance_to_ball']].to_dict(orient="records")
+            outputs_ball_player.append({
+                "match_time": match_time,
+                "players": players_info
+            })
+    with open(output_ball_player_path, 'w') as f:
+        json.dump(outputs_ball_player, f, indent=4)
+
+    return outputs_ball_player
+
+def player_to_player(ball_player_df, output_player_to_player_path, frame_rate, min_possess_duration):
+
+    # キャッシュファイルが存在する場合は読み込み
+    if os.path.exists(output_player_to_player_path):
+        print(f"Loading cached data from {output_player_to_player_path}")
+        outputs_player_to_player = pd.read_json(output_player_to_player_path)
+        return outputs_player_to_player.reset_index(drop=True)
+    
+    outputs_player_to_player = []
+    last_player_id = None
+    last_team_id = None
+    possess_start_time = None
+    possess_end_time = None
+
+    for i, row in ball_player_df.iterrows():
+        match_time = row["match_time"]
+        players = row["players"]
+        
+        # NaNチェック
+        if players is None or (isinstance(players, float) and math.isnan(players)):
+            players = []  # 空のリストに置き換え
+        
+        # ボールを保持している選手がいるか確認
+        if players:
+            current_player_id = players[0]["player_id"]
+            current_team_id = players[0]["team_id"]
+        else:
+            current_player_id = None
+            current_team_id = None
+
+        # ボール保持の変化をチェック
+        if current_player_id != last_player_id:
+            # 前の選手が規定時間以上保持していたらPASSと記録
+            if possess_start_time is not None and (possess_end_time - possess_start_time) >= (min_possess_duration / frame_rate):
+                outputs_player_to_player.append({
+                    "match_time": possess_end_time,
+                    "player_id": last_player_id,
+                    "team_id": last_team_id,
+                    "x": possess_end_x,
+                    "y": possess_end_y
+                })
+
+            # 新しい保持者の情報をリセット
+            last_player_id = current_player_id
+            last_team_id = current_team_id
+            possess_start_time = match_time if current_player_id else None
+
+        # ボール保持の終了時間を更新
+        if current_player_id:
+            possess_end_time = match_time
+            possess_end_x = players[0]["x"]
+            possess_end_y = players[0]["y"]
+
+    # 最後の保持者をチェック
+    if possess_start_time is not None and (possess_end_time - possess_start_time) >= (min_possess_duration / frame_rate):
+        outputs_player_to_player.append({
+            "match_time": possess_end_time,
+            "player_id": last_player_id,
+            "team_id": last_team_id,
+            "x": possess_end_x,
+            "y": possess_end_y
+        })
+    with open(output_player_to_player_path, 'w') as f:
+        json.dump(outputs_player_to_player, f, indent=4)
+
+    return outputs_player_to_player
 
 if __name__ == '__main__':
     main()
