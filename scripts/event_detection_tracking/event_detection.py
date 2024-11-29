@@ -36,7 +36,7 @@ def main():
     num_class = str(args.num_class)
     
     for match_id in match_ids:
-        tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_pitch_plane_coordinates.csv'
+        tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_filtered_pitch_plane_coordinates.csv'
         event_path = f'data/raw/{match_id}/{match_id}_{num_class}_class_events.json'
         output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_event_tracking.mp4'
         output_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_event_detection.json'
@@ -88,8 +88,35 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
     ball_player_df = ball_player(tracking_df, all_distances_df, output_ball_player_path)
     # ボール保持者の移り変わりを記録
     player_to_player_df = player_to_player(ball_player_df, output_player_to_player_path, frame_rate=25, min_possess_duration=5)
-    for i, row in player_to_player_df.iterrows():
+
+    previous_pass_position = None  # 前回のパス開始位置
+    # 閾値 (方向ベクトルの角度差) を設定: 単位は度 (例: 30度以下はラベル付けしない)
+    ANGLE_THRESHOLD = 10
+
+    # PASS を記録
+    for i in range(len(player_to_player_df)):
+        row = player_to_player_df.loc[i]
+        # 前回のパスと角度差が存在しない場合は除く
+        # 現在のパス開始位置
+        current_position = np.array([row['x'], row['y']])
+        # 前回のパスが存在する場合、方向を比較
+        if previous_pass_position is not None:
+            previous_vector = current_position - previous_pass_position
+            if i + 1 < len(player_to_player_df):
+                next_row = player_to_player_df[i + 1]
+                next_position = np.array([next_row['x'], next_row['y']])
+                current_vector = next_position - current_position
+                
+                # ベクトルの角度差を計算
+                angle_difference = get_angle_difference(previous_vector, current_vector)
+                
+                # 角度差が閾値以下の場合はスキップ
+                if angle_difference <= ANGLE_THRESHOLD:
+                    continue
+
         # ラベル付け
+        # CROSS, HIGH PASS, SHOT, HEADER の検出
+
         label = 'PASS'
         outputs.append({
             "gameTime": format_game_time(row['match_time']),
@@ -110,7 +137,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
         # まだ外出てない
         if stationary_out_frame is None:
             # out
-            if ball_data.loc[i, 'x'] < 0.0 or ball_data.loc[i, 'x'] > 1.0 or ball_data.loc[i, 'y'] < 0.0 or ball_data.loc[i, 'y'] > 1.0:
+            if ball_data.loc[i, 'x'] < 0 or ball_data.loc[i, 'x'] > 105 or ball_data.loc[i, 'y'] < 0 or ball_data.loc[i, 'y'] > 68:
                 # 外に出たフレームを記録
                 stationary_out_frame = frame
                 stationary_out_time = match_time
@@ -128,17 +155,17 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
         # 外に出てる
         else:
             # 縦にOUT(→THROW IN)
-            if (stationary_out_y < 0.0 or stationary_out_y > 1.0) and (0.0 <= stationary_out_x <= 1.0):
+            if (stationary_out_y < 0 or stationary_out_y > 68) and (0 <= stationary_out_x <= 105):
                 # 既にライン際で止まっている
                 if after_y_out_stop_frame is None:
                     # 止まったかも
-                    if ball_data.loc[i, 'y'] < 0.05 or ball_data.loc[i, 'y'] > 0.95:
+                    if ball_data.loc[i, 'y'] < 2 or ball_data.loc[i, 'y'] > 66:
                         # 停止が開始した瞬間を記録
                         after_y_out_stop_frame = frame
                 # ライン際で止まり始めている
                 else:
                     # ライン際で止まり続ける
-                    if ball_data.loc[i, 'y'] < 0.05 or ball_data.loc[i, 'y'] > 0.95:
+                    if ball_data.loc[i, 'y'] < 2 or ball_data.loc[i, 'y'] > 66:
                         pass
                     # 動き出す
                     else:
@@ -160,13 +187,13 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                 # 既にコーナー付近で止まっている
                 if after_x_out_CK_stop_frame is None:
                     # 止まったかも
-                    if (ball_data.loc[i, 'x'] <= 0.1 or ball_data.loc[i, 'x'] >= 0.9) and (ball_data.loc[i, 'y'] <= 0.1 or ball_data.loc[i, 'y'] >= 0.9):
+                    if (ball_data.loc[i, 'x'] <= 2 or ball_data.loc[i, 'x'] >= 103) and (ball_data.loc[i, 'y'] <= 2 or ball_data.loc[i, 'y'] >= 66):
                         # 停止が開始した瞬間を記録
                         after_x_out_CK_stop_frame = frame
                 # コーナー付近で止まり始めている
                 else:
                     # コーナー付近で止まり続ける
-                    if (ball_data.loc[i, 'x'] <= 0.1 or ball_data.loc[i, 'x'] >= 0.9) and (ball_data.loc[i, 'y'] <= 0.1 or ball_data.loc[i, 'y'] >= 0.9):
+                    if (ball_data.loc[i, 'x'] <= 2 or ball_data.loc[i, 'x'] >= 103) and (ball_data.loc[i, 'y'] <= 2 or ball_data.loc[i, 'y'] >= 66):
                         pass
                     # 動き出す
                     else:
@@ -187,13 +214,13 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                 # 既にGK付近で止まっている
                 if after_x_out_GK_stop_frame is None:
                     # 止まったかも
-                    if (0.3 <= ball_data.loc[i, 'x'] <= 0.6 or 0.94 <= ball_data.loc[i, 'x'] <= 0.97) and (0.35 <= ball_data.loc[i, 'y'] <= 0.65):
+                    if (3 <= ball_data.loc[i, 'x'] <= 8 or 97 <= ball_data.loc[i, 'x'] <= 102) and (28 <= ball_data.loc[i, 'y'] <= 40):
                         # 停止が開始した瞬間を記録
                         after_x_out_GK_stop_frame = frame
-                # コーナー付近で止まり始めている
+                # GK付近で止まり始めている
                 else:
-                    # コーナー付近で止まり続ける
-                    if (0.3 <= ball_data.loc[i, 'x'] <= 0.6 or 0.94 <= ball_data.loc[i, 'x'] <= 0.97) and (0.35 <= ball_data.loc[i, 'y'] <= 0.65):
+                    # GK付近で止まり続ける
+                    if (3 <= ball_data.loc[i, 'x'] <= 8 or 97 <= ball_data.loc[i, 'x'] <= 102) and (28 <= ball_data.loc[i, 'y'] <= 40):
                         pass
                     # 動き出す
                     else:
@@ -218,7 +245,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
             # 止まったかも
             if ball_data.loc[i, 'x'] == ball_data.loc[i + 1, 'x'] and ball_data.loc[i, 'y'] == ball_data.loc[i + 1, 'y']:
                 # ピッチの外の場合，OUT検出と重複するのを回避
-                if 0 < ball_data.loc[i, 'x'] < 1 and 0 < ball_data.loc[i, 'y'] < 1:
+                if 0 < ball_data.loc[i, 'x'] < 105 and 0 < ball_data.loc[i, 'y'] < 68:
                     # 停止が開始した瞬間を記録
                     stationary_stop_frame = frame
                     stationary_stop_time = match_time
@@ -259,7 +286,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
         # ゴールの幅を通ってない
         if stationary_goal_frame is None:
             # ゴールの幅を通過
-            if (0.44 <= ball_data.loc[i, 'y'] <= 0.56) and (ball_data.loc[i, 'x'] <= 0.0 or ball_data.loc[i, 'x'] >= 1.0):
+            if (30 <= ball_data.loc[i, 'y'] <= 38) and (ball_data.loc[i, 'x'] <= 0 or ball_data.loc[i, 'x'] >= 105):
                 # 通過した瞬間を記録
                 stationary_goal_frame = frame
                 stationary_goal_time = match_time
@@ -268,7 +295,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
             # 60秒以内にボールが(0.5,0.5)に
             if (frame - stationary_goal_frame) >= 60 * frame_rate:
                 stationary_goal_frame = None
-            if (0.49 <= ball_data.loc[i, 'x'] <= 0.51) and (0.49 <= ball_data.loc[i, 'y'] <= 0.51):
+            if (52 <= ball_data.loc[i, 'x'] <= 53) and (34.5 <= ball_data.loc[i, 'y'] <= 34.5):
                 label = "GOAL"
                 outputs.append({
                     "gameTime": format_game_time(stationary_goal_time),
@@ -283,7 +310,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
             print(i)
     
     # Sort outputs by frame for chronological order
-    outputs.sort(key=lambda x: int(x['position']))
+    outputs.sort(key=lambda x: int(float(x['position'])))
 
     # 結果をJSON形式で保存
     recognition_results = {
@@ -339,19 +366,14 @@ def ball_dis(tracking_df, fps=25):
 
         # 各プレイヤーとの距離を計算し、データをリストに追加
         for _, player_row in players_in_time.iterrows():
-            player_id = player_row['id']
-            team_id = player_row['teamId']
-            player_x = player_row['x']
-            player_y = player_row['y']
-            distance = np.sqrt((player_x - ball_x)**2 + (player_y - ball_y)**2)
 
             distances_list.append({
                 'match_time': match_time,
-                'player_id': player_id,
-                'team_id': team_id,
-                'x': player_x,
-                'y': player_y,
-                'distance_to_ball': distance
+                'player_id': player_row['id'],
+                'team_id': player_row['teamId'],
+                'x': player_row['x'],
+                'y': player_row['y'],
+                'distance_to_ball': np.sqrt((player_row['x'] - ball_x)**2 + (player_row['y'] - ball_y)**2)
             })
         
         # 進捗を出力
@@ -367,7 +389,7 @@ def ball_dis(tracking_df, fps=25):
 
     return all_distances_df.reset_index(drop=True)
 
-def ball_player(tracking_df, all_distances_df, output_ball_player_path, ball_possess_threshold = 0.05):
+def ball_player(tracking_df, all_distances_df, output_ball_player_path, ball_possess_threshold = 1.00):
 
     # キャッシュファイルが存在する場合は読み込み
     if os.path.exists(output_ball_player_path):
@@ -416,7 +438,8 @@ def player_to_player(ball_player_df, output_player_to_player_path, frame_rate, m
     possess_start_time = None
     possess_end_time = None
 
-    for i, row in ball_player_df.iterrows():
+    for i in range(len(ball_player_df)):
+        row = ball_player_df.loc[i]
         match_time = row["match_time"]
         players = row["players"]
         
@@ -437,11 +460,11 @@ def player_to_player(ball_player_df, output_player_to_player_path, frame_rate, m
             # 前の選手が規定時間以上保持していたらPASSと記録
             if possess_start_time is not None and (possess_end_time - possess_start_time) >= (min_possess_duration / frame_rate):
                 outputs_player_to_player.append({
-                    "match_time": possess_end_time,
-                    "player_id": last_player_id,
-                    "team_id": last_team_id,
-                    "x": possess_end_x,
-                    "y": possess_end_y
+                    "match_time": float(possess_end_time),
+                    "player_id": float(last_player_id),
+                    "team_id": float(last_team_id),
+                    "x": float(possess_end_x),
+                    "y": float(possess_end_y)
                 })
 
             # 新しい保持者の情報をリセット
@@ -458,16 +481,33 @@ def player_to_player(ball_player_df, output_player_to_player_path, frame_rate, m
     # 最後の保持者をチェック
     if possess_start_time is not None and (possess_end_time - possess_start_time) >= (min_possess_duration / frame_rate):
         outputs_player_to_player.append({
-            "match_time": possess_end_time,
-            "player_id": last_player_id,
-            "team_id": last_team_id,
-            "x": possess_end_x,
-            "y": possess_end_y
+            "match_time": float(possess_end_time),
+            "player_id": float(last_player_id),
+            "team_id": float(last_team_id),
+            "x": float(possess_end_x),
+            "y": float(possess_end_y)
         })
+    # DataFrame 形式の場合
     with open(output_player_to_player_path, 'w') as f:
         json.dump(outputs_player_to_player, f, indent=4)
 
-    return outputs_player_to_player
+    return pd.DataFrame(outputs_player_to_player)
+
+# ベクトルの角度差を計算する関数
+def get_angle_difference(vec1, vec2):
+    """
+    Calculate the angle (in degrees) between two vectors.
+    Args:
+        vec1 (np.array): First vector.
+        vec2 (np.array): Second vector.
+    Returns:
+        float: Angle difference in degrees.
+    """
+    unit_vec1 = vec1 / np.linalg.norm(vec1)
+    unit_vec2 = vec2 / np.linalg.norm(vec2)
+    dot_product = np.clip(np.dot(unit_vec1, unit_vec2), -1.0, 1.0)
+    angle_rad = np.arccos(dot_product)
+    return np.degrees(angle_rad)
 
 if __name__ == '__main__':
     main()

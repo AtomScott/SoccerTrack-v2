@@ -1,11 +1,7 @@
 """
-Script to detect events in a soccer match video from tracking data in a CSV file.
+Script to evaluate event detection in soccer match videos or tracking data using recognition and ground truth JSON files.
 
-This script reads tracking data of the ball and players, 
-to identify events based on changes in ball movement and players position. 
-
-The tracking data CSV structure is as follows:
-frame,match_time,event_period,ball_status,id,x,y,teamId
+This script reads the recognition results and ground truth data to compute the mean Average Precision (mAP), providing a performance metric for event detection.
 """
 
 import argparse
@@ -16,6 +12,8 @@ from collections import defaultdict
 import os
 import zipfile
 import glob
+from tqdm import tqdm
+import time
 
 def parse_arguments():
     """
@@ -46,7 +44,7 @@ def main():
         results = evaluate(labels, detections)
         # ファイルを書き込み
         with open(results_json_path, 'w') as f:
-            json.dumps(results, f)
+            json.dump(results, f)
         print(results)
 
 def evaluate(
@@ -280,13 +278,7 @@ def predictions2vector(predictions, num_classes=17, version=2, framerate=2, EVEN
 
     return prediction_half1, prediction_half2
 
-
-import numpy as np
-from tqdm import tqdm
-import time
-
 np.seterr(divide='ignore', invalid='ignore')
-
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
