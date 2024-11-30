@@ -89,42 +89,77 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
     # ボール保持者の移り変わりを記録
     player_to_player_df = player_to_player(ball_player_df, output_player_to_player_path, frame_rate=25, min_possess_duration=5)
 
-    previous_pass_position = None  # 前回のパス開始位置
+    # 前回のパス開始
+    previous_position = None
+    previous_player_id = None
+    previous_event_index = None
     # 閾値 (方向ベクトルの角度差) を設定: 単位は度 (例: 30度以下はラベル付けしない)
     ANGLE_THRESHOLD = 10
 
     # PASS を記録
     for i in range(len(player_to_player_df)):
         row = player_to_player_df.loc[i]
-        # 前回のパスと角度差が存在しない場合は除く
+
+        # default
+        label = 'PASS'
+
+        # 現在の選手IDを取得
+        current_player_id = row['player_id']
         # 現在のパス開始位置
         current_position = np.array([row['x'], row['y']])
-        # 前回のパスが存在する場合、方向を比較
-        if previous_pass_position is not None:
-            previous_vector = current_position - previous_pass_position
+
+        # 前回のパスと角度差が存在しない場合は除く
+        if previous_position is not None:
+
+            # 誤検出
+            # 前回のパスが存在する場合、方向を比較
+            previous_vector = current_position - previous_position
             if i + 1 < len(player_to_player_df):
-                next_row = player_to_player_df[i + 1]
+                next_row = player_to_player_df.loc[i + 1]
                 next_position = np.array([next_row['x'], next_row['y']])
                 current_vector = next_position - current_position
-                
                 # ベクトルの角度差を計算
                 angle_difference = get_angle_difference(previous_vector, current_vector)
-                
                 # 角度差が閾値以下の場合はスキップ
                 if angle_difference <= ANGLE_THRESHOLD:
                     continue
+        
+            # DRIVEの検出
+            # 前回の選手IDと現在の選手IDが同じ場合、前回のイベントを 'DRIVE' に更新
+            if previous_player_id == current_player_id and previous_event_index is not None:
+                outputs[previous_event_index]['label'] = 'DRIVE'
+
+            # CROSSの検出
+            elif (previous_position[0] <= 43.35 or previous_position[0] >= 61.65) and \
+            (previous_position[1] <= 13.84 or previous_position[1] >= 54.16) and \
+            (current_position[0] <= 11 or current_position[0] >= 94) and \
+            (24.84 <= current_position[1] <= 43.16) and previous_event_index is not None:
+                outputs[previous_event_index]['label'] = 'CROSS'
+
+            # SHOTの検出
+            elif (previous_position[0] <= 30 or previous_position[0] >= 75) and \
+            (13.84 <= previous_position[1] <= 54.16) and \
+            (current_position[0] <= 3 or current_position[0] >= 102) and \
+            (24.84 <= current_position[1] <= 43.16) and previous_event_index is not None:
+                outputs[previous_event_index]['label'] = 'SHOT'
+
+            # HIGH PASSの検出
+            elif np.linalg.norm(current_position - previous_position) >= 45 and previous_event_index is not None:
+                outputs[previous_event_index]['label'] = 'HIGH PASS'
 
         # ラベル付け
-        # CROSS, HIGH PASS, SHOT, HEADER の検出
-
-        label = 'PASS'
         outputs.append({
             "gameTime": format_game_time(row['match_time']),
             "label": label,
             "position": str(row['match_time']),
             "team": "",
-            "confidence": "1.0"
+            "confidence": "0.5"
         })
+
+        # 現在の選手IDとインデックスを保存
+        previous_player_id = current_player_id
+        previous_position = current_position
+        previous_event_index = len(outputs) - 1  # 現在追加したイベントのインデックス
     
     print('start detection of (Out → CK, GK, TI), (FOUL → FK), GOAL')
 
@@ -150,7 +185,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                     "label": label,
                     "position": str(stationary_out_time),
                     "team": "",
-                    "confidence": "1.0"
+                    "confidence": "0.5"
                 })
         # 外に出てる
         else:
@@ -178,7 +213,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                                 "label": label,
                                 "position": str(match_time),
                                 "team": "",
-                                "confidence": "1.0"
+                                "confidence": "0.5"
                             })
                         after_y_out_stop_frame = None
                         stationary_out_frame = None
@@ -206,7 +241,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                                 "label": label,
                                 "position": str(match_time),
                                 "team": "",
-                                "confidence": "1.0"
+                                "confidence": "0.5"
                             })
                         after_x_out_CK_stop_frame = None
                         stationary_out_frame = None
@@ -233,7 +268,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                                 "label": label,
                                 "position": str(match_time),
                                 "team": "",
-                                "confidence": "1.0"
+                                "confidence": "0.5"
                             })
                         after_x_out_GK_stop_frame = None
                         stationary_out_frame = None
@@ -267,7 +302,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                             "label": label,
                             "position": str(stationary_stop_time),
                             "team": "",
-                            "confidence": "1.0"
+                            "confidence": "0.5"
                         })
                         label = "FREE KICK"
                         outputs.append({
@@ -275,7 +310,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                             "label": label,
                             "position": str(match_time),
                             "team": "",
-                            "confidence": "1.0"
+                            "confidence": "0.5"
                         })
                 # 一定時間経たずに動き出した場合も
                 # 停止状態のリセット
@@ -302,7 +337,7 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
                     "label": label,
                     "position": str(stationary_goal_time),
                     "team": "",
-                    "confidence": "1.0"
+                    "confidence": "0.5"
                 })
                 stationary_goal_frame = None
 

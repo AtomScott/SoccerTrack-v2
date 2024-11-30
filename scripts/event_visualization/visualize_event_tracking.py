@@ -48,7 +48,8 @@ def main():
     num_class = str(args.num_class)
     
     for match_id in match_ids:
-        tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_filtered_pitch_plane_coordinates.csv' # pitch_plane_coordinates, ball_position
+        original_tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_pitch_plane_coordinates.csv'
+        filtered_tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_filtered_pitch_plane_coordinates.csv'
         labels_path = f'data/raw/{match_id}/{match_id}_{num_class}_class_events.json'
         detections_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_event_detection.json'
         nearest_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_nearest_player_data.csv'
@@ -56,18 +57,20 @@ def main():
         output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_event_detection.mp4'
 
         # ファイルを読み込み
-        tracking_df = pd.read_csv(tracking_path)
+        original_tracking_df = pd.read_csv(original_tracking_path)
+        filtered_tracking_df = pd.read_csv(filtered_tracking_path)
         nearest_player_df = pd.read_csv(nearest_player_path)
-        tracking_df.reset_index
+        original_tracking_df.reset_index
+        filtered_tracking_df.reset_index
         nearest_player_df.reset_index
         with open(labels_path, 'r') as f:
             labels_df = json.load(f)
         with open(detections_path, 'r') as f:
             detections_df = json.load(f)
         
-        visualize_event_tracking(tracking_df, labels_df, detections_df, output_video_path)
+        visualize_event_tracking(original_tracking_df, filtered_tracking_df, labels_df, detections_df, output_video_path)
 
-def visualize_event_tracking(tracking_df: pd.DataFrame, labels_df: pd.DataFrame, detections_df: pd.DataFrame, output_path: str) -> None:
+def visualize_event_tracking(original_tracking_df: pd.DataFrame, filtered_tracking_df: pd.DataFrame, labels_df: pd.DataFrame, detections_df: pd.DataFrame, output_path: str) -> None:
     """
     Process a video and overlay event labels and detections at specified frames.
     Also highlights the player closest to the ball in orange.
@@ -79,7 +82,7 @@ def visualize_event_tracking(tracking_df: pd.DataFrame, labels_df: pd.DataFrame,
         output_path (str): Path to save the processed video.
     """
     # パラメータ設定
-    video_duration_seconds = 80  # 動画の再生時間（秒）
+    video_duration_seconds = 180  # 動画の再生時間（秒）
     fps = 25  # フレームレート
     frame_width, frame_height = 1050, 680  # サッカーコートの表示サイズ
     court_width, court_height = 105, 68  # 座標のサッカーコートの表示サイズ
@@ -102,11 +105,17 @@ def visualize_event_tracking(tracking_df: pd.DataFrame, labels_df: pd.DataFrame,
 
     # フレームごとに選手とボールの位置を描画
     for frame_num in range(fps * video_duration_seconds):
-        frame_data = tracking_df[tracking_df['match_time'] / 40.0 == frame_num]
+        if frame_num <= 35:
+            frame_data = original_tracking_df[original_tracking_df['match_time'] / 40.0 == frame_num]
+        else:
+            frame_data = filtered_tracking_df[filtered_tracking_df['match_time'] / 40.0 == frame_num]
         frame = court.copy()  # サッカーコートの背景をコピー
 
         for _, row in frame_data.iterrows():
-            x, y = int(row['x'] * frame_width / court_width), int(row['y'] * frame_height / court_height)
+            if frame_num <= 35:
+                x, y = int(row['x'] * frame_width), int(row['y'] * frame_height)
+            else:
+                x, y = int(row['x'] * frame_width / court_width), int(row['y'] * frame_height / court_height)
             # ボールと選手の描画（ボールは赤、選手は青で描画）
             if row['id'] == 'ball':
                 cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)  # ボールの位置
@@ -144,7 +153,7 @@ def visualize_event_tracking(tracking_df: pd.DataFrame, labels_df: pd.DataFrame,
 
         out.write(frame)  # フレームを書き出し
 
-        if frame_num % 100 == 0:
+        if frame_num % 1000 == 0:
             print(frame_num)
     out.release()  # 動画ファイルを保存
     print(f"Created file: {output_path}")
