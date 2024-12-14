@@ -54,8 +54,15 @@ def filter_coordinates(tracking_df, output_tracking_path):
     # Apply Kalman filter for smoothing
     smoothed_df = apply_kalman_filter(tracking_df)
 
+    # Replace first 5 frames with original data
+    smoothed_df = replace_initial_frames(tracking_df, smoothed_df, init_frames=5)
+
     # 並び順を入力ファイルに合わせる
     smoothed_df = smoothed_df.sort_values(by=['match_time', 'frame']).reset_index(drop=True)
+
+    # Round 'x' and 'y' to 2 decimal places
+    smoothed_df['x'] = smoothed_df['x'].round(2)
+    smoothed_df['y'] = smoothed_df['y'].round(2)
 
     # Save the filtered data
     smoothed_df.to_csv(output_tracking_path, index=False)
@@ -125,6 +132,32 @@ def apply_kalman_filter(data, init_frames=10):
         smoothed_data.append(obj_data)
 
     return pd.concat(smoothed_data)
+
+def replace_initial_frames(original_df, smoothed_df, init_frames=5):
+    """
+    Replace the first `init_frames` of smoothed data with the original data.
+
+    Args:
+        original_df (pd.DataFrame): Original tracking data.
+        smoothed_df (pd.DataFrame): Smoothed tracking data.
+        init_frames (int): Number of initial frames to replace.
+
+    Returns:
+        pd.DataFrame: Combined DataFrame with replaced initial frames.
+    """
+    for obj_id in original_df['id'].unique():
+        original_obj_data = original_df[original_df['id'] == obj_id]
+        smoothed_obj_data = smoothed_df[smoothed_df['id'] == obj_id]
+
+        # Identify the initial frames
+        initial_frames = original_obj_data.head(init_frames)
+        remaining_frames = smoothed_obj_data.iloc[init_frames:]
+
+        # Combine original initial frames with the rest of the smoothed data
+        combined_data = pd.concat([initial_frames, remaining_frames])
+        smoothed_df.update(combined_data)
+
+    return smoothed_df
 
 if __name__ == '__main__':
     main()

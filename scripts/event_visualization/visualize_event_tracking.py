@@ -84,7 +84,7 @@ def visualize_event_tracking(original_tracking_df: pd.DataFrame, filtered_tracki
     # パラメータ設定
     video_duration_seconds = 180  # 動画の再生時間（秒）
     fps = 25  # フレームレート
-    frame_width, frame_height = 1050, 680  # サッカーコートの表示サイズ
+    frame_width, frame_height = 1150, 780  # サッカーコートの表示サイズ
     court_width, court_height = 105, 68  # 座標のサッカーコートの表示サイズ
 
     # サッカーコートの背景画像を生成（緑の長方形として簡易的に作成）

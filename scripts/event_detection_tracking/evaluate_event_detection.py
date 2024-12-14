@@ -151,7 +151,7 @@ def evaluate(
         targets_numpy, detections_numpy, closests_numpy, framerate, deltas=deltas)
 
     results = {
-        "a_mAP": a_mAP,
+        "a_mAP": float(a_mAP),
         "a_mAP_per_class": {event: value for event, value in zip(EVENT_DICTIONARY.keys(), a_mAP_per_class)},
         "a_mAP_visible": a_mAP_visible if version == 2 else None,
         "a_mAP_per_class_visible": {event: value for event, value in zip(EVENT_DICTIONARY.keys(), a_mAP_per_class_visible)} if version == 2 else None,

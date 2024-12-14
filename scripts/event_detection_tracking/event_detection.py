@@ -67,21 +67,11 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
         dict: A dictionary with annotations in the specified format.
     """
 
-    # 停止状態を判定するためのフラグとカウンター
-    stationary_stop_frame = None
-    stationary_out_frame = None
-    after_x_out_CK_stop_frame = None
-    after_x_out_GK_stop_frame = None
-    after_y_out_stop_frame = None
-    stationary_goal_frame = None
-    is_in_pitch = True
     outputs = []
 
     # PASS → CROSS, HIGH PASS, SHOT, HEADER
     print('start detection of (PASS → CROSS, HIGH PASS, SHOT, HEADER)')
 
-    # ボールのデータのみを抽出
-    ball_data = tracking_df[tracking_df['id'] == 'ball'][['frame', 'match_time', 'x', 'y']].reset_index(drop=True)
     # 全選手のボールとの距離を取得
     all_distances_df = ball_dis(tracking_df)
     # ボール保持者
@@ -89,260 +79,254 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
     # ボール保持者の移り変わりを記録
     player_to_player_df = player_to_player(ball_player_df, output_player_to_player_path, frame_rate=25, min_possess_duration=5)
 
-    # 前回のパス開始
-    previous_position = None
-    previous_player_id = None
-    previous_event_index = None
     # 閾値 (方向ベクトルの角度差) を設定: 単位は度 (例: 30度以下はラベル付けしない)
-    ANGLE_THRESHOLD = 10
+    ANGLE_THRESHOLD = 50
+    # OUT の後か記録
+    after_OUT = False
+    # 前回のパスを記録
+    previous_position = None
 
-    # PASS を記録
-    for i in range(len(player_to_player_df)):
+    x_OUT = False
+    y_OUT = False
+
+    # Event を記録
+    for i in range(len(player_to_player_df) - 1):
+        if i >= 1000:
+            break
         row = player_to_player_df.loc[i]
-
-        # default
-        label = 'PASS'
-
         # 現在の選手IDを取得
         current_player_id = row['player_id']
         # 現在のパス開始位置
+        current_x = row['x']
+        current_y = row['y']
+        # 現在のパス開始位置
         current_position = np.array([row['x'], row['y']])
+        # 次のパス受け取った人の位置を参照
+        next_row = player_to_player_df.loc[i + 1]
+        # 次のパス開始位置
+        next_position = np.array([next_row['x'], next_row['y']])
+        # フィルタをかけた元データ
+        # origin_row = tracking_df[tracking_df['match_time'] == row['match_time']][['frame', 'match_time', 'x', 'y']]
 
-        # 前回のパスと角度差が存在しない場合は除く
-        if previous_position is not None:
-
-            # 誤検出
-            # 前回のパスが存在する場合、方向を比較
-            previous_vector = current_position - previous_position
-            if i + 1 < len(player_to_player_df):
-                next_row = player_to_player_df.loc[i + 1]
-                next_position = np.array([next_row['x'], next_row['y']])
-                current_vector = next_position - current_position
-                # ベクトルの角度差を計算
-                angle_difference = get_angle_difference(previous_vector, current_vector)
-                # 角度差が閾値以下の場合はスキップ
-                if angle_difference <= ANGLE_THRESHOLD:
-                    continue
-        
-            # DRIVEの検出
-            # 前回の選手IDと現在の選手IDが同じ場合、前回のイベントを 'DRIVE' に更新
-            if previous_player_id == current_player_id and previous_event_index is not None:
-                outputs[previous_event_index]['label'] = 'DRIVE'
-
-            # CROSSの検出
-            elif (previous_position[0] <= 43.35 or previous_position[0] >= 61.65) and \
-            (previous_position[1] <= 13.84 or previous_position[1] >= 54.16) and \
-            (current_position[0] <= 11 or current_position[0] >= 94) and \
-            (24.84 <= current_position[1] <= 43.16) and previous_event_index is not None:
-                outputs[previous_event_index]['label'] = 'CROSS'
-
-            # SHOTの検出
-            elif (previous_position[0] <= 30 or previous_position[0] >= 75) and \
-            (13.84 <= previous_position[1] <= 54.16) and \
-            (current_position[0] <= 3 or current_position[0] >= 102) and \
-            (24.84 <= current_position[1] <= 43.16) and previous_event_index is not None:
-                outputs[previous_event_index]['label'] = 'SHOT'
-
-            # HIGH PASSの検出
-            elif np.linalg.norm(current_position - previous_position) >= 45 and previous_event_index is not None:
-                outputs[previous_event_index]['label'] = 'HIGH PASS'
-
-        # ラベル付け
-        outputs.append({
-            "gameTime": format_game_time(row['match_time']),
-            "label": label,
-            "position": str(row['match_time']),
-            "team": "",
-            "confidence": "0.5"
-        })
-
-        # 現在の選手IDとインデックスを保存
-        previous_player_id = current_player_id
-        previous_position = current_position
-        previous_event_index = len(outputs) - 1  # 現在追加したイベントのインデックス
-    
-    print('start detection of (Out → CK, GK, TI), (FOUL → FK), GOAL')
-
-    for i, row in ball_data.iterrows():
-        frame = row['frame']
-        match_time = row['match_time']
-        distances_data = all_distances_df[all_distances_df['match_time'] == match_time].reset_index(drop=True)
-
-        # Out → CK, GK, TIの判定
-        # まだ外出てない
-        if stationary_out_frame is None:
-            # out
-            if ball_data.loc[i, 'x'] < 0 or ball_data.loc[i, 'x'] > 105 or ball_data.loc[i, 'y'] < 0 or ball_data.loc[i, 'y'] > 68:
-                # 外に出たフレームを記録
-                stationary_out_frame = frame
-                stationary_out_time = match_time
-                stationary_out_x = ball_data.loc[i, 'x']
-                stationary_out_y = ball_data.loc[i, 'y']
-                # ラベル付け
-                label = 'OUT'
-                outputs.append({
-                    "gameTime": format_game_time(stationary_out_time),
-                    "label": label,
-                    "position": str(stationary_out_time),
-                    "team": "",
-                    "confidence": "0.5"
-                })
-        # 外に出てる
-        else:
-            # 縦にOUT(→THROW IN)
-            if (stationary_out_y < 0 or stationary_out_y > 68) and (0 <= stationary_out_x <= 105):
-                # 既にライン際で止まっている
-                if after_y_out_stop_frame is None:
-                    # 止まったかも
-                    if ball_data.loc[i, 'y'] < 2 or ball_data.loc[i, 'y'] > 66:
-                        # 停止が開始した瞬間を記録
-                        after_y_out_stop_frame = frame
-                # ライン際で止まり始めている
-                else:
-                    # ライン際で止まり続ける
-                    if ball_data.loc[i, 'y'] < 2 or ball_data.loc[i, 'y'] > 66:
-                        pass
-                    # 動き出す
-                    else:
-                        # 一定時間（min_stationary_durationフレーム）以上停止している場合 # 停止状態が1秒以上経過している場合
-                        if (frame - after_y_out_stop_frame) >= min_stationary_duration / 2:
+        # OUTに依存
+        # after OUT
+        if after_OUT:
+            # y方向にOUT(→THROW IN)
+            if y_OUT:
+                # 時間経過しているか(5s)かつ
+                if row['match_time'] - OUT_match_time >= 3000:
+                    if current_y <= 0.5 or current_y >= 67.5:
+                        # 次の人がピッチ内　かつ　違う人
+                        if (next_row['x'] >= 0.0 and next_row['x'] <= 105.0 and next_row['y'] >= 0.0 and next_row['y'] <= 68.0) and (current_player_id != next_row['player_id']):
                             # ラベル付け
                             label = 'THROW IN'
                             outputs.append({
-                                "gameTime": format_game_time(match_time),
+                                "gameTime": format_game_time(row['match_time']),
                                 "label": label,
-                                "position": str(match_time),
+                                "position": str(row['match_time']),
                                 "team": "",
                                 "confidence": "0.5"
                             })
-                        after_y_out_stop_frame = None
-                        stationary_out_frame = None
+                            after_OUT = False
+                            y_OUT = False
             # 横にOUT(→ CK or GK)
-            else:
-                # 既にコーナー付近で止まっている
-                if after_x_out_CK_stop_frame is None:
-                    # 止まったかも
-                    if (ball_data.loc[i, 'x'] <= 2 or ball_data.loc[i, 'x'] >= 103) and (ball_data.loc[i, 'y'] <= 2 or ball_data.loc[i, 'y'] >= 66):
-                        # 停止が開始した瞬間を記録
-                        after_x_out_CK_stop_frame = frame
-                # コーナー付近で止まり始めている
-                else:
-                    # コーナー付近で止まり続ける
-                    if (ball_data.loc[i, 'x'] <= 2 or ball_data.loc[i, 'x'] >= 103) and (ball_data.loc[i, 'y'] <= 2 or ball_data.loc[i, 'y'] >= 66):
-                        pass
-                    # 動き出す
-                    else:
-                        # 一定時間（min_stationary_durationフレーム）以上停止している場合 # 停止状態が1秒以上経過している場合
-                        if (frame - after_x_out_CK_stop_frame) >= min_stationary_duration / 5:
+            elif x_OUT:
+                # 時間経過しているか(5s)
+                print(row['match_time'], current_x, current_y, row['match_time'] - OUT_match_time)
+                if row['match_time'] - OUT_match_time >= 5000:
+                    # CK を記録
+                    if (current_x <= 2.0 or current_x >= 103.0) and (current_y <= 2.0 or current_y >= 66.0):
+                        # 次の人がピッチ内　かつ　違う人
+                        if (next_row['x'] >= 0.0 and next_row['x'] <= 105.0 and next_row['y'] >= 0.0 and next_row['y'] <= 68.0):
                             # ラベル付け
                             label = 'CORNER KICK'
                             outputs.append({
-                                "gameTime": format_game_time(match_time),
+                                "gameTime": format_game_time(row['match_time']),
                                 "label": label,
-                                "position": str(match_time),
+                                "position": str(row['match_time']),
                                 "team": "",
                                 "confidence": "0.5"
                             })
-                        after_x_out_CK_stop_frame = None
-                        stationary_out_frame = None
-    
-                # 既にGK付近で止まっている
-                if after_x_out_GK_stop_frame is None:
-                    # 止まったかも
-                    if (3 <= ball_data.loc[i, 'x'] <= 8 or 97 <= ball_data.loc[i, 'x'] <= 102) and (28 <= ball_data.loc[i, 'y'] <= 40):
-                        # 停止が開始した瞬間を記録
-                        after_x_out_GK_stop_frame = frame
-                # GK付近で止まり始めている
-                else:
-                    # GK付近で止まり続ける
-                    if (3 <= ball_data.loc[i, 'x'] <= 8 or 97 <= ball_data.loc[i, 'x'] <= 102) and (28 <= ball_data.loc[i, 'y'] <= 40):
-                        pass
-                    # 動き出す
-                    else:
-                        # 一定時間（min_stationary_durationフレーム）以上停止している場合 # 停止状態が1秒以上経過している場合
-                        if (frame - after_x_out_GK_stop_frame) >= min_stationary_duration:
+                            after_OUT = False
+                            x_OUT = False
+                    # GOAL KICK を記録
+                    elif (5.0 <= current_x <= 6.0 or 99.0 <= current_x <= 100.0) and (24 <= current_y <= 42):
+                        # 次の人がピッチ内　かつ　違う人
+                        if (next_row['x'] >= 0.0 and next_row['x'] <= 105.0 and next_row['y'] >= 0.0 and next_row['y'] <= 68.0):
                             # ラベル付け
                             label = 'GOAL KICK'
                             outputs.append({
-                                "gameTime": format_game_time(match_time),
+                                "gameTime": format_game_time(row['match_time']),
                                 "label": label,
-                                "position": str(match_time),
+                                "position": str(row['match_time']),
                                 "team": "",
                                 "confidence": "0.5"
                             })
-                        after_x_out_GK_stop_frame = None
-                        stationary_out_frame = None
-
-        # FOUL → FK の検出
-        # ボールが停止状態かの判定
-        # まだ止まっていない
-        if stationary_stop_frame is None:
-            # 止まったかも
-            if ball_data.loc[i, 'x'] == ball_data.loc[i + 1, 'x'] and ball_data.loc[i, 'y'] == ball_data.loc[i + 1, 'y']:
-                # ピッチの外の場合，OUT検出と重複するのを回避
-                if 0 < ball_data.loc[i, 'x'] < 105 and 0 < ball_data.loc[i, 'y'] < 68:
-                    # 停止が開始した瞬間を記録
-                    stationary_stop_frame = frame
-                    stationary_stop_time = match_time
-                    stationary_stop_x = ball_data.loc[i, 'x']
-                    stationary_stop_y = ball_data.loc[i, 'y']
-        # 止まり始めている
+                            after_OUT = False
+                            x_OUT = False
+        
+        # after OUT ではない，In play
         else:
-            # 止まり続ける
-            if ball_data.loc[i, 'x'] == stationary_stop_x and ball_data.loc[i, 'y'] == stationary_stop_y:
-                pass
-            # 動き出す
+            # OUT を記録
+            if type(row['player_id']) == str:
+                if (row['y'] < 0.0 or row['y'] > 68.0) and (0.0 <= row['x'] <= 105.0):
+                    # 次の保持者の間はどこにいるか
+                    if (next_row['y'] < 1.0 or next_row['y'] > 67.0):
+                        after_OUT = True
+                        y_OUT = True
+                        # ラベル付け
+                        label = 'OUT'
+                        outputs.append({
+                            "gameTime": format_game_time(row['match_time']),
+                            "label": label,
+                            "position": str(row['match_time']),
+                            "team": "",
+                            "confidence": "0.5"
+                        })
+                elif (row['x'] < 0.0 or row['x'] > 105.0) and (0.0 <= row['y'] <= 68.0):
+                    after_OUT = True
+                    x_OUT = True
+                    # ラベル付け(横方向は安心)
+                    label = 'OUT'
+                    outputs.append({
+                        "gameTime": format_game_time(row['match_time']),
+                        "label": label,
+                        "position": str(row['match_time']),
+                        "team": "",
+                        "confidence": "0.5"
+                    })
+                OUT_match_time = row['match_time']
+            
+            # PASS を記録
             else:
-                # 一定時間（min_stationary_durationフレーム）以上停止している場合 # 停止状態が4秒以上経過している場合
-                if (frame - stationary_stop_frame) >= min_stationary_duration * 2:
-                    if is_in_pitch:
-                        label = "FOUL"
-                        outputs.append({
-                            "gameTime": format_game_time(stationary_stop_time),
-                            "label": label,
-                            "position": str(stationary_stop_time),
-                            "team": "",
-                            "confidence": "0.5"
-                        })
-                        label = "FREE KICK"
-                        outputs.append({
-                            "gameTime": format_game_time(match_time),
-                            "label": label,
-                            "position": str(match_time),
-                            "team": "",
-                            "confidence": "0.5"
-                        })
-                # 一定時間経たずに動き出した場合も
-                # 停止状態のリセット
-                stationary_stop_frame = None
-                stationary_stop_time = None
 
-        # GOAL の検出
-        # ゴールの幅を通ってない
-        if stationary_goal_frame is None:
-            # ゴールの幅を通過
-            if (30 <= ball_data.loc[i, 'y'] <= 38) and (ball_data.loc[i, 'x'] <= 0 or ball_data.loc[i, 'x'] >= 105):
-                # 通過した瞬間を記録
-                stationary_goal_frame = frame
-                stationary_goal_time = match_time
-        # 既にゴールの幅を通過
-        else:
-            # 60秒以内にボールが(0.5,0.5)に
-            if (frame - stationary_goal_frame) >= 60 * frame_rate:
-                stationary_goal_frame = None
-            if (52 <= ball_data.loc[i, 'x'] <= 53) and (34.5 <= ball_data.loc[i, 'y'] <= 34.5):
-                label = "GOAL"
+                # 現在の選手と次の選手が同じ
+                if current_player_id == next_row['player_id']:
+                    # DRIVEの検出
+                    # ワンタッチパス対策，一回トラップしてパスするのに少なくとも 0.2s かかると予想
+                    if next_row['match_time'] - row['match_time'] >= 200:
+                        # ラベル付け
+                        label = 'DRIVE'
+                        outputs.append({
+                            "gameTime": format_game_time(row['match_time']),
+                            "label": label,
+                            "position": str(row['match_time']),
+                            "team": "",
+                            "confidence": "0.5"
+                        })
+                # 違う選手（パスの可能性高い）
+                else:
+                    # default
+                    label = 'PASS'
+
+                    # 誤検出
+                    # 前回のパスが存在する場合、方向を比較する（スルーや上空対策）
+                    if previous_position is not None:
+                        last_pass_vector = current_position - previous_position
+                        current_pass_vector = next_position - current_position
+                        # ベクトルの角度差を計算
+                        angle_difference = get_angle_difference(last_pass_vector, current_pass_vector)
+                        # 角度差が閾値以下の場合はスキップ
+                        if angle_difference <= ANGLE_THRESHOLD:
+                            continue
+                    # パスをしたわけではない場合（ボールを奪われた時），PLAYER_SUCCESFUL_TACKLE
+
+                    
+                    # CROSSの検出
+                    if (current_position[0] <= 43.35 or current_position[0] >= 61.65) and \
+                    (current_position[1] <= 13.84 or current_position[1] >= 54.16) and \
+                    (next_position[0] <= 11 or next_position[0] >= 94) and \
+                    (24.84 <= current_position[1] <= 43.16):
+                        label = 'CROSS'
+
+                    # SHOTの検出
+                    elif (current_position[0] <= 30.0 or current_position[0] >= 75.0) and \
+                    (13.84 <= current_position[1] <= 54.16) and \
+                    (next_position[0] <= 3.0 or next_position[0] >= 102.0) and \
+                    (24.84 <= next_position[1] <= 43.16):
+                        label = 'SHOT'
+
+                    # HIGH PASSの検出
+                    elif np.linalg.norm(next_position - current_position) >= 45.0 :
+                        label = 'HIGH PASS'
+
+                    # GOALの検出
+                    # elif 
+
+                    # ラベル付け
+                    outputs.append({
+                        "gameTime": format_game_time(row['match_time']),
+                        "label": label,
+                        "position": str(row['match_time']),
+                        "team": "",
+                        "confidence": "0.5"
+                    })
+        
+        '''# OUTに依存しない
+        # 現在の選手と次の選手が同じ
+        if current_player_id == next_row['player_id']:
+            # DRIVEの検出
+            # ワンタッチパス対策，一回トラップしてパスするのに少なくとも 0.2s かかると予想
+            if next_row['match_time'] - row['match_time'] >= 200:
+                # ラベル付け
+                label = 'DRIVE'
                 outputs.append({
-                    "gameTime": format_game_time(stationary_goal_time),
+                    "gameTime": format_game_time(row['match_time']),
                     "label": label,
-                    "position": str(stationary_goal_time),
+                    "position": str(row['match_time']),
                     "team": "",
                     "confidence": "0.5"
                 })
-                stationary_goal_frame = None
+        # 違う選手（パスの可能性高い）
+        else:
+            # default
+            label = 'PASS'
 
-        if i % 10000 == 0:
-            print(i)
+            # 誤検出
+            # 前回のパスが存在する場合、方向を比較する（スルーや上空対策）
+            if previous_position is not None:
+                last_pass_vector = current_position - previous_position
+                current_pass_vector = next_position - current_position
+                # ベクトルの角度差を計算
+                angle_difference = get_angle_difference(last_pass_vector, current_pass_vector)
+                # 角度差が閾値以下の場合はスキップ
+                if angle_difference <= ANGLE_THRESHOLD:
+                    continue
+            # パスをしたわけではない場合（ボールを奪われた時），PLAYER_SUCCESFUL_TACKLE
+
+            
+            # CROSSの検出
+            if (current_position[0] <= 43.35 or current_position[0] >= 61.65) and \
+            (current_position[1] <= 13.84 or current_position[1] >= 54.16) and \
+            (next_position[0] <= 11 or next_position[0] >= 94) and \
+            (24.84 <= current_position[1] <= 43.16):
+                label = 'CROSS'
+
+            # SHOTの検出
+            elif (current_position[0] <= 30.0 or current_position[0] >= 75.0) and \
+            (13.84 <= current_position[1] <= 54.16) and \
+            (next_position[0] <= 3.0 or next_position[0] >= 102.0) and \
+            (24.84 <= next_position[1] <= 43.16):
+                label = 'SHOT'
+
+            # HIGH PASSの検出
+            elif np.linalg.norm(next_position - current_position) >= 45.0 :
+                label = 'HIGH PASS'
+
+            # GOALの検出
+            # elif 
+
+            # ラベル付け
+            outputs.append({
+                "gameTime": format_game_time(row['match_time']),
+                "label": label,
+                "position": str(row['match_time']),
+                "team": "",
+                "confidence": "0.5"
+            })'''
+
+        # 前回のパスを記録
+        previous_position = current_position
     
     # Sort outputs by frame for chronological order
     outputs.sort(key=lambda x: int(float(x['position'])))
@@ -356,6 +340,8 @@ def detect(tracking_df, output_json_path, output_ball_player_path, output_player
 
     with open(output_json_path, 'w') as f:
         json.dump(recognition_results, f, indent=4)
+    
+    print(f"ファイルが保存されました: {output_json_path}")
 
 def format_game_time(time):
     """
@@ -436,28 +422,53 @@ def ball_player(tracking_df, all_distances_df, output_ball_player_path, ball_pos
     ball_data = tracking_df[tracking_df['id'] == 'ball'][['frame', 'match_time', 'x', 'y']].reset_index(drop=True)
     outputs_ball_player = []
     
+    # 前回のボール位置を記録
+    last_ball_x = 52.5
+    last_ball_y = 34
+    # 前回のOUTの時間を記録
+    # last_out_match_time = 0.0
+
+    after_OUT = True
+    
     for i, row in ball_data.iterrows():
-        frame = row['frame']
         match_time = row['match_time']
+        ball_x = row['x']
+        ball_y = row['y']
         distances_data = all_distances_df[all_distances_df['match_time'] == match_time].reset_index(drop=True)
 
         # 距離が閾値以下の選手をフィルタリング
         close_players = distances_data[distances_data['distance_to_ball'] <= ball_possess_threshold]
 
-        if close_players.empty:
-            # 該当する選手がいない場合
-            outputs_ball_player.append({"match_time": match_time})
-        else:
-            # 該当する選手がいる場合
-            players_info = close_players[['player_id', 'team_id', 'x', 'y', 'distance_to_ball']].to_dict(orient="records")
+        # OUTの記録
+        if (ball_x < 0.0 or ball_x > 105.0 or ball_y < 0.0 or ball_y > 68.0) and (last_ball_x >= 0.0 and last_ball_x <= 105.0 and last_ball_y >= 0.0 and last_ball_y <= 68.0): # and (match_time - last_match_time > 1000)
             outputs_ball_player.append({
                 "match_time": match_time,
-                "players": players_info
+                "players": 'OUT',
+                "x": ball_x,
+                "y": ball_y
             })
+            after_OUT = True
+            # last_out_match_time = match_time
+        # 距離が閾値以下の選手の記録
+        else:
+            if close_players.empty:
+                # 該当する選手がいない場合
+                outputs_ball_player.append({"match_time": match_time})
+            else:
+                # 該当する選手がいる場合
+                players_info = close_players[['player_id', 'team_id', 'x', 'y', 'distance_to_ball']].to_dict(orient="records")
+                outputs_ball_player.append({
+                    "match_time": match_time,
+                    "players": players_info
+                })
+        
+        last_ball_x = ball_x
+        last_ball_y = ball_y
+
     with open(output_ball_player_path, 'w') as f:
         json.dump(outputs_ball_player, f, indent=4)
 
-    return outputs_ball_player
+    return outputs_ball_player.reset_index(drop=True)
 
 def player_to_player(ball_player_df, output_player_to_player_path, frame_rate, min_possess_duration):
 
@@ -468,60 +479,85 @@ def player_to_player(ball_player_df, output_player_to_player_path, frame_rate, m
         return outputs_player_to_player.reset_index(drop=True)
     
     outputs_player_to_player = []
-    last_player_id = None
-    last_team_id = None
-    possess_start_time = None
-    possess_end_time = None
+    last_frame_player_id = None
+    last_frame_players = None
+    last_possess_player_id = None
+    # ボール保持フレーム数（１の時対策必要）
+    num_last_ball_possess_frame = 0
 
     for i in range(len(ball_player_df)):
         row = ball_player_df.loc[i]
         match_time = row["match_time"]
-        players = row["players"]
+        current_frame_players = row["players"]
+
+        # NaNチェックとデータ型変換
+        if isinstance(current_frame_players, float) or current_frame_players is None:
+            current_frame_players = []  # 空のリストに置き換え
         
-        # NaNチェック
-        if players is None or (isinstance(players, float) and math.isnan(players)):
-            players = []  # 空のリストに置き換え
+        # 一番最初は全員距離0
+        if i <= 1:
+            last_frame_players = None
+            current_frame_player_id = None
+            current_frame_team_id = None
+            last_possess_player_id = None
+            continue
         
         # ボールを保持している選手がいるか確認
-        if players:
-            current_player_id = players[0]["player_id"]
-            current_team_id = players[0]["team_id"]
-        else:
-            current_player_id = None
-            current_team_id = None
-
-        # ボール保持の変化をチェック
-        if current_player_id != last_player_id:
-            # 前の選手が規定時間以上保持していたらPASSと記録
-            if possess_start_time is not None and (possess_end_time - possess_start_time) >= (min_possess_duration / frame_rate):
+        # OUT
+        if current_frame_players == 'OUT':
+            if last_frame_players != 'OUT':
                 outputs_player_to_player.append({
-                    "match_time": float(possess_end_time),
-                    "player_id": float(last_player_id),
-                    "team_id": float(last_team_id),
-                    "x": float(possess_end_x),
-                    "y": float(possess_end_y)
-                })
+                        "match_time": float(match_time),
+                        "player_id": 'OUT',
+                        "team_id": 'OUT',
+                        "x": float(row["x"]),
+                        "y": float(row["y"])
+                    })
+            current_frame_player_id = None
+            current_frame_team_id = None
+            last_possess_player_id = None
+            num_last_ball_possess_frame = 0
+        else:
+            if current_frame_players:
+                current_frame_player_id = current_frame_players[0]["player_id"]
+                current_frame_team_id = current_frame_players[0]["team_id"]
+                # 1フレーム前のボール保持者と違う
+                if current_frame_player_id != last_frame_player_id:
+                    # 前回のボール保持者と違う
+                    if current_frame_player_id != last_possess_player_id:
+                        if (last_possess_player_id != None) and (num_last_ball_possess_frame >= 2):
+                            # 前回の保持者でパスをしたと記録
+                            outputs_player_to_player.append({
+                                "match_time": float(last_possess_match_time),
+                                "player_id": float(last_possess_player_id),
+                                "team_id": float(last_possess_team_id),
+                                "x": float(last_possess_x),
+                                "y": float(last_possess_y)
+                            })
+                        # 前回の保持者からパスを受け取った人を記録
+                        outputs_player_to_player.append({
+                            "match_time": float(match_time),
+                            "player_id": float(current_frame_player_id),
+                            "team_id": float(current_frame_team_id),
+                            "x": float(current_frame_players[0]["x"]),
+                            "y": float(current_frame_players[0]["y"])
+                        })
+                    num_last_ball_possess_frame = 0
+                # 前回のボール保持者として記録
+                last_possess_match_time = match_time
+                last_possess_x = current_frame_players[0]["x"]
+                last_possess_y = current_frame_players[0]["y"]
+                last_possess_player_id = current_frame_player_id
+                last_possess_team_id = current_frame_team_id
+                num_last_ball_possess_frame += 1
 
-            # 新しい保持者の情報をリセット
-            last_player_id = current_player_id
-            last_team_id = current_team_id
-            possess_start_time = match_time if current_player_id else None
+            else:
+                current_frame_player_id = None
+                current_frame_team_id = None
 
-        # ボール保持の終了時間を更新
-        if current_player_id:
-            possess_end_time = match_time
-            possess_end_x = players[0]["x"]
-            possess_end_y = players[0]["y"]
+        last_frame_player_id = current_frame_player_id
+        last_frame_players = current_frame_players
 
-    # 最後の保持者をチェック
-    if possess_start_time is not None and (possess_end_time - possess_start_time) >= (min_possess_duration / frame_rate):
-        outputs_player_to_player.append({
-            "match_time": float(possess_end_time),
-            "player_id": float(last_player_id),
-            "team_id": float(last_team_id),
-            "x": float(possess_end_x),
-            "y": float(possess_end_y)
-        })
     # DataFrame 形式の場合
     with open(output_player_to_player_path, 'w') as f:
         json.dump(outputs_player_to_player, f, indent=4)
