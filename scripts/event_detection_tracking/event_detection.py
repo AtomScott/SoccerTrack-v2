@@ -160,7 +160,7 @@ def event_detect_Playbox(PASS_DRIVE_df, plus_team_id, output_json_path):
                             "confidence": "0.5"
                         })
                 # HIGH PASS
-                if current_pass_len > 45.0:
+                if current_pass_len > 30.0:
                     predictions.append({
                         "gameTime": format_game_time(start['match_time']),
                         "label": 'HIGH PASS',
@@ -366,7 +366,7 @@ def event_detect_SoccerNet(PASS_DRIVE_df, plus_team_id, output_json_path):
                             "confidence": "0.5"
                         })
                 # HIGH PASS
-                if current_pass_len > 45.0:
+                if current_pass_len > 30.0:
                     predictions.append({
                         "gameTime": format_game_time(start['match_time']),
                         "label": 'HIGH PASS',
