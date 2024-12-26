@@ -24,7 +24,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--match_id', help="Match ID for the video and annotation files")
-    parser.add_argument('--num_class', help="Number of event classes, e.g., '12' or '14'")
+    parser.add_argument('--num_class', help="Number of event classes, e.g., '8' or '12'")
     return parser.parse_args()
 
 def main():
@@ -34,14 +34,14 @@ def main():
     
     for match_id in match_ids:
         labels_json_path = f'data/raw/{match_id}/{match_id}_{num_class}_class_events.json'
-        detections_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_event_detection.json'
-        results_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_results.json'
+        detections_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{num_class}_class_events_detection.json'
+        results_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{num_class}_class_events_results.json'
         # ファイルを読み込み
         with open(labels_json_path, 'r') as f:
             labels = json.load(f)
         with open(detections_json_path, 'r') as f:
             detections = json.load(f)
-        results = evaluate(labels, detections)
+        results = evaluate(labels, detections, metric="loose", dataset=num_class)
         # ファイルを書き込み
         with open(results_json_path, 'w') as f:
             json.dump(results, f)
@@ -55,7 +55,7 @@ def evaluate(
         framerate=2,
         metric="loose",
         num_classes=17,  # DEPRECATED, use EVENT_DICTIONARY instead. Kept for backward compatibility
-        dataset="SoccerNet",  # DEPRECATED, set to None and use inferGameList instead. Kept for backward compatibility
+        dataset=12,  # DEPRECATED, set to None and use inferGameList instead. Kept for backward compatibility
         task="spotting",
         EVENT_DICTIONARY=None,  # Set to None to use the default EVENT_DICTIONARY from previous datasets
 ):
@@ -79,12 +79,12 @@ def evaluate(
 
     # Set EVENT_DICTIONARY if None, else use the one provided
     # Event name to label index fororor SoccerNet-V2
-    EVENT_DICTIONARY_PLAYBOX = {"PASS": 0, "DRIVE": 1, "HEADER": 2, "HIGH PASS": 3, "OUT": 4, "CROSS": 5, "THROW IN": 6, "SHOT": 7, "BALL PLAYER BLOCK": 8, "PLAYER SUCCESSFUL TACKLE": 9, "FREE KICK": 10, "GOAL": 11}
+    EVENT_DICTIONARY_PLAYBOX = {"HEADER": 0, "CROSS": 1, "THROW IN": 2, "SHOT": 3, "FREE KICK": 4, "GOAL": 5, "CORNER KICK": 6, "GOAL KICK": 7}
     EVENT_DICTIONARY_SOCCERNET = {"PASS": 0, "DRIVE": 1, "HEADER": 2, "HIGH PASS": 3, "OUT": 4, "CROSS": 5, "THROW IN": 6, "SHOT": 7, "BALL PLAYER BLOCK": 8, "PLAYER SUCCESSFUL TACKLE": 9, "FREE KICK": 10, "GOAL": 11}
     if EVENT_DICTIONARY is None:
-        if dataset == "playbox" and version == 2 and task == "spotting":
+        if dataset == str(8):
             EVENT_DICTIONARY = EVENT_DICTIONARY_PLAYBOX
-        elif dataset == "SoccerNet":
+        elif dataset == str(12):
             EVENT_DICTIONARY = EVENT_DICTIONARY_SOCCERNET
 
     num_classes = len(EVENT_DICTIONARY)
@@ -475,8 +475,7 @@ def delta_curve(targets, closests, detections, framerate, deltas=np.arange(5) * 
     mAP_per_class_unshown = list()
 
     for delta in tqdm(deltas * framerate):
-        precision, recall, precision_visible, recall_visible, precision_unshown, recall_unshown = compute_precision_recall_curve(
-            targets, closests, detections, delta)
+        precision, recall, precision_visible, recall_visible, precision_unshown, recall_unshown = compute_precision_recall_curve(targets, closests, detections, delta)
 
         tmp_mAP, tmp_mAP_per_class = compute_mAP(precision, recall)
         mAP.append(tmp_mAP)
@@ -492,11 +491,7 @@ def delta_curve(targets, closests, detections, framerate, deltas=np.arange(5) * 
 
 
 def average_mAP(targets, detections, closests, framerate=2, deltas=np.arange(5) * 1 + 1):
-    mAP, mAP_per_class, mAP_visible, mAP_per_class_visible, mAP_unshown, mAP_per_class_unshown = delta_curve(targets,
-                                                                                                             closests,
-                                                                                                             detections,
-                                                                                                             framerate,
-                                                                                                             deltas)
+    mAP, mAP_per_class, mAP_visible, mAP_per_class_visible, mAP_unshown, mAP_per_class_unshown = delta_curve(targets,closests,detections,framerate,deltas)
 
     if len(mAP) == 1:
         return mAP[0], mAP_per_class[0], mAP_visible[0], mAP_per_class_visible[0], mAP_unshown[0], \
