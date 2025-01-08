@@ -2,6 +2,8 @@
 # Data folder: Contains raw and processed data files
 # Keeping .gitkeep to maintain the folder structure in the repository
 data
+wandb
+*.mp4
 
 # Scratch folder: Contains temporary files for development and testing
 scratch/*
