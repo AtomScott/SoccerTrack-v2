@@ -1,6 +1,7 @@
-base_path: "/data/share/SoccerTrack-v2/"
+base_path: "/data/share/SoccerTrack-v2"
 interim_data_path: "${base_path}/data/interim"
 
+log_level: "INFO"
 match:
   id: "117093"
   first_frame_only: false
@@ -19,6 +20,75 @@ visualization:
     player: 5
     ball: 3
 
+ball_tracking:
+
+  data: # shared between dataset and datamodule
+    frame_size: [1280, 720]  # [width, height]
+    num_frame: 3
+    frame_stride: 1      # Stride between frames within a sequence
+    sequence_stride: 30  # Stride between different sequences
+    mag: 1.0
+    sigma: 2.5
+    video_paths: ["/data/share/teamtrack/teamtrack-mot/soccer_side/full/combined.mp4"]
+    mot_paths: ["/data/share/teamtrack/teamtrack-mot/soccer_side/full/combined.txt"]
+    output_dir: "${interim_data_path}/ball_tracking_dataset-stride-1"
+    data_dir: "${ball_tracking.data.output_dir}"
+    class_names: ["ball"]
+    splits:
+      train: 0.95   # 95% for training
+      val: 0.025   # 2.5% for validation
+      test: 0.025   # 2.5% for testing
+    min_visibility: 0.3
+    copy_files: true
+    max_num_sequences: 1000
+    num_workers: 16
+    batch_size: 4
+    downscale_factor: 2
+    # Data augmentation
+    augmentation:
+      enabled: true  # Master switch for all augmentations
+      transforms:
+        resize:
+          enabled: false # dont use. precompute resizes if possible
+          height: null  # Will use original height if null
+          width: null   # Will use original width if null
+        random_crop:
+          enabled: true  # Only applied during training
+          height: 480
+          width: 480
+          include_object_prob: 1.0 # other than 1.0 breaks
+        horizontal_flip:
+          enabled: true  # Only applied during training
+          prob: 0.5
+
+  train:
+    # Model configuration
+    model_name: "TrackNetV2"
+    num_frame: ${ball_tracking.data.num_frame}
+    input_type: "2d"
+    in_channels: 9 #${defaults.sequence.num_frame * 3}  # num_frame * RGB channels
+    out_channels: ${ball_tracking.data.num_frame}
+    
+    # Training parameters
+    epochs: 300
+    learning_rate: 0.001
+    tolerance: 4
+    save_dir: "exp-stride=1-weighted_msee"
+    debug: false
+    data_dir: "${interim_data_path}/ball_tracking_dataset-stride-1"
+    devices: [0]
+    early_stop_patience: 50
+    
+    # Loss configuration
+    main_loss: "weighted_mse"  # choices: weighted_bce, focal_wbce, kl_div, bce
+    auxiliary_losses: ["tv"]     # choices: tv, jaccard, dice
+    auxiliary_weights: [0.1]
+        
+  # Wandb logging
+  wandb:
+    project: "TrackNetX"
+    entity: null  # Use default
+    run_name: null  # Auto-generate
 
 video:
   calibrated_videos: "${interim_data_path}/${match.id}/${match.id}_panorama_test.mp4"
@@ -44,16 +114,17 @@ plot_coordinates_on_video:
 
 plot_bboxes_on_video:
   video_path: ${video.calibrated_videos}
-  detections_path: "${interim_data_path}/${match.id}/${match.id}_panorama_test_detections.csv"
-  # detections_path: "${interim_data_path}/${match.id}/${match.id}_ground_truth_mot.csv"
+  # detections_path: "${interim_data_path}/${match.id}/${match.id}_panorama_test_detections.csv"
+  detections_path: "${interim_data_path}/${match.id}/${match.id}_ground_truth_mot.csv"
   match_id: ${match.id}
-  output_path: "${interim_data_path}/${match.id}/${match.id}_plot_bboxes_on_video-yolov8.mp4"
+  output_path: "${interim_data_path}/${match.id}/${match.id}_plot_bboxes_on_video-ground_truth_mot.mp4"
   first_frame_only: ${match.first_frame_only}
   team_colors: ${visualization.team_colors}
   track_colors: ${visualization.track_colors}
+  classes: ["person"]
 
 detect_objects:
-  weights_path: "${base_path}/models/yolov8m.pt"
+  weights_path: "${base_path}/models/model=yolov8m-imgsz=2048.pt"
   imgsz: 5000
   conf: 0.4
   iou: 0.7
@@ -79,7 +150,7 @@ create_ground_truth_mot:
   homography_path: ${video.homography}
   event_period: ${match.event_period}
   output_path: "${interim_data_path}/${match.id}/${match.id}_ground_truth_mot.csv"
-  max_distance: 150.0
+  max_distance: 5.0
   conf_threshold: 0.3
   max_interpolation_gap: 10
   association_window_size: 30
@@ -87,6 +158,16 @@ create_ground_truth_mot:
   error_threshold: 50.0
   pitch_length: ${pitch_length}
   pitch_width: ${pitch_width}
+
+create_yolo_dataset:
+  video_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/combined.mp4"
+  mot_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/gt.txt"
+  output_dir: "/home/atom/SoccerTrack-v2/data/v1"
+  frame_interval: 1000
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  overwrite: true
 
 log_string:
   string: "Hello, world!"

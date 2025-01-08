@@ -3,27 +3,28 @@ import numpy as np
 import cv2
 
 
+import random
+import numpy as np
+
+
 class RandomCrop:
     """
-    Always crops the image to a specified size, with a probability of including the tracked object.
+    Crops the image to a specified size, with a probability of including the tracked object.
 
     Assumptions:
-        - Input frames are numpy arrays of shape (num_frames * 3, H, W)
-        - Input heatmaps are numpy arrays of shape (num_frames, H, W)
-        - Input coordinates are numpy arrays of shape (num_frames, 2) where each row is [x, y]
-        - Coordinate values are in pixel space (not normalized)
-        - All input arrays are properly aligned (same number of frames)
+        - Input frames: (num_frame * 3, H, W)
+        - Input heatmaps: (num_frame, H, W)
+        - Input coordinates: (num_frame, 2) in [x, y]
+        - crop_width < W and crop_height < H
+        - No padding needed
     """
 
     def __init__(self, crop_height, crop_width, include_object_prob=0.5):
         """
-        Initialize the RandomCrop transformation.
-
         Args:
             crop_height (int): Height of the cropped patch.
             crop_width (int): Width of the cropped patch.
-            include_object_prob (float): Probability of including the tracked object in the crop
-                                         (must be between 0 and 1).
+            include_object_prob (float): Probability of including the tracked object in the crop.
         """
         if not (0 <= include_object_prob <= 1):
             raise ValueError("include_object_prob must be between 0 and 1")
@@ -36,27 +37,15 @@ class RandomCrop:
 
     def __call__(self, frames, heatmaps, coordinates):
         """
-        Apply the random crop transformation.
-
         Args:
-            frames (np.ndarray): Concatenated frames of shape (num_frame * 3, H, W).
-            heatmaps (np.ndarray): Heatmaps of shape (num_frame, H, W).
-            coordinates (np.ndarray): Object coordinates of shape (num_frame, 2).
+            frames (np.ndarray): (num_frame * 3, H, W).
+            heatmaps (np.ndarray): (num_frame, H, W).
+            coordinates (np.ndarray): (num_frame, 2).
 
         Returns:
-            Tuple[np.ndarray, np.ndarray, np.ndarray]: Transformed frames, heatmaps, and coordinates.
-
-        Raises:
-            ValueError: If input shapes are inconsistent or invalid.
+            (frames, heatmaps, coordinates) after random crop.
         """
-        # Input validation
-        if (
-            len(frames.shape) != 3
-            or len(heatmaps.shape) != 3
-            or len(coordinates.shape) != 2
-        ):
-            raise ValueError("Invalid input shapes")
-
+        # Validate input dimensions
         num_frames = frames.shape[0] // 3
         if heatmaps.shape[0] != num_frames or coordinates.shape[0] != num_frames:
             raise ValueError("Inconsistent number of frames across inputs")
@@ -65,96 +54,42 @@ class RandomCrop:
         if heatmaps.shape[1:] != (H, W):
             raise ValueError("Heatmap dimensions don't match frame dimensions")
 
-        # Decide whether to include the object in the crop
         include_object = random.random() < self.include_object_prob
 
         if include_object:
-            # Find all valid object positions within the image
-            valid_indices = [
-                i for i, (x, y) in enumerate(coordinates) if 0 <= x < W and 0 <= y < H
-            ]
-
+            # Find valid object indices
+            valid_indices = [i for i, (x, y) in enumerate(coordinates) if 0 <= x < W and 0 <= y < H]
             if valid_indices:
-                # Randomly select one valid object position
-                selected_idx = random.choice(valid_indices)
-                center_x, center_y = coordinates[selected_idx]
+                # Pick a random visible object
+                idx = random.choice(valid_indices)
+                x, y = coordinates[idx]
+                # Center the crop around (x, y) as much as possible
+                left = int(x - self.crop_width // 2)
+                top = int(y - self.crop_height // 2)
 
-                # Determine crop boundaries to include the object
-                left_min = max(0, int(center_x - self.crop_width + 1))
-                left_max = min(int(center_x), W - self.crop_width)
-                top_min = max(0, int(center_y - self.crop_height + 1))
-                top_max = min(int(center_y), H - self.crop_height)
-
-                if left_max < left_min:
-                    left_min = max(0, int(center_x - self.crop_width / 2))
-                    left_max = min(int(center_x), W - self.crop_width)
-                if top_max < top_min:
-                    top_min = max(0, int(center_y - self.crop_height / 2))
-                    top_max = min(int(center_y), H - self.crop_height)
-
-                left = (
-                    random.randint(left_min, left_max)
-                    if left_max > left_min
-                    else left_min
-                )
-                top = random.randint(top_min, top_max) if top_max > top_min else top_min
+                # Clamp to valid range
+                left = max(0, min(left, W - self.crop_width))
+                top = max(0, min(top, H - self.crop_height))
             else:
-                # Fallback to random crop if no valid positions are found
-                left = random.randint(0, max(W - self.crop_width, 0))
-                top = random.randint(0, max(H - self.crop_height, 0))
+                # No visible objects, do a random crop
+                left = random.randint(0, W - self.crop_width)
+                top = random.randint(0, H - self.crop_height)
         else:
-            # Random crop anywhere
-            left = random.randint(0, max(W - self.crop_width, 0))
-            top = random.randint(0, max(H - self.crop_height, 0))
+            # Simple random crop
+            left = random.randint(0, W - self.crop_width)
+            top = random.randint(0, H - self.crop_height)
 
-        # Perform the crop on frames
-        cropped_frames = frames[
-            :, top : top + self.crop_height, left : left + self.crop_width
-        ]
-
-        # If the cropped area is smaller than the desired crop size, pad the image
-        if (
-            cropped_frames.shape[1] < self.crop_height
-            or cropped_frames.shape[2] < self.crop_width
-        ):
-            padded_frames = np.zeros(
-                (frames.shape[0], self.crop_height, self.crop_width), dtype=frames.dtype
-            )
-            padded_frames[:, : cropped_frames.shape[1], : cropped_frames.shape[2]] = (
-                cropped_frames
-            )
-            cropped_frames = padded_frames
-
-        # Perform the crop on heatmaps
-        cropped_heatmaps = heatmaps[
-            :, top : top + self.crop_height, left : left + self.crop_width
-        ]
-
-        # Pad heatmaps if necessary
-        if (
-            cropped_heatmaps.shape[1] < self.crop_height
-            or cropped_heatmaps.shape[2] < self.crop_width
-        ):
-            padded_heatmaps = np.zeros(
-                (heatmaps.shape[0], self.crop_height, self.crop_width),
-                dtype=heatmaps.dtype,
-            )
-            padded_heatmaps[
-                :, : cropped_heatmaps.shape[1], : cropped_heatmaps.shape[2]
-            ] = cropped_heatmaps
-            cropped_heatmaps = padded_heatmaps
+        # Crop frames and heatmaps
+        cropped_frames = frames[:, top : top + self.crop_height, left : left + self.crop_width]
+        cropped_heatmaps = heatmaps[:, top : top + self.crop_height, left : left + self.crop_width]
 
         # Adjust coordinates
         cropped_coordinates = coordinates.copy()
         cropped_coordinates[:, 0] -= left
         cropped_coordinates[:, 1] -= top
-
-        # Ensure coordinates are within the cropped image
-        cropped_coordinates = np.clip(
-            cropped_coordinates,
-            a_min=0,
-            a_max=[self.crop_width - 1, self.crop_height - 1],
-        )
+        # Clip coordinates to the crop region
+        cropped_coordinates[:, 0] = np.clip(cropped_coordinates[:, 0], 0, self.crop_width - 1)
+        cropped_coordinates[:, 1] = np.clip(cropped_coordinates[:, 1], 0, self.crop_height - 1)
 
         return cropped_frames, cropped_heatmaps, cropped_coordinates
 
@@ -250,9 +185,7 @@ class Resize:
         resized_heatmaps = []
         for i in range(num_frames):
             heatmap = heatmaps[i]
-            heatmap_resized = cv2.resize(
-                heatmap, (self.target_width, self.target_height)
-            )
+            heatmap_resized = cv2.resize(heatmap, (self.target_width, self.target_height))
             resized_heatmaps.append(heatmap_resized)
         resized_heatmaps = np.stack(resized_heatmaps, axis=0)  # (num_frame, H, W)
 

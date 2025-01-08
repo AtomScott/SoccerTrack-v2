@@ -2,7 +2,6 @@ import os
 import cv2
 import math
 import torch
-import parse
 import shutil
 import numpy as np
 import pandas as pd

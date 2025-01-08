@@ -9,20 +9,27 @@ dependencies = [
     "joblib>=1.4.2",
     "jupyter>=1.1.1",
     "lapx>=0.5.11",
+    "line-profiler>=4.2.0",
     "loguru>=0.7.2",
-    "moviepy>=1.0.3",
+    "moviepy==1.0.3",
     "mplsoccer>=1.4.0",
+    "numpy>=1.26.4",
     "omegaconf>=2.3.0",
-    "numpy>=2.1.1",
     "opencv-python>=4.10.0.84",
     "openstarlab-preprocessing>=0.1.11",
+    "parse>=1.20.2",
+    "pydrive2>=1.21.1",
     "pyexiftool>=0.5.6",
+    "python-dotenv>=1.0.1",
+    "pytorch-lightning>=2.4.0",
     "ruff>=0.7.4",
+    "scikit-learn>=1.5.2",
     "setuptools>=75.1.0",
     "tqdm>=4.66.5",
     "typer-config>=1.4.2",
     "ultralytics>=8.3.35",
     "vidgear>=0.3.3",
+    "wandb>=0.19.0",
 ]
 
 # Add this section to make the package installable
@@ -38,7 +45,7 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
-ignore = []
+ignore = ["E402", "I001"]
 
 [tool.ruff.format]
 quote-style = "double"

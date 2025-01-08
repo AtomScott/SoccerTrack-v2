@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import wandb  # Added for W&B Image logging
 
 # Import loss functions
-from tracknetx.losses import (
+from src.ball_tracking.tracknetx.losses import (
     WeightedBinaryCrossEntropy,
     FocalWeightedBinaryCrossEntropy,
     DiceLoss,
@@ -13,8 +13,9 @@ from tracknetx.losses import (
     TotalVariationLoss,
     EdgeLoss,
     PerceptualLoss,
+    CoordinateHeatmapLoss,
+    WeightedMSELoss,
 )
-import torchmetrics
 
 
 class ChannelAttentionModule(nn.Module):
@@ -60,9 +61,7 @@ class SpatialAttentionModule(nn.Module):
         Spatial Attention Module as part of CBAM.
         """
         super(SpatialAttentionModule, self).__init__()
-        self.conv = nn.Conv2d(
-            in_channels=2, out_channels=1, kernel_size=7, padding=3, bias=False
-        )
+        self.conv = nn.Conv2d(in_channels=2, out_channels=1, kernel_size=7, padding=3, bias=False)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -115,9 +114,7 @@ class Conv2DBlock(nn.Module):
     Convolutional Block: Conv2D -> BatchNorm -> ReLU
     """
 
-    def __init__(
-        self, in_channels, out_channels, kernel_size, padding="same", bias=True
-    ):
+    def __init__(self, in_channels, out_channels, kernel_size, padding="same", bias=True):
         """
         Initialize Conv2DBlock.
 
@@ -300,6 +297,8 @@ class TrackNetXModel(pl.LightningModule):
         super(TrackNetXModel, self).__init__()
         self.save_hyperparameters()
         self.learning_rate = learning_rate
+        self.in_channels = in_channels
+        self.out_channels = out_channels
 
         # Define layers
         self.down_block_1 = InceptionBlock(in_channels, 64)
@@ -326,6 +325,10 @@ class TrackNetXModel(pl.LightningModule):
             self.main_criterion = FocalWeightedBinaryCrossEntropy(gamma=2)
         elif loss_function == "bce":
             self.main_criterion = nn.BCELoss()
+        elif loss_function == "coordinate_heatmap":
+            self.main_criterion = CoordinateHeatmapLoss()
+        elif loss_function == "weighted_mse":
+            self.main_criterion = WeightedMSELoss()
         else:
             raise ValueError(f"Unsupported loss function: {loss_function}")
 
@@ -335,9 +338,7 @@ class TrackNetXModel(pl.LightningModule):
 
         if aux_loss_functions and aux_loss_weights:
             if len(aux_loss_functions) != len(aux_loss_weights):
-                raise ValueError(
-                    "aux_loss_functions and aux_loss_weights must have the same length."
-                )
+                raise ValueError("aux_loss_functions and aux_loss_weights must have the same length.")
             for aux_loss_name, aux_weight in zip(aux_loss_functions, aux_loss_weights):
                 if aux_loss_name == "dice":
                     aux_loss = DiceLoss()
@@ -350,19 +351,11 @@ class TrackNetXModel(pl.LightningModule):
                 elif aux_loss_name == "perceptual":
                     aux_loss = PerceptualLoss()
                 else:
-                    raise ValueError(
-                        f"Unsupported auxiliary loss function: {aux_loss_name}"
-                    )
+                    raise ValueError(f"Unsupported auxiliary loss function: {aux_loss_name}")
                 self.aux_criteria.append(aux_loss)
                 self.aux_weights.append(aux_weight)
         elif aux_loss_functions or aux_loss_weights:
-            raise ValueError(
-                "Both aux_loss_functions and aux_loss_weights must be provided together."
-            )
-
-        # Initialize metrics using TorchMetrics
-        self.train_accuracy = torchmetrics.Accuracy(task="binary")
-        self.val_accuracy = torchmetrics.Accuracy(task="binary")
+            raise ValueError("Both aux_loss_functions and aux_loss_weights must be provided together.")
 
     def forward(self, x):
         """
@@ -410,7 +403,7 @@ class TrackNetXModel(pl.LightningModule):
         x = self.predictor(x)
         return x  # Return logits
 
-    def _compute_and_log_losses(self, outputs, outputs_probs, heatmaps, prefix="train"):
+    def _compute_and_log_losses(self, outputs, outputs_probs, heatmaps, coords, prefix="train"):
         """
         Compute and log main loss, auxiliary losses, and total loss.
 
@@ -423,14 +416,15 @@ class TrackNetXModel(pl.LightningModule):
         Returns:
             torch.Tensor: Total loss
         """
+        # If using coordinate_heatmap loss:
+        if isinstance(self.main_criterion, CoordinateHeatmapLoss):
+            # main loss = Smooth-L1(coord) + beta * Awing(heatmap)
+            main_loss = self.main_criterion(outputs_probs, heatmaps, coords)
+        else:
+            # Original code if not using coordinate_heatmap
+            main_loss = self.main_criterion(outputs_probs, heatmaps)
 
-        # Compute main loss
-        main_loss = self.main_criterion(outputs_probs, heatmaps)
-        self.log(
-            f"{prefix}_main_loss",
-            main_loss,
-            prog_bar=True,  # Show in progress bar if desired
-        )
+        self.log(f"{prefix}_main_loss", main_loss, prog_bar=True)
 
         total_loss = main_loss
         aux_loss_sum = 0
@@ -450,43 +444,38 @@ class TrackNetXModel(pl.LightningModule):
                 aux_loss_sum += weighted_aux_loss
 
                 # Log individual auxiliary loss
-                self.log(
-                    f"{prefix}_{aux_loss_fn.__class__.__name__}",
-                    aux_loss_value,
-                    prog_bar=False,
-                )
+                self.log(f"{prefix}_{aux_loss_fn.__class__.__name__}", aux_loss_value, prog_bar=False)
 
             # Log sum of auxiliary losses
-            self.log(
-                f"{prefix}_aux_loss",
-                aux_loss_sum,
-                prog_bar=True,
-            )
+            self.log(f"{prefix}_aux_loss", aux_loss_sum, prog_bar=True)
             total_loss = main_loss + aux_loss_sum
 
         # Log total loss
-        self.log(
-            f"{prefix}_total_loss",
-            total_loss,
-            prog_bar=True,
-        )
+        self.log(f"{prefix}_total_loss", total_loss, prog_bar=True)
 
+        # Get coordinates of peak in heatmaps
+        batch_size, num_maps, height, width = outputs_probs.shape
+
+        # Flatten spatial dimensions and find max index for all maps
+        flat_indices = outputs_probs.reshape(batch_size, num_maps, -1).argmax(dim=2)  # Shape: (batch_size, num_maps)
+
+        # Convert flat indices to 2D coordinates
+        pred_y = flat_indices // width
+        pred_x = flat_indices % width
+
+        # Stack x,y coordinates - Shape: (batch_size, num_maps, 2)
+        pred_coords = torch.stack([pred_x, pred_y], dim=2).float()
+        dist = torch.norm(coords - pred_coords, dim=2).mean()
+        self.log(f"{prefix}_dist", dist, prog_bar=True)
         return total_loss
 
     def training_step(self, batch, batch_idx):
-        _, frames, heatmaps, _ = batch
+        _, frames, heatmaps, coords = batch
         outputs = self(frames)
         outputs_probs = torch.sigmoid(outputs)
 
         # Compute and log losses without batch_idx
-        total_loss = self._compute_and_log_losses(
-            outputs, outputs_probs, heatmaps, prefix="train"
-        )
-
-        # Update metrics
-        preds = (outputs_probs > 0.5).int()
-        targets = heatmaps.int()
-        self.train_accuracy.update(preds, targets)
+        total_loss = self._compute_and_log_losses(outputs, outputs_probs, heatmaps, coords, prefix="train")
 
         if batch_idx == 0:
             grid = self.create_grid(frames, heatmaps, outputs_probs)
@@ -498,27 +487,13 @@ class TrackNetXModel(pl.LightningModule):
             )
         return total_loss
 
-    def on_train_epoch_end(self):
-        """
-        Called at the end of the training epoch.
-        Replaces the deprecated training_epoch_end method.
-        """
-        acc = self.train_accuracy.compute()
-        self.log("train_acc", acc, prog_bar=True)
-        self.train_accuracy.reset()
-
     def validation_step(self, batch, batch_idx):
-        _, frames, heatmaps, _ = batch
+        _, frames, heatmaps, coords = batch
         outputs = self(frames)
         outputs_probs = torch.sigmoid(outputs)
 
         # Compute and log losses without batch_idx
-        self._compute_and_log_losses(outputs, outputs_probs, heatmaps, prefix="val")
-
-        # Update metrics
-        preds = (outputs_probs > 0.5).int()
-        targets = heatmaps.int()
-        self.val_accuracy.update(preds, targets)
+        self._compute_and_log_losses(outputs, outputs_probs, heatmaps, coords, prefix="val")
 
         # Periodic visualization
         if batch_idx == 0:
@@ -530,14 +505,13 @@ class TrackNetXModel(pl.LightningModule):
                 }
             )
 
-    def on_validation_epoch_end(self):
-        """
-        Called at the end of the validation epoch.
-        Replaces the deprecated validation_epoch_end method.
-        """
-        acc = self.val_accuracy.compute()
-        self.log("val_acc", acc, prog_bar=True)
-        self.val_accuracy.reset()
+    def test_step(self, batch, batch_idx):
+        _, frames, heatmaps, coords = batch
+        outputs = self(frames)
+        outputs_probs = torch.sigmoid(outputs)
+
+        # Compute and log losses without batch_idx
+        self._compute_and_log_losses(outputs, outputs_probs, heatmaps, coords, prefix="test")
 
     def create_grid(self, frames, heatmaps, outputs):
         """
@@ -561,9 +535,7 @@ class TrackNetXModel(pl.LightningModule):
 
         # Normalize for visualization
         try:
-            middle_frame = (middle_frame - middle_frame.min()) / (
-                middle_frame.max() - middle_frame.min()
-            )
+            middle_frame = (middle_frame - middle_frame.min()) / (middle_frame.max() - middle_frame.min())
         except:
             middle_frame = torch.zeros_like(middle_frame)
         try:
@@ -603,5 +575,5 @@ class TrackNetXModel(pl.LightningModule):
         Returns:
             torch.optim.Optimizer: Optimizer.
         """
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         return optimizer
