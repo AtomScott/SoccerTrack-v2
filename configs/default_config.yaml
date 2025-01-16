@@ -25,7 +25,7 @@ ball_tracking:
   data: # shared between dataset and datamodule
     frame_size: [1280, 720]  # [width, height]
     num_frame: 3
-    frame_stride: 1      # Stride between frames within a sequence
+    frame_stride: 3      # Stride between frames within a sequence
     sequence_stride: 30  # Stride between different sequences
     mag: 1.0
     sigma: 2.5
@@ -70,14 +70,14 @@ ball_tracking:
     out_channels: ${ball_tracking.data.num_frame}
     
     # Training parameters
-    epochs: 300
+    epochs: 100
     learning_rate: 0.001
     tolerance: 4
-    save_dir: "exp-stride=1-weighted_msee"
+    save_dir: "exp-stride=3-weighted_msee"
     debug: false
-    data_dir: "${interim_data_path}/ball_tracking_dataset-stride-1"
+    data_dir: "${interim_data_path}/ball_tracking_dataset"
     devices: [0]
-    early_stop_patience: 50
+    early_stop_patience: 25
     
     # Loss configuration
     main_loss: "weighted_mse"  # choices: weighted_bce, focal_wbce, kl_div, bce
@@ -161,8 +161,8 @@ create_ground_truth_mot:
 
 create_yolo_dataset:
   video_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/combined.mp4"
-  mot_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/gt.txt"
-  output_dir: "/home/atom/SoccerTrack-v2/data/v1"
+  mot_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/combined.txt"
+  output_dir: "/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/yolo_dataset"
   frame_interval: 1000
   train_split: 0.8
   val_split: 0.1

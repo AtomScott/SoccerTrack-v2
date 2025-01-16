@@ -8,7 +8,7 @@ from pathlib import Path
 import torch.nn.functional as F
 
 # Replace with the actual import of your TrackNetXModel
-from src.ball_tracking.tracknetx.model import TrackNetXModel
+from model import TrackNetXModel
 
 
 def load_model(checkpoint_path: str, device: str = "cpu"):

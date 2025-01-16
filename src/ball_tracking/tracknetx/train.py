@@ -4,6 +4,7 @@ import numpy as np
 import sys
 from pathlib import Path
 from typing import List
+import random
 
 import torch
 import pytorch_lightning as pl
@@ -12,13 +13,29 @@ from pytorch_lightning.loggers import WandbLogger
 from loguru import logger
 from omegaconf import OmegaConf
 
-from src.ball_tracking.tracknetx.data_module import TrackNetXDataModule
-from src.ball_tracking.tracknetx.model import TrackNetXModel
-from src.ball_tracking.tracknetx.utils import model_summary, evaluation, plot_result
+from data_module import TrackNetXDataModule
+from model import TrackNetXModel
+from utils import model_summary, evaluation, plot_result
+
+def seed_everything(seed: int = 42):
+    """
+    Set seed for reproducibility.
+    
+    Args:
+        seed (int): Random seed value.
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # For multi-GPU setups
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def main():
     """Main training function."""
+    seed_everything(42)
     # Load configuration
     config = OmegaConf.load("configs/default_config.yaml")
     logger.remove()
@@ -81,8 +98,9 @@ def main():
     )
 
     # Train the model
+    # checkpoint_path = "/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/tracknetx/exp-stride=1-weighted_msee/model-epoch=47-val_total_loss=0.00.ckpt"
     logger.info("Starting training with validation...")
-    trainer.fit(model, data_module)
+    trainer.fit(model, data_module) # , ckpt_path=checkpoint_path
 
     # Test the model
     logger.info("Starting testing...")

@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-# from PIL import Image, ImageSequence
+from PIL import Image, ImageSequence
+import parse
 
 # HEIGHT = 333
 # WIDTH = 3250
@@ -769,3 +770,4 @@ def show_prediction(x, y, y_pred, y_coor, input_type, save_dir):
             duration=1000,
             loop=0,
         )
+        
