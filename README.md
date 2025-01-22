@@ -17,6 +17,54 @@
 - [Citation](#citation)
 - [Contact](#contact)
 
+## Documentation
+
+Detailed documentation is available in the `docs/` directory:
+
+- [Ground Truth Creation](docs/ground_truth_creation.md): Creating MOT files with dynamic bounding boxes
+- [Visualization Guide](docs/visualization.md): Options for visualizing tracking results
+- [Data Processing](docs/data_processing.md): Data preprocessing and transformation
+
+## Project Structure
+
+- `src/`: Core source code and modules
+- `configs/`: Configuration files using OmegaConf
+- `scripts/`: Utility and processing scripts
+- `data/`: Data storage (gitignored except `.gitkeep`)
+- `models/`: Model storage (gitignored except `.gitkeep`)
+- `notebooks/`: Jupyter notebooks for analysis
+- `docs/`: Project documentation
+
+## Quick Start
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Create ground truth MOT files:
+   ```bash
+   ./scripts/create_ground_truth_fixed_bboxes.sh <match_id>
+   ```
+
+3. Visualize results:
+   ```bash
+   # With player IDs
+   ./scripts/create_ground_truth_fixed_bboxes.sh <match_id>
+   
+   # Without player IDs (unique colors)
+   ./scripts/create_ground_truth_fixed_bboxes.sh <match_id> --no-ids
+   ```
+
+## Development Guidelines
+
+- **Python Version**: Requires Python 3.12+
+- **Formatting**: Uses [ruff](https://github.com/charliermarsh/ruff) for linting and formatting
+- **Type Hints & Docstrings**: Comprehensive type hinting and detailed docstrings required
+- **Version Control**: Git with appropriate `.gitignore` configuration
+
+For more details, see the documentation in the `docs/` directory.
+
 ## Overview
 
 **SoccerTrack-V2** is an advanced dataset designed for soccer game analysis, building upon the foundation of the original SoccerTrack project. This version introduces a larger collection of full-pitch view videos, tracking data, event data, and supports the  Game State Reconstruction (GS-HOTA) evaluation metric. SoccerTrack-V2 aims to facilitate research in player tracking, event detection, game state analysis, and performance evaluation in soccer.
