@@ -1,0 +1,7 @@
+train: /home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/yolo_dataset-stride-1/images/train
+val:   /home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/yolo_dataset-stride-1/images/val
+test:  /home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/yolo_dataset-stride-1/images/test
+
+nc: 1
+names:
+  0: ball

@@ -70,14 +70,14 @@ ball_tracking:
     out_channels: ${ball_tracking.data.num_frame}
     
     # Training parameters
-    epochs: 300
+    epochs: 100
     learning_rate: 0.001
     tolerance: 4
     save_dir: "exp-stride=1-weighted_msee"
     debug: false
     data_dir: "${interim_data_path}/ball_tracking_dataset-stride-1"
     devices: [0]
-    early_stop_patience: 50
+    early_stop_patience: 30
     
     # Loss configuration
     main_loss: "weighted_mse"  # choices: weighted_bce, focal_wbce, kl_div, bce
