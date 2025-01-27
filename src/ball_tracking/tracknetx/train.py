@@ -11,6 +11,7 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 from loguru import logger
+from src.ball_tracking.tracknetx.evaluate_callback import EvaluateAndLogCallback  # Use internal evaluate_tracknet_model
 from omegaconf import OmegaConf
 
 from data_module import TrackNetXDataModule
@@ -32,12 +33,11 @@ def seed_everything(seed: int = 42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-
 def main():
     """Main training function."""
     seed_everything(42)
     # Load configuration
-    config = OmegaConf.load("configs/default_config.yaml")
+    config = OmegaConf.load("/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/tracknetx/SoccerTrack-v2/configs/default_config.yaml")
     logger.remove()
     logger.add(sys.stderr, level=config.log_level)
     config = config.ball_tracking
@@ -71,6 +71,35 @@ def main():
         sigma=config.data.sigma,
         splits=list(config.data.splits.keys()),
     )
+    
+    # Load validation data
+    sequences = np.load("/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/ball_tracking_dataset-stride-1/val/sequences.npy", allow_pickle=True)
+    coordinates = np.load("/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/ball_tracking_dataset-stride-1/val/coordinates.npy", allow_pickle=True)
+    visibility = np.load("/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/SoccerTrack-v2/data/interim/ball_tracking_dataset-stride-1/val/visibility.npy", allow_pickle=True)
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Define distance thresholds and corresponding output directories
+    distance_thresholds_list = [
+        [5, 4, 3, 2, 1],
+        [20, 10, 5, 2, 1]
+    ]
+    output_dir_list = [
+        "/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/tracknetx/SoccerTrack-v2/src/ball_tracking/tracknetx/valid_result/thres5_500_2",
+        "/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/tracknetx/SoccerTrack-v2/src/ball_tracking/tracknetx/valid_result/thres20_500_2"
+    ]
+
+    # Create EvaluateAndLogCallback instance
+    eval_callback = EvaluateAndLogCallback(
+        sequences=sequences,
+        coordinates=coordinates,
+        visibility=visibility,
+        model_checkpoint=None,
+        device=device,
+        distance_thresholds_list=distance_thresholds_list,
+        output_dir_list=output_dir_list,
+        draw_visualizations=False  # Disable visualization during training
+    )
 
     # Configure callbacks
     callbacks = [
@@ -86,6 +115,7 @@ def main():
             patience=config.train.early_stop_patience,
             mode="min",
         ),
+        eval_callback
     ]
 
     # Initialize trainer
@@ -97,15 +127,14 @@ def main():
         callbacks=callbacks,
     )
 
-    # Train the model
-    # checkpoint_path = "/home/nakamura/desktop/playbox/ball_detection/TrackNetV3/tracknetx/exp-stride=1-weighted_msee/model-epoch=47-val_total_loss=0.00.ckpt"
+
     logger.info("Starting training with validation...")
     trainer.fit(model, data_module) # , ckpt_path=checkpoint_path
+
 
     # Test the model
     logger.info("Starting testing...")
     trainer.test(model, data_module)
-
 
 if __name__ == "__main__":
     main()

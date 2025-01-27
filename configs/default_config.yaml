@@ -77,6 +77,7 @@ ball_tracking:
     debug: false
     data_dir: "${interim_data_path}/ball_tracking_dataset"
     devices: [0]
+
     early_stop_patience: 25
     
     # Loss configuration
