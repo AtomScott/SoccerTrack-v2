@@ -9,8 +9,8 @@ from typing import Any
 from dataclasses import dataclass
 from omegaconf import DictConfig
 
-from src.ball_tracking.tracknetx.dataset import TrackNetX_Dataset
-from src.ball_tracking.tracknetx.data_transforms import RandomCrop, RandomHorizontalFlip, Resize
+from dataset import TrackNetX_Dataset
+from data_transforms import RandomCrop, RandomHorizontalFlip, Resize
 
 
 def collate_fn(batch):
