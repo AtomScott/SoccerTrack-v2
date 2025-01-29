@@ -1,53 +1,38 @@
-<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="629px" height="441px" viewBox="-0.5 -0.5 629 441" content="&lt;mxfile&gt;&lt;diagram id=&quot;XlpM2ySgYpREaOkbm_Kc&quot; name=&quot;Page-1&quot;&gt;3ZZdb4IwFIZ/DbeGFkW9FT92s5uZbJemQgfdgDalCuzX7yCtQJjRmEznrjh9+56252lDazleUqwkEdEzD2hsYTsoLGduYYxcZMOnUkqtoJFWQskCrTXCmn1RLRrbjgU06xgV57Fioiv6PE2przoakZLnXds7j7uzChLSnrD2SdxX31igolqd4HGjP1EWRmZm5E7rnoQYs64ki0jA85bkLCzHk5yrOkoKj8YVPcOlzlue6D0uTNJUXZKA64Q9iXe6Nms8g1X60QYs4/lGkJRLkpBBIoYWdmMYdbaVEIVV9EJyyH6F3eDwXTIA1PMM7albIHtiKlalwZhHTNG1IH7VzuGsgDtSSQwtBGG/Fl3enkpFi5aka1tRnlAlS7DoXjOpPmjY1u282TXkai1q7ZjJI/qghMeRG5YQaJw/o3XPoYXzxLaSKBqcoewdjX8atmPfkfb4Ctob9NC8R/iOvCfX8Mb/ireDb8h7eo73Jy0FZ6nKBh8ZT/vkBAPv4aKsRk2qGw54VBmHe0kIlobZ/X/Rw+ENoZr3xGmqAKYYpKJ8HJ73BYouAFo+NtCR+3tAodm8/Q59rSe0s/gG&lt;/diagram&gt;&lt;/mxfile&gt;">
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="1140px" height="1071px" viewBox="-0.5 -0.5 1140 1071" content="&lt;mxfile&gt;&lt;diagram id=&quot;XlpM2ySgYpREaOkbm_Kc&quot; name=&quot;Page-1&quot;&gt;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&lt;/diagram&gt;&lt;/mxfile&gt;">
     <defs/>
     <g>
-        <rect x="0" y="0" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <path d="M 329 110 Q 329 80 449 80 Q 569 80 569 103.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 569 108.88 L 565.5 101.88 L 569 103.63 L 572.5 101.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 329 110 Q 329 0 569 0 Q 809 0 809 103.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 809 108.88 L 805.5 101.88 L 809 103.63 L 812.5 101.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="249" y="110" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-dasharray="3 3" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 40px; margin-left: 1px;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 150px; margin-left: 250px;">
                         <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
                             <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
-                                {match_id}_panorama.mp4
+                                {match_id}_panorama_1.mp4
                                 <br/>
-                                Raw Video File
+                                1st Half Video File
                                 <br/>
                                 4096x1080
                             </div>
                         </div>
                     </div>
                 </foreignObject>
-                <text x="80" y="44" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
-                    {match_id}_panorama.mp4...
+                <text x="329" y="154" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_panorama_1.mp4...
                 </text>
             </switch>
         </g>
-        <rect x="220" y="0" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <path d="M 569 110 Q 569 20 689 20 Q 809 20 809 103.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 809 108.88 L 805.5 101.88 L 809 103.63 L 812.5 101.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="489" y="110" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 40px; margin-left: 221px;">
-                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
-                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
-                                {match_id}_calibrated_panorama.mp4
-                                <br/>
-                                Calibrated Video File
-                                <br/>
-                                4096x1080
-                            </div>
-                        </div>
-                    </div>
-                </foreignObject>
-                <text x="300" y="44" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
-                    {match_id}_calibrated_pano...
-                </text>
-            </switch>
-        </g>
-        <rect x="440" y="0" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
-        <g transform="translate(-0.5 -0.5)">
-            <switch>
-                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 40px; margin-left: 441px;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 150px; margin-left: 490px;">
                         <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
                             <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
                                 {match_id}_calibrated_panorama_1.mp4
@@ -59,16 +44,250 @@
                         </div>
                     </div>
                 </foreignObject>
-                <text x="520" y="44" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                <text x="569" y="154" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
                     {match_id}_calibrated_pano...
                 </text>
             </switch>
         </g>
-        <rect x="440" y="120" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="9" y="350" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-dasharray="3 3" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 160px; margin-left: 441px;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 390px; margin-left: 10px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_keypoints.json
+                                <br/>
+                                Raw Annotated Keypoints
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="89" y="394" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_keypoints.json...
+                </text>
+            </switch>
+        </g>
+        <path d="M 329 350 L 562.96 272.01" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 567.94 270.35 L 562.41 275.89 L 562.96 272.01 L 560.19 269.25 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="249" y="350" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 390px; margin-left: 250px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_mapx.npy
+                                <br/>
+                                pitch to image point mappings
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="329" y="394" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_mapx.npy...
+                </text>
+            </switch>
+        </g>
+        <rect x="249" y="430" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 470px; margin-left: 250px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_mapy.npy
+                                <br/>
+                                pitch to image point mappings
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="329" y="474" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_mapy.npy...
+                </text>
+            </switch>
+        </g>
+        <path d="M 89 670 Q 89 650 209 650 Q 329 650 329 663.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 329 668.88 L 325.5 661.88 L 329 663.63 L 332.5 661.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="9" y="670" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-dasharray="3 3" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 710px; margin-left: 10px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_tracker_box_data.xml
+                                <br/>
+                                Raw Coordinate Data
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="89" y="714" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_tracker_box_dat...
+                </text>
+            </switch>
+        </g>
+        <path d="M 329 670 Q 329 650 489 650 Q 649 650 649 663.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 649 668.88 L 645.5 661.88 L 649 663.63 L 652.5 661.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="249" y="670" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 710px; margin-left: 250px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_pitch_plane_cooridnates_1st_half.csv
+                                <br/>
+                                Formatted Coordinate Data
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="329" y="714" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_pitch_plane_coo...
+                </text>
+            </switch>
+        </g>
+        <rect x="569" y="670" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 710px; margin-left: 570px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_calibrated_image_plane_bbox_1st_half.csv
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="649" y="714" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_calibrated_imag...
+                </text>
+            </switch>
+        </g>
+        <path d="M 329 1070 Q 329 1030 649 1030 Q 969 1030 969 756.37" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 969 751.12 L 972.5 758.12 L 969 756.37 L 965.5 758.12 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="889" y="670" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 710px; margin-left: 890px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_calibrated_image_plane_bbox_1st_half.csv
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="969" y="714" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_calibrated_imag...
+                </text>
+            </switch>
+        </g>
+        <path d="M 89 350 Q 89 320 209 320 Q 329 320 329 343.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 329 348.88 L 325.5 341.88 L 329 343.63 L 332.5 341.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="179" y="290" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 58px; height: 1px; padding-top: 305px; margin-left: 180px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                generate_calibration_mappings.sh
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="209" y="308" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    generate_cal...
+                </text>
+            </switch>
+        </g>
+        <rect x="419" y="50" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 58px; height: 1px; padding-top: 65px; margin-left: 420px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                calibrate_camera_from_mappings.sh
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="449" y="68" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    calibrate_ca...
+                </text>
+            </switch>
+        </g>
+        <rect x="9" y="110" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-dasharray="3 3" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 150px; margin-left: 10px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_panorama.mp4
+                                <br/>
+                                Raw Video File
+                                <br/>
+                                4096x1080
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="89" y="154" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_panorama.mp4...
+                </text>
+            </switch>
+        </g>
+        <path d="M 89 110 Q 89 80 209 80 Q 329 80 329 103.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 329 108.88 L 325.5 101.88 L 329 103.63 L 332.5 101.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="179" y="50" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 58px; height: 1px; padding-top: 65px; margin-left: 180px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                trim_video_into_halves.sh
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="209" y="68" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    trim_video_i...
+                </text>
+            </switch>
+        </g>
+        <rect x="249" y="190" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-dasharray="3 3" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 230px; margin-left: 250px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_panorama_2.mp4
+                                <br/>
+                                2nd Half Video File
+                                <br/>
+                                4096x1080
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="329" y="234" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_panorama_2.mp4...
+                </text>
+            </switch>
+        </g>
+        <rect x="489" y="190" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 230px; margin-left: 490px;">
                         <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
                             <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
                                 {match_id}_calibrated_panorama_2.mp4
@@ -80,65 +299,318 @@
                         </div>
                     </div>
                 </foreignObject>
-                <text x="520" y="164" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                <text x="569" y="234" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
                     {match_id}_calibrated_pano...
                 </text>
             </switch>
         </g>
-        <rect x="0" y="240" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="97" y="620" width="224" height="30" fill="none" stroke="none" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 280px; margin-left: 1px;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 222px; height: 1px; padding-top: 635px; margin-left: 98px;">
                         <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
-                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
-                                {match_id}_keypoints.json
-                                <br/>
-                                pitch to image point mappings
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                convert_raw_to_pitch_plane.sh
                             </div>
                         </div>
                     </div>
                 </foreignObject>
-                <text x="80" y="284" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
-                    {match_id}_keypoints.json...
+                <text x="209" y="638" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    convert_raw_to_pitch_plane.sh
                 </text>
             </switch>
         </g>
-        <rect x="200" y="240" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="249" y="750" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 280px; margin-left: 201px;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 790px; margin-left: 250px;">
                         <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
                             <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
-                                {match_id}_mapx.npy
+                                {match_id}_pitch_plane_cooridnates_2nd_half.csv
                                 <br/>
-                                pitch to image point mappings
+                                Formatted Coordinate Data
                             </div>
                         </div>
                     </div>
                 </foreignObject>
-                <text x="280" y="284" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
-                    {match_id}_mapx.npy...
+                <text x="329" y="794" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_pitch_plane_coo...
                 </text>
             </switch>
         </g>
-        <rect x="200" y="360" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <path d="M 409 780 Q 429 780 429 790 Q 429 800 415.37 800" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 410.12 800 L 417.12 796.5 L 415.37 800 L 417.12 803.5 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="339" y="620" width="300" height="30" fill="none" stroke="none" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 400px; margin-left: 201px;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 298px; height: 1px; padding-top: 635px; margin-left: 340px;">
                         <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
-                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
-                                {match_id}_mapy.npy
-                                <br/>
-                                pitch to image point mappings
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                convert_pitch_plane_to_image_plane.sh
                             </div>
                         </div>
                     </div>
                 </foreignObject>
-                <text x="280" y="404" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
-                    {match_id}_mapy.npy...
+                <text x="489" y="638" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    convert_pitch_plane_to_image_plane.sh
+                </text>
+            </switch>
+        </g>
+        <rect x="569" y="750" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 790px; margin-left: 570px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_calibrated_image_plane_bbox_2nd_half.csv
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="649" y="794" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_calibrated_imag...
+                </text>
+            </switch>
+        </g>
+        <rect x="569" y="830" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 870px; margin-left: 570px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_calibrated_image_plane_bbox_1st_half.csv
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="649" y="874" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_calibrated_imag...
+                </text>
+            </switch>
+        </g>
+        <rect x="569" y="910" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 950px; margin-left: 570px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_calibrated_image_plane_bbox_2nd_half.csv
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="649" y="954" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_calibrated_imag...
+                </text>
+            </switch>
+        </g>
+        <path d="M 329 590 L 642.82 668.46" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 647.92 669.73 L 640.28 671.43 L 642.82 668.46 L 641.97 664.64 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 641px; margin-left: 514px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 11px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; background-color: rgb(255, 255, 255); white-space: nowrap;">
+                                Text
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="514" y="644" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="11px" text-anchor="middle">
+                    Text
+                </text>
+            </switch>
+        </g>
+        <rect x="249" y="510" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 550px; margin-left: 250px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_camera_intrinsics.npz
+                                <br/>
+                                camera_intrinsics such as K and D vectors
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="329" y="554" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_camera_intrinsi...
+                </text>
+            </switch>
+        </g>
+        <path d="M 649 670 Q 649 650 809 650 Q 969 650 969 663.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 969 668.88 L 965.5 661.88 L 969 663.63 L 972.5 661.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="659" y="620" width="300" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 298px; height: 1px; padding-top: 635px; margin-left: 660px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                convert_raw_to_pitch_plane.sh
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="809" y="638" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    convert_raw_to_pitch_plane.sh
+                </text>
+            </switch>
+        </g>
+        <rect x="889" y="750" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 790px; margin-left: 890px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_calibrated_image_plane_bbox_1st_half.csv
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="969" y="794" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_calibrated_imag...
+                </text>
+            </switch>
+        </g>
+        <rect x="969" y="110" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 150px; margin-left: 970px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_bbox_models.joblib
+                                <br/>
+                                Models Parameters for Estimating Bbox Sizes
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="1049" y="154" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_bbox_models.job...
+                </text>
+            </switch>
+        </g>
+        <rect x="969" y="190" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 230px; margin-left: 970px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_height_regression.png
+                                <br/>
+                                Plot Bbox height &amp; Image y-axis Correlation
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="1049" y="234" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_height_regressi...
+                </text>
+            </switch>
+        </g>
+        <rect x="969" y="270" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 310px; margin-left: 970px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_width_regression.png
+                                <br/>
+                                Plot Bbox Width &amp; Image x-axis Correlation
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="1049" y="314" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_width_regressio...
+                </text>
+            </switch>
+        </g>
+        <rect x="729" y="110" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 150px; margin-left: 730px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_detections_calibrated.csv
+                                <br/>
+                                Objects Detection in Calibrated Video File
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="809" y="154" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_detections_cali...
+                </text>
+            </switch>
+        </g>
+        <path d="M 809 110 Q 809 90 929 90 Q 1049 90 1049 103.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 1049 108.88 L 1045.5 101.88 L 1049 103.63 L 1052.5 101.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="889" y="60" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 58px; height: 1px; padding-top: 75px; margin-left: 890px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                calibrate_camera_from_mappings.sh
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="919" y="78" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    calibrate_ca...
+                </text>
+            </switch>
+        </g>
+        <rect x="729" y="190" width="160" height="80" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 158px; height: 1px; padding-top: 230px; margin-left: 730px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                {match_id}_detections.csv
+                                <br/>
+                                Objects Detection in distorted Video File
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="809" y="234" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    {match_id}_detections.csv...
+                </text>
+            </switch>
+        </g>
+        <rect x="719" y="0" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 58px; height: 1px; padding-top: 15px; margin-left: 720px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 10px; font-family: &quot;Courier New&quot;; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: normal; overflow-wrap: normal;">
+                                generate_detections.sh
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="749" y="18" fill="rgb(0, 0, 0)" font-family="Courier New" font-size="10px" text-anchor="middle">
+                    generate_det...
                 </text>
             </switch>
         </g>
