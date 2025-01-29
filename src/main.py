@@ -5,6 +5,8 @@ from types import ModuleType
 from loguru import logger
 from omegaconf import OmegaConf
 from rich.traceback import install as install_rich_traceback
+import inspect
+import re
 
 install_rich_traceback()
 
@@ -41,17 +43,53 @@ def load_commands() -> dict[str, callable]:
 
 
 def run_command(command: str, config: OmegaConf) -> None:
-    """Run a command with the given configuration."""
     commands = load_commands()
 
-    if command in commands:
-        # Get the config section matching the command name (with underscores)
-        config_section = config.get(command, {})
-        commands[command](**config_section)
-    else:
+    if command not in commands:
         available_commands = ", ".join(sorted(commands.keys()))
         logger.error(f"Unknown command: {command}")
         logger.info(f"Available commands: {available_commands}")
+        return
+
+    command_func = commands[command]
+    config_section = config.get(command, {})
+
+    try:
+        command_func(**config_section)
+
+    except TypeError as e:
+        # Gather information about the function signature
+        sig = inspect.signature(command_func)
+        available_args = list(sig.parameters.keys())
+        passed_args = list(config_section.keys())
+
+        logger.error(f"Failed to run command '{command}': {e}")
+
+        # 1) Show the available arguments
+        logger.info(f"Available arguments for '{command}': {available_args}")
+
+        # 2) Show the arguments that were actually passed
+        logger.info(f"Provided arguments: {passed_args}")
+
+        # Attempt to detect an unexpected argument by parsing the error message
+        match = re.search(r"got an unexpected keyword argument '(.*)'", str(e))
+        if match:
+            unexpected_arg = match.group(1)
+            logger.warning(f"Unexpected argument detected: '{unexpected_arg}'")
+
+        # 3) Check for required (positional) arguments that were not passed
+        required_args = [
+            name
+            for name, param in sig.parameters.items()
+            if (param.default is param.empty and param.kind in (param.POSITIONAL_OR_KEYWORD, param.KEYWORD_ONLY))
+        ]
+        missing_required_args = set(required_args) - set(passed_args)
+        if missing_required_args:
+            logger.warning(f"Missing required arguments for '{command}': {missing_required_args}")
+
+    except Exception as e:
+        # Catch any other errors your command might raise
+        logger.exception(f"An error occurred while running '{command}': {e}")
 
 
 def main() -> None:

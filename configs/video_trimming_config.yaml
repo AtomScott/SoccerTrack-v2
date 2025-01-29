@@ -1,0 +1,31 @@
+# Video trimming configuration
+
+defaults:
+  - default_config
+
+paths:
+  raw_video: ${paths.raw_dir}/${match.id}/${match.id}_panorama.mp4
+  padding_info: ${paths.raw_dir}/${match.id}/${match.id}_padding_info.csv
+  output_dir: ${paths.interim_dir}/${match.id}
+
+trim_video_into_halves:
+  input_video_path: ${paths.raw_video}
+  padding_info_path: ${paths.padding_info}
+  output_dir: ${paths.output_dir}
+
+# Frame padding settings
+padding:
+  start_frames: 30    # Number of frames to include before the start of each half
+  end_frames: 30      # Number of frames to include after the end of each half
+
+# Video output settings
+output:
+  codec: "libx264"    # Video codec for output files
+  crf: 23            # Constant Rate Factor (18-28 is good, lower is better quality)
+  preset: "medium"    # Encoding preset (slower = better compression)
+
+# Frame extraction settings
+frame_extraction:
+  start_frame_buffer: 10   # Extra frames to check before detected start
+  end_frame_buffer: 10     # Extra frames to check after detected end
+  min_sequence_length: 100  # Minimum number of frames for a valid sequence 

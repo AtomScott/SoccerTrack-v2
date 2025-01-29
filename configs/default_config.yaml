@@ -99,18 +99,13 @@ coordinates:
   path: "${interim_data_path}/pitch_plane_coordinates/${match.id}/${match.id}_pitch_plane_coordinates.csv"
 
 plot_coordinates_on_video:
-  homography_path: ${video.homography}
   coordinates_path: ${coordinates.path}
   video_path: ${video.calibrated_videos}
   match_id: ${match.id}
   output_path: "${interim_data_path}/annotated_videos/${match.id}/${match.id}_plot_coordinates_on_video.mp4"
   first_frame_only: ${match.first_frame_only}
-  event_period: ${match.event_period}
-  team_colors: ${visualization.team_colors}
-  track_colors: ${visualization.track_colors}
+  colors: ${visualization.team_colors}
   point_sizes: ${visualization.point_sizes}
-  pitch_length: ${pitch_length}
-  pitch_width: ${pitch_width}
 
 plot_bboxes_on_video:
   video_path: ${video.calibrated_videos}
@@ -171,3 +166,51 @@ create_yolo_dataset:
 
 log_string:
   string: "Hello, world!"
+
+# Video preprocessing
+trim_video_into_halves:
+  padding_frames: 30  # Number of frames to pad at start/end of each half
+
+# Coordinate conversion
+convert_raw_to_pitch_plane:
+  pitch_length: 105.0  # meters
+  pitch_width: 68.0   # meters
+
+# Camera calibration
+generate_calibration_mappings:
+  min_matches: 10
+  ransac_threshold: 3.0
+  confidence: 0.99
+
+calibrate_camera:
+  interpolation: cubic  # Options: linear, cubic
+
+# Coordinate projection
+convert_pitch_plane_to_image_plane:
+  calibrated: true  # Whether to use calibrated or distorted coordinates
+
+# Object detection
+detect_objects:
+  conf: 0.25        # Confidence threshold
+  iou: 0.45         # IOU threshold
+  imgsz: 640        # Input image size
+  tracker_config: "@configs/tracker_config.yaml"
+
+# Visualization
+plot_coordinates_on_video:
+  colors:
+    ball: [255, 0, 0]    # Red
+    "9701": [0, 0, 255]  # Blue
+    "9834": [0, 255, 0]  # Green
+  point_sizes:
+    ball: 3
+    player: 5
+
+plot_bboxes_on_video:
+  colors:
+    ball: [255, 0, 0]    # Red
+    "9701": [0, 0, 255]  # Blue
+    "9834": [0, 255, 0]  # Green
+  line_thickness: 2
+  font_size: 1.0
+  show_ids: true

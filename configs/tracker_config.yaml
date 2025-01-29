@@ -1,0 +1,22 @@
+# YOLOv8 Tracker Configuration
+
+tracker_type: bytetrack  # Options: botsort, bytetrack
+tracker_config:
+  track_high_thresh: 0.5    # Threshold for high confidence tracks
+  track_low_thresh: 0.1     # Threshold for low confidence tracks
+  new_track_thresh: 0.6     # Threshold for creating new tracks
+  track_buffer: 30          # How many frames to keep track of inactive tracks
+  match_thresh: 0.8         # IOU threshold for matching
+  
+# Camera-specific settings
+min_box_area: 100          # Minimum bounding box area
+aspect_ratio_thresh: 3.0    # Maximum aspect ratio for valid detections
+
+# Classes to track (COCO dataset class indices)
+track_classes: 
+  - 0  # person
+
+# Visualization settings
+hide_labels: false         # Hide class labels
+hide_conf: true           # Hide confidence scores
+line_thickness: 2         # Bounding box line thickness 
