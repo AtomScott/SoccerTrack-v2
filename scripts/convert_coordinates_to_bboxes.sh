@@ -2,57 +2,79 @@
 
 # Check if match_id is provided
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <match_id> [--no-ids]"
+    echo "Usage: $0 <match_id>"
     echo "Example: $0 117093"
-    echo "Example with no IDs: $0 117093 --no-ids"
     exit 1
 fi
 
 MATCH_ID=$1
-SHOW_IDS=true
 
-# Check for --no-ids flag
-if [ "$2" = "--no-ids" ]; then
-    SHOW_IDS=false
-fi
+# Define arrays for variants
+HALVES=("first_half" "second_half")
+TYPES=("calibrated" "distorted")
 
-# First, analyze bounding box dimensions and create regression models
-echo "Analyzing bounding box dimensions..."
-uv run python src/data_association/analyze_bbox_dimensions.py \
-    --detections_path "data/interim/${MATCH_ID}/${MATCH_ID}_panorama_test_detections.csv" \
-    --output_dir "data/interim/${MATCH_ID}" \
-    --match_id "${MATCH_ID}" \
-    --conf_threshold 0.3
-
-# Then create ground truth MOT file using the regression models
-if [ $? -eq 0 ]; then
-    echo "Creating ground truth MOT file with dynamic bounding boxes..."
-    uv run python -m src.main \
-        command=create_ground_truth_mot_from_coordinates \
-        match.id=$MATCH_ID \
-        create_ground_truth_mot_from_coordinates.event_period="FIRST_HALF" \
-        create_ground_truth_mot_from_coordinates.match_id=$MATCH_ID \
-        create_ground_truth_mot_from_coordinates.coordinates_path="data/interim/pitch_plane_coordinates/${MATCH_ID}/${MATCH_ID}_pitch_plane_coordinates.csv" \
-        create_ground_truth_mot_from_coordinates.homography_path="data/interim/homography/${MATCH_ID}/${MATCH_ID}_homography.npy" \
-        create_ground_truth_mot_from_coordinates.bbox_models_path="data/interim/${MATCH_ID}/${MATCH_ID}_bbox_models.joblib" \
-        create_ground_truth_mot_from_coordinates.output_path="data/interim/${MATCH_ID}/${MATCH_ID}_ground_truth_mot_dynamic_bboxes.csv"
-
-    # Run visualization if the ground truth was created successfully
-    if [ $? -eq 0 ]; then
-        echo "Ground truth created successfully. Running visualization..."
-        uv run python -m src.main \
-            command=plot_bboxes_on_video \
-            match.id=$MATCH_ID \
-            plot_bboxes_on_video.match_id=$MATCH_ID \
-            plot_bboxes_on_video.video_path="data/interim/${MATCH_ID}/${MATCH_ID}_panorama.mp4" \
-            plot_bboxes_on_video.detections_path="data/interim/${MATCH_ID}/${MATCH_ID}_ground_truth_mot_dynamic_bboxes.csv" \
-            plot_bboxes_on_video.output_path="data/interim/${MATCH_ID}/${MATCH_ID}_plot_bboxes_on_video-ground_truth_mot_dynamic_bboxes.mp4" \
-            plot_bboxes_on_video.show_ids=$SHOW_IDS
+# Function to get video suffix based on half
+get_video_suffix() {
+    local half=$1
+    if [ "$half" = "first_half" ]; then
+        echo "1st_half"
     else
-        echo "Failed to create ground truth MOT file"
-        exit 1
+        echo "2nd_half"
     fi
-else
-    echo "Failed to analyze bounding box dimensions"
-    exit 1
-fi 
+}
+
+# Function to get event period based on half
+get_event_period() {
+    local half=$1
+    if [ "$half" = "first_half" ]; then
+        echo "FIRST_HALF"
+    else
+        echo "SECOND_HALF"
+    fi
+}
+
+# Process each combination
+for HALF in "${HALVES[@]}"; do
+    VIDEO_SUFFIX=$(get_video_suffix "$HALF")
+    EVENT_PERIOD=$(get_event_period "$HALF")
+    
+    for TYPE in "${TYPES[@]}"; do
+        echo "Processing $HALF $TYPE..."
+        
+        # Set paths based on type and half
+        if [ "$TYPE" = "calibrated" ]; then
+            VIDEO_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_calibrated_panorama_${VIDEO_SUFFIX}.mp4"
+            DETECTIONS_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_detections_${VIDEO_SUFFIX}_calibrated.csv"
+        else
+            VIDEO_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_panorama_${VIDEO_SUFFIX}.mp4"
+            DETECTIONS_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_detections_${VIDEO_SUFFIX}_distorted.csv"
+        fi
+        
+        COORDINATES_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_image_plane_coordinates_${VIDEO_SUFFIX}_${TYPE}.csv"
+        OUTPUT_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_ground_truth_mot_${VIDEO_SUFFIX}_${TYPE}.csv"
+        BBOX_MODELS_PATH="data/interim/${MATCH_ID}/${MATCH_ID}_bbox_models_${VIDEO_SUFFIX}_${TYPE}.joblib"
+        # First, analyze bounding box dimensions and create regression models
+        echo "Analyzing bounding box dimensions for $HALF $TYPE..."
+        uv run python src/data_association/analyze_bbox_dimensions.py \
+            --detections_path "$DETECTIONS_PATH" \
+            --output_path "$BBOX_MODELS_PATH" \
+            --match_id "${MATCH_ID}" \
+            --conf_threshold 0.3
+
+        # Then create ground truth MOT file using the regression models
+        if [ $? -eq 0 ]; then
+            echo "Converting coordinates to bounding boxes for $HALF $TYPE..."
+            uv run python -m src.main \
+                command=convert_image_plane_to_bounding_box \
+                match.id=$MATCH_ID \
+                convert_image_plane_to_bounding_box.event_period="$EVENT_PERIOD" \
+                convert_image_plane_to_bounding_box.match_id=$MATCH_ID \
+                convert_image_plane_to_bounding_box.coordinates_path="$COORDINATES_PATH" \
+                convert_image_plane_to_bounding_box.bbox_models_path="$BBOX_MODELS_PATH" \
+                convert_image_plane_to_bounding_box.output_path="$OUTPUT_PATH"
+        else
+            echo "Failed to analyze bounding box dimensions for $HALF $TYPE"
+            continue
+        fi
+    done
+done

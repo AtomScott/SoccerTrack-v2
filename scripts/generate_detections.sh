@@ -11,20 +11,13 @@ MATCH_ID=$1
 
 # Set up paths
 BASE_DIR="data/interim/$MATCH_ID"
-WEIGHTS_PATH="models/yolov8x.pt"
-TRACKER_CONFIG_PATH="configs/tracker_config.yaml"
+WEIGHTS_PATH="models/model=yolov8m-imgsz=2048.pt"
 
 # Check if required files exist
 if [ ! -f "$WEIGHTS_PATH" ]; then
     echo "Error: YOLOv8 weights file not found at $WEIGHTS_PATH"
     exit 1
 fi
-
-if [ ! -f "$TRACKER_CONFIG_PATH" ]; then
-    echo "Error: Tracker config file not found at $TRACKER_CONFIG_PATH"
-    exit 1
-fi
-
 # Define arrays for variants
 HALVES=("first_half" "second_half")
 TYPES=("calibrated" "distorted")
@@ -62,10 +55,9 @@ for HALF in "${HALVES[@]}"; do
             command=detect_objects \
             detect_objects.match_id=$MATCH_ID \
             detect_objects.video_path="$VIDEO_PATH" \
-            detect_objects.output_dir="$BASE_DIR" \
+            detect_objects.output_path="$OUTPUT_PATH" \
             detect_objects.weights_path="$WEIGHTS_PATH" \
-            detect_objects.tracker_config="@$TRACKER_CONFIG_PATH" \
-            detect_objects.event_period=$EVENT_PERIOD
+            detect_objects.vid_stride=200
         
         # Check if detection was successful
         if [ $? -ne 0 ]; then
@@ -73,8 +65,6 @@ for HALF in "${HALVES[@]}"; do
             exit 1
         fi
         
-        # Rename the output file to include the type
-        mv "$BASE_DIR/${MATCH_ID}_detections_${VIDEO_SUFFIX}.csv" "$OUTPUT_PATH"
     done
 done
 

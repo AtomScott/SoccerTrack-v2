@@ -36,20 +36,21 @@ class DetectionResult(dict):
 def detect_objects(
     match_id: str,
     video_path: Path | str,
-    output_dir: Path | str,
+    output_path: Path | str,
     weights_path: Path | str,
     tracker_config: dict | DictConfig,
     event_period: str | None = None,
     conf: float = 0.25,
     iou: float = 0.45,
     imgsz: int = 640,
+    vid_stride: int = 1,
 ) -> None:
     """Run YOLOv8 inference on a single video.
 
     Args:
         match_id: The ID of the match
         video_path: Path to input video
-        output_dir: Directory to save detection results
+        output_path: Path to save detection results
         weights_path: Path to YOLOv8 weights file
         tracker_config: Configuration for the tracker
         event_period: Event period (FIRST_HALF or SECOND_HALF)
@@ -58,7 +59,7 @@ def detect_objects(
         imgsz: Input image size
     """
     video_path = Path(video_path)
-    output_dir = Path(output_dir)
+    output_path = Path(output_path)
     weights_path = Path(weights_path)
 
     # Validate inputs
@@ -70,13 +71,7 @@ def detect_objects(
         raise ValueError("event_period must be either FIRST_HALF or SECOND_HALF")
 
     # Create output directory
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Determine output filename based on event period
-    period_suffix = ""
-    if event_period:
-        period_suffix = "_1st_half" if event_period == "FIRST_HALF" else "_2nd_half"
-    output_csv = output_dir / f"{match_id}_detections{period_suffix}.csv"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Load model
     try:
@@ -110,10 +105,13 @@ def detect_objects(
                 imgsz=imgsz,
                 verbose=False,
                 stream=True,
+                vid_stride=vid_stride,
             )
 
             total_frames = get_total_frames(video_path)
-            for frame_idx, res in enumerate(tqdm(results, desc=f"Processing {video_path.stem}", total=total_frames)):
+            for frame_idx, res in enumerate(
+                tqdm(results, desc=f"Processing {video_path.stem}", total=total_frames // vid_stride)
+            ):
                 for box in res.boxes:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     detections.append(
@@ -149,9 +147,9 @@ def detect_objects(
             ]
             df = df[mot_columns]
             df[["frame", "id"]] = df[["frame", "id"]].astype(int)
-            df.to_csv(output_csv, index=False, header=False)
+            df.to_csv(output_path, index=False, header=False)
 
-            logger.success(f"Processed {video_path}. Results saved to {output_csv}")
+            logger.success(f"Processed {video_path}. Results saved to {output_path}")
 
         except Exception as e:
             logger.error(f"Failed to process video {video_path}: {e}")

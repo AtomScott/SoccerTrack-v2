@@ -13,7 +13,7 @@ import joblib
 
 def analyze_bbox_dimensions(
     detections_path: Path | str,
-    output_dir: Path | str,
+    output_path: Path | str,
     match_id: str,
     conf_threshold: float = 0.3,
 ) -> tuple[tuple[PolynomialFeatures, LinearRegression], LinearRegression]:
@@ -24,7 +24,7 @@ def analyze_bbox_dimensions(
 
     Args:
         detections_path: Path to the detections CSV file
-        output_dir: Directory to save analysis plots
+        output_path: Path to save analysis files
         match_id: Match ID for file naming
         conf_threshold: Confidence threshold for filtering detections
 
@@ -46,8 +46,8 @@ def analyze_bbox_dimensions(
     detections["bottom_y"] = detections["bb_top"] + detections["bb_height"]
 
     # Create output directory
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Save the data ranges for normalization during prediction
     model_info = {
@@ -57,43 +57,43 @@ def analyze_bbox_dimensions(
         "height_range": (float(detections["bb_height"].min()), float(detections["bb_height"].max())),
     }
 
-    # Analyze width correlation with polynomial
-    plt.figure(figsize=(10, 6))
-    plt.scatter(detections["center_x"], detections["bb_width"], alpha=0.1)
-    plt.xlabel("X Position")
-    plt.ylabel("Bounding Box Width")
-    plt.title("X Position vs Bounding Box Width")
+    # # Analyze width correlation with polynomial
+    # plt.figure(figsize=(10, 6))
+    # plt.scatter(detections["center_x"], detections["bb_width"], alpha=0.1)
+    # plt.xlabel("X Position")
+    # plt.ylabel("Bounding Box Width")
+    # plt.title("X Position vs Bounding Box Width")
 
-    # Calculate correlation
-    width_correlation = stats.pearsonr(detections["center_x"], detections["bb_width"])
-    plt.text(
-        0.05,
-        0.95,
-        f"Correlation: {width_correlation[0]:.3f}\np-value: {width_correlation[1]:.3e}",
-        transform=plt.gca().transAxes,
-    )
+    # # Calculate correlation
+    # width_correlation = stats.pearsonr(detections["center_x"], detections["bb_width"])
+    # plt.text(
+    #     0.05,
+    #     0.95,
+    #     f"Correlation: {width_correlation[0]:.3f}\np-value: {width_correlation[1]:.3e}",
+    #     transform=plt.gca().transAxes,
+    # )
 
-    plt.savefig(output_dir / f"{match_id}_width_correlation.png")
-    plt.close()
+    # plt.savefig(output_path.with_suffix(".width_correlation.png"))
+    # plt.close()
 
-    # Analyze height correlation
-    plt.figure(figsize=(10, 6))
-    plt.scatter(detections["bottom_y"], detections["bb_height"], alpha=0.1)
-    plt.xlabel("Y Position (Bottom)")
-    plt.ylabel("Bounding Box Height")
-    plt.title("Y Position vs Bounding Box Height")
+    # # Analyze height correlation
+    # plt.figure(figsize=(10, 6))
+    # plt.scatter(detections["bottom_y"], detections["bb_height"], alpha=0.1)
+    # plt.xlabel("Y Position (Bottom)")
+    # plt.ylabel("Bounding Box Height")
+    # plt.title("Y Position vs Bounding Box Height")
 
-    # Calculate correlation
-    height_correlation = stats.pearsonr(detections["bottom_y"], detections["bb_height"])
-    plt.text(
-        0.05,
-        0.95,
-        f"Correlation: {height_correlation[0]:.3f}\np-value: {height_correlation[1]:.3e}",
-        transform=plt.gca().transAxes,
-    )
+    # # Calculate correlation
+    # height_correlation = stats.pearsonr(detections["bottom_y"], detections["bb_height"])
+    # plt.text(
+    #     0.05,
+    #     0.95,
+    #     f"Correlation: {height_correlation[0]:.3f}\np-value: {height_correlation[1]:.3e}",
+    #     transform=plt.gca().transAxes,
+    # )
 
-    plt.savefig(output_dir / f"{match_id}_height_correlation.png")
-    plt.close()
+    # plt.savefig(output_path.with_suffix(".height_correlation.png"))
+    # plt.close()
 
     # Fit regression models
     # For width model - polynomial
@@ -124,7 +124,7 @@ def analyze_bbox_dimensions(
         transform=plt.gca().transAxes,
     )
     plt.legend()
-    plt.savefig(output_dir / f"{match_id}_width_regression.png")
+    plt.savefig(output_path.with_suffix(".width_regression.png"))
     plt.close()
 
     plt.figure(figsize=(10, 6))
@@ -136,7 +136,7 @@ def analyze_bbox_dimensions(
     plt.title("Height Regression Model")
     plt.text(0.05, 0.95, f"R² Score: {height_model.score(X_height, y_height):.3f}", transform=plt.gca().transAxes)
     plt.legend()
-    plt.savefig(output_dir / f"{match_id}_height_regression.png")
+    plt.savefig(output_path.with_suffix(".height_regression.png"))
     plt.close()
 
     # Print model coefficients
@@ -149,7 +149,7 @@ def analyze_bbox_dimensions(
     logger.info("Saving regression models and data ranges")
     joblib.dump(
         {"width_poly": poly, "width_model": width_model, "height_model": height_model, "ranges": model_info},
-        output_dir / f"{match_id}_bbox_models.joblib",
+        output_path,
     )
 
     return (poly, width_model), height_model
@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Analyze bounding box dimensions correlation with position")
     parser.add_argument("--detections_path", type=str, required=True, help="Path to detections CSV file")
-    parser.add_argument("--output_dir", type=str, required=True, help="Directory to save analysis plots")
+    parser.add_argument("--output_path", type=str, required=True, help="Path to save analysis files")
     parser.add_argument("--match_id", type=str, required=True, help="Match ID for file naming")
     parser.add_argument(
         "--conf_threshold", type=float, default=0.3, help="Confidence threshold for filtering detections"
@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
     width_model, height_model = analyze_bbox_dimensions(
         detections_path=args.detections_path,
-        output_dir=args.output_dir,
+        output_path=args.output_path,
         match_id=args.match_id,
         conf_threshold=args.conf_threshold,
     )

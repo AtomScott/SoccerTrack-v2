@@ -101,7 +101,7 @@ def plot_coordinates_on_video(
     coordinates_df = pd.read_csv(coordinates_path)
 
     # Initialize video decoder
-    decoder = FFdecoder(str(f"file://{video_path.resolve()}"), frame_format="bgr24").formulate()
+    decoder = FFdecoder(str(video_path.resolve()), frame_format="bgr24").formulate()
 
     if first_frame_only:
         try:
@@ -129,7 +129,7 @@ def plot_coordinates_on_video(
             "-input_framerate": input_framerate,
             "-vcodec": "libx264",
         }
-        writer = WriteGear(output=f"file://{output_path}", logging=True, **output_params)
+        writer = WriteGear(output=str(output_path.resolve()), logging=True, **output_params)
 
         try:
             for frame_num, frame in enumerate(tqdm(decoder.generateFrame(), desc="Processing frames")):
