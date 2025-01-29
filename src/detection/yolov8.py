@@ -14,7 +14,7 @@ from ultralytics import YOLO
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 
-from video_utils import get_total_frames
+from ..video_utils import get_total_frames
 
 
 class DetectionResult(dict):
@@ -34,10 +34,12 @@ class DetectionResult(dict):
 
 
 def detect_objects(
+    match_id: str,
     video_path: Path | str,
     output_dir: Path | str,
     weights_path: Path | str,
     tracker_config: dict | DictConfig,
+    event_period: str | None = None,
     conf: float = 0.25,
     iou: float = 0.45,
     imgsz: int = 640,
@@ -45,10 +47,12 @@ def detect_objects(
     """Run YOLOv8 inference on a single video.
 
     Args:
+        match_id: The ID of the match
         video_path: Path to input video
         output_dir: Directory to save detection results
         weights_path: Path to YOLOv8 weights file
         tracker_config: Configuration for the tracker
+        event_period: Event period (FIRST_HALF or SECOND_HALF)
         conf: Confidence threshold
         iou: IOU threshold
         imgsz: Input image size
@@ -62,10 +66,17 @@ def detect_objects(
         raise FileNotFoundError(f"Video file not found: {video_path}")
     if not weights_path.exists():
         raise FileNotFoundError(f"Weights file not found: {weights_path}")
+    if event_period and event_period not in ["FIRST_HALF", "SECOND_HALF"]:
+        raise ValueError("event_period must be either FIRST_HALF or SECOND_HALF")
 
     # Create output directory
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_csv = output_dir / f"{video_path.stem}_detections.csv"
+
+    # Determine output filename based on event period
+    period_suffix = ""
+    if event_period:
+        period_suffix = "_1st_half" if event_period == "FIRST_HALF" else "_2nd_half"
+    output_csv = output_dir / f"{match_id}_detections{period_suffix}.csv"
 
     # Load model
     try:

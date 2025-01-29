@@ -1,5 +1,144 @@
 # SoccerTrack-V2
 
+A comprehensive toolkit for soccer player tracking and analysis.
+
+## Features
+
+- Video preprocessing and calibration
+- Player and ball tracking
+- Coordinate conversion and projection
+- Ground truth data generation
+- Visualization tools
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/SoccerTrack-v2.git
+cd SoccerTrack-v2
+
+# Install dependencies using uv
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
+
+## Ground Truth Creation Pipeline
+
+The toolkit provides a complete pipeline for creating ground truth data from soccer match videos. The pipeline includes:
+
+1. Video preprocessing (trimming into halves)
+2. Coordinate conversion (raw XML to pitch plane)
+3. Camera calibration
+4. Coordinate projection (pitch plane to image plane)
+5. Object detection using YOLOv8
+6. Coordinate to bounding box conversion
+7. Visualization generation
+
+### Quick Start
+
+Process a single match:
+```bash
+./scripts/create_ground_truth.sh 117093
+```
+
+Process multiple matches:
+```bash
+./scripts/create_ground_truth.sh 117093 117094 117095
+```
+
+### Individual Steps
+
+If you need to run specific steps individually:
+
+```bash
+# 1. Trim video into halves
+./scripts/trim_video_into_halves.sh 117093
+
+# 2. Convert XML tracking data to pitch plane coordinates
+./scripts/convert_raw_to_pitch_plane.sh 117093
+
+# 3. Generate and apply camera calibration
+./scripts/calibration/generate_calibration_mappings.sh 117093
+./scripts/calibration/calibrate_camera.sh 117093
+
+# 4. Project coordinates to image plane
+./scripts/convert_pitch_plane_to_image_plane.sh 117093
+
+# 5. Run object detection
+./scripts/generate_detections.sh 117093
+
+# 6. Convert coordinates to bounding boxes
+./scripts/convert_coordinates_to_bboxes.sh 117093
+
+# 7. Generate visualizations
+./scripts/plot_coordinates_on_video.sh 117093  # Full video
+./scripts/plot_coordinates_on_video.sh 117093 --first-frame-only  # Single frames
+```
+
+### Output Structure
+
+The pipeline generates a comprehensive set of files in `data/interim/<match_id>/`:
+
+1. Videos:
+   - Trimmed halves: `*_panorama_[1st/2nd]_half.mp4`
+   - Calibrated videos: `*_calibrated_panorama_[1st/2nd]_half.mp4`
+
+2. Coordinates and Detections:
+   - Pitch plane coordinates: `*_pitch_plane_coordinates_*.csv`
+   - Image plane coordinates: `*_image_plane_coordinates_*.csv`
+   - YOLOv8 detections: `*_detections_*.csv`
+   - Ground truth MOT files: `*_ground_truth_mot_*.csv`
+
+3. Calibration Files:
+   - Camera intrinsics: `*_camera_intrinsics.npz`
+   - Homography matrix: `*_homography.npy`
+
+4. Analysis and Models:
+   - Correlation plots: `*_[width/height]_correlation.png`
+   - Regression plots: `*_[width/height]_regression.png`
+   - Bounding box models: `*_bbox_models.joblib`
+
+5. Visualizations:
+   - First frame images: `*_plot_coordinates_*_half_*.jpg`
+   - Full videos: `*_plot_coordinates_*_half_*.mp4`
+
+## Project Structure
+
+```
+SoccerTrack-v2/
+├── configs/           # Configuration files
+├── data/             # Data storage (gitignored except .gitkeep)
+│   ├── raw/          # Raw input data
+│   └── interim/      # Intermediate processing results
+├── models/           # Model storage (gitignored except .gitkeep)
+├── notebooks/        # Jupyter notebooks
+├── scripts/          # Shell scripts for pipeline steps
+└── src/             # Core Python modules
+    ├── calibration/  # Camera calibration tools
+    ├── coordinate_conversion/  # Coordinate processing
+    ├── detection/    # Object detection modules
+    ├── visualization/  # Visualization tools
+    └── video_utils/  # Video processing utilities
+```
+
+## Requirements
+
+- Python 3.12+
+- OpenCV
+- PyTorch
+- Ultralytics YOLOv8
+- Other dependencies in `requirements.txt`
+
+## Development
+
+- Uses [ruff](https://github.com/charliermarsh/ruff) for linting and formatting
+- Line length: 120 characters
+- Comprehensive type hints and docstrings required
+- Git-based version control
+
+For detailed documentation on the ground truth creation process, see [docs/ground_truth_creation.md](docs/ground_truth_creation.md).
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -24,46 +163,6 @@ Detailed documentation is available in the `docs/` directory:
 - [Ground Truth Creation](docs/ground_truth_creation.md): Creating MOT files with dynamic bounding boxes
 - [Visualization Guide](docs/visualization.md): Options for visualizing tracking results
 - [Data Processing](docs/data_processing.md): Data preprocessing and transformation
-
-## Project Structure
-
-- `src/`: Core source code and modules
-- `configs/`: Configuration files using OmegaConf
-- `scripts/`: Utility and processing scripts
-- `data/`: Data storage (gitignored except `.gitkeep`)
-- `models/`: Model storage (gitignored except `.gitkeep`)
-- `notebooks/`: Jupyter notebooks for analysis
-- `docs/`: Project documentation
-
-## Quick Start
-
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. Create ground truth MOT files:
-   ```bash
-   ./scripts/create_ground_truth_fixed_bboxes.sh <match_id>
-   ```
-
-3. Visualize results:
-   ```bash
-   # With player IDs
-   ./scripts/create_ground_truth_fixed_bboxes.sh <match_id>
-   
-   # Without player IDs (unique colors)
-   ./scripts/create_ground_truth_fixed_bboxes.sh <match_id> --no-ids
-   ```
-
-## Development Guidelines
-
-- **Python Version**: Requires Python 3.12+
-- **Formatting**: Uses [ruff](https://github.com/charliermarsh/ruff) for linting and formatting
-- **Type Hints & Docstrings**: Comprehensive type hinting and detailed docstrings required
-- **Version Control**: Git with appropriate `.gitignore` configuration
-
-For more details, see the documentation in the `docs/` directory.
 
 ## Overview
 
@@ -135,39 +234,6 @@ SoccerTrack-V2/
 - **Annotations:** Detailed annotations for player positions, movements, and actions in [specify format, e.g., JSON].
 - **Evaluation Scripts:** Tools and scripts for evaluating tracking results using GS-HOTA and other metrics.
 - **Documentation:** Instructions and guidelines for using the dataset effectively.
-
-## Installation
-
-Follow the steps below to set up the SoccerTrack-V2 repository on your local machine.
-
-1. **Clone the Repository**
-
-   ```bash
-   git clone https://github.com/YourUsername/SoccerTrack-V2.git
-   cd SoccerTrack-V2
-   ```
-
-2. **Install Dependencies**
-
-   It's recommended to use a virtual environment.
-
-   ```bash
-   python3 -m venv env
-   source env/bin/activate  # On Windows: env\Scripts\activate
-   pip install -r requirements.txt
-   ```
-
-   *Ensure you have Python 3.7 or higher installed.*
-
-3. **Download the Dataset**
-
-   The dataset files are large and are hosted on [your chosen hosting service, e.g., Google Drive, AWS S3]. Use the provided script to download the data.
-
-   ```bash
-   bash scripts/download_dataset.sh
-   ```
-
-   *Modify the script with your dataset's actual download links.*
 
 ## Usage
 
