@@ -195,67 +195,138 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚽ SoccerTrack-v2</h1>
-            <p class="subtitle">Tracking + Event Dataset for Soccer Analysis</p>
+            <h1>⚽ SoccerTrack v2</h1>
+            <p class="subtitle">A Full-Pitch Multi-View Soccer Dataset for Game State Reconstruction</p>
+            <p style="margin-top: 1rem; font-size: 1.1rem; opacity: 0.95;">
+                10 full-length panoramic 4K matches with per-frame Game State Reconstruction (GSR) and Ball Action Spotting (BAS) labels for soccer analytics
+            </p>
             <div class="badges">
-                <a href="https://github.com/atom/SoccerTrack-v2" class="badge">📦 GitHub</a>
-                <a href="https://huggingface.co/datasets/soccertrack-v2" class="badge">🤗 Hugging Face</a>
-                <a href="#citation" class="badge">📄 Citation</a>
+                <a href="https://arxiv.org/abs/2508.01802" class="badge">📄 Paper (arXiv)</a>
+                <a href="https://github.com/AtomScott/SoccerTrack-v2" class="badge">📦 GitHub</a>
+                <a href="https://huggingface.co/datasets/atomscott/soccertrack-v2" class="badge">🤗 Hugging Face</a>
+                <a href="https://mmsports.multimedia-computing.de/mmsports2025/challenge.html" class="badge">🏆 Challenge (MMSports 2025)</a>
             </div>
         </header>
         
         <main>
+            <section id="tldr">
+                <h2>TL;DR</h2>
+                <ul style="margin-left: 2rem; line-height: 2;">
+                    <li><strong>10 full matches</strong> (~900 minutes) of 4K panoramic full-pitch footage covering entire playing field</li>
+                    <li><strong>Per-frame GSR annotations</strong>: 2D pitch coordinates, track IDs, jersey numbers, roles, and team assignments</li>
+                    <li><strong>Ball Action Spotting</strong>: 12 action classes (Pass, Drive, Shot, Header, Cross, etc.) with global timestamps</li>
+                    <li><strong>Three benchmark tasks</strong>: Multi-Object Tracking (MOT), Game State Reconstruction (GSR), Ball Action Spotting (BAS)</li>
+                    <li><strong>Open access</strong>: Available on GitHub and Hugging Face for reproducible research</li>
+                </ul>
+            </section>
+            
             <section id="overview">
-                <h2>Overview</h2>
+                <h2>What is SoccerTrack v2?</h2>
                 <p>
-                    SoccerTrack-v2 is a comprehensive dataset combining player tracking data with event annotations 
-                    for soccer match analysis. The dataset enables reproducible research in sports analytics, 
-                    computer vision, and player tracking.
+                    SoccerTrack v2 addresses critical gaps in existing soccer datasets by providing full-pitch panoramic coverage 
+                    with comprehensive per-frame annotations. Unlike broadcast-view datasets limited by occlusions and partial field coverage, 
+                    our dataset captures the entire pitch using panoramic 4K cameras.
+                </p>
+                <p style="margin-top: 1rem;">
+                    The dataset features <strong>10 university-level amateur matches</strong> recorded with BePro camera systems, 
+                    providing approximately 900 minutes of gameplay. Each frame is annotated with detailed game state information 
+                    including player positions in 2D pitch coordinates, persistent track IDs, jersey numbers, player roles 
+                    (player/goalkeeper/referee), and team assignments.
+                </p>
+                <p style="margin-top: 1rem;">
+                    Beyond tracking, SoccerTrack v2 includes <strong>Ball Action Spotting</strong> annotations covering 12 action classes 
+                    aligned to the video timeline, enabling comprehensive tactical analysis and event detection research.
                 </p>
             </section>
             
-            <section id="stats">
-                <h2>Dataset Statistics</h2>
-                <div class="stats">
-                    <div class="stat">
-                        <span class="stat-number">X</span>
-                        <span class="stat-label">Matches</span>
+            <section id="contents">
+                <h2>Dataset Contents</h2>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">Matches & Videos</h3>
+                <ul style="margin-left: 2rem;">
+                    <li><strong>10 university-level amateur matches</strong></li>
+                    <li>Approximately <strong>900 minutes</strong> of gameplay</li>
+                    <li><strong>4K panoramic MP4</strong> videos with full-pitch coverage</li>
+                    <li>Camera setup: BePro Cerberus (2 matches) + 3-camera panoramic systems (8 matches)</li>
+                </ul>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR (Game State Reconstruction) Annotations</h3>
+                <p>Per-frame annotations including:</p>
+                <ul style="margin-left: 2rem;">
+                    <li><strong>2D pitch coordinates</strong> (meters) for all players</li>
+                    <li><strong>Unique track IDs</strong> persistent throughout the match</li>
+                    <li><strong>Player roles</strong>: player, goalkeeper, referee, other</li>
+                    <li><strong>Team assignments</strong>: left, right, or null</li>
+                    <li><strong>Jersey numbers</strong>: 0–99 or null</li>
+                </ul>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS (Ball Action Spotting) Annotations</h3>
+                <p><strong>12 action classes</strong> with global timestamps:</p>
+                <div style="margin-left: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                    <div>• Pass</div>
+                    <div>• Drive</div>
+                    <div>• Header</div>
+                    <div>• High Pass</div>
+                    <div>• Out</div>
+                    <div>• Cross</div>
+                    <div>• Throw In</div>
+                    <div>• Shot</div>
+                    <div>• Ball Player Block</div>
+                    <div>• Player Successful Tackle</div>
+                    <div>• Free Kick</div>
+                    <div>• Goal</div>
+                </div>
+            </section>
+            
+            <section id="tasks">
+                <h2>Tasks & Benchmarks</h2>
+                <div class="features">
+                    <div class="feature">
+                        <h3>🎯 Multi-Object Tracking (MOT)</h3>
+                        <p>Full-pitch player tracking with persistent IDs across long sequences. Evaluate tracking performance, ID maintenance, and re-identification in complex game scenarios.</p>
                     </div>
-                    <div class="stat">
-                        <span class="stat-number">X</span>
-                        <span class="stat-label">Tracked Players</span>
+                    <div class="feature">
+                        <h3>🗺️ Game State Reconstruction (GSR)</h3>
+                        <p>Generate 2D pitch minimaps from panoramic video. Reconstruct complete game state including all player positions, roles, and team assignments for tactical analysis.</p>
                     </div>
-                    <div class="stat">
-                        <span class="stat-number">X</span>
-                        <span class="stat-label">Events Annotated</span>
+                    <div class="feature">
+                        <h3>⚡ Ball Action Spotting (BAS)</h3>
+                        <p>Detect and classify 12 types of ball actions from video. Event detection task aligned with global timestamps for comprehensive match analysis.</p>
                     </div>
-                    <div class="stat">
-                        <span class="stat-number">X</span>
-                        <span class="stat-label">Total Frames</span>
+                    <div class="feature">
+                        <h3>🏆 SoccerTrack Challenge</h3>
+                        <p>A subset of matches with bounding box annotations is featured in the <a href="https://mmsports.multimedia-computing.de/mmsports2025/challenge.html" style="color: #667eea;">SoccerTrack Challenge at MMSports 2025</a>.</p>
                     </div>
                 </div>
             </section>
             
-            <section id="features">
-                <h2>Key Features</h2>
-                <div class="features">
-                    <div class="feature">
-                        <h3>🎯 Multi-Object Tracking</h3>
-                        <p>High-quality player and ball tracking annotations with unique IDs across frames</p>
-                    </div>
-                    <div class="feature">
-                        <h3>📊 Event Data</h3>
-                        <p>Synchronized event annotations including passes, shots, tackles, and more</p>
-                    </div>
-                    <div class="feature">
-                        <h3>🎥 Video Aligned</h3>
-                        <p>Pixel coordinates and field coordinates aligned with broadcast video</p>
-                    </div>
-                    <div class="feature">
-                        <h3>🔄 Fully Reproducible</h3>
-                        <p>Complete pipeline with preprocessing, feature extraction, and evaluation scripts</p>
-                    </div>
-                </div>
+            <section id="format">
+                <h2>Data Format & Folder Structure</h2>
+                <p>The dataset is organized as follows:</p>
+                <pre><code>SoccerTrack-v2/
+├── videos/          # Panoramic 4K video files (1-n MP4s per match)
+├── gsr/             # Per-frame GSR annotations (JSON/CSV)
+├── bas/             # Ball Action Spotting event annotations (JSON/CSV)
+└── splits/          # Train/val/test split definitions (match-level)</code></pre>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR Annotation Fields</h3>
+                <ul style="margin-left: 2rem;">
+                    <li><code>frame</code>: Frame number</li>
+                    <li><code>time</code>: Timestamp in video</li>
+                    <li><code>player_id</code>: Unique track ID (persistent throughout match)</li>
+                    <li><code>x, y</code>: 2D pitch coordinates in meters</li>
+                    <li><code>role</code>: player / goalkeeper / referee / other</li>
+                    <li><code>team_side</code>: left / right / null</li>
+                    <li><code>jersey_number</code>: 0–99 / null</li>
+                </ul>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS Annotation Fields</h3>
+                <ul style="margin-left: 2rem;">
+                    <li><code>time</code>: Global timestamp aligned to video timeline</li>
+                    <li><code>event_class</code>: One of 12 action classes</li>
+                    <li><code>team</code>: Team performing the action</li>
+                    <li><code>player_id</code>: Track ID (when available)</li>
+                </ul>
             </section>
             
             <section id="download">
@@ -263,59 +334,76 @@
                 <div class="download-section">
                     <p><strong>Choose your preferred platform:</strong></p>
                     <div style="text-align: center; margin-top: 1.5rem;">
-                        <a href="https://github.com/atom/SoccerTrack-v2/releases" class="btn">Download from GitHub</a>
-                        <a href="https://huggingface.co/datasets/soccertrack-v2" class="btn">Download from Hugging Face</a>
+                        <a href="https://github.com/AtomScott/SoccerTrack-v2/releases" class="btn">Download from GitHub</a>
+                        <a href="https://huggingface.co/datasets/atomscott/soccertrack-v2" class="btn">Download from Hugging Face</a>
                     </div>
                 </div>
             </section>
             
             <section id="quickstart">
-                <h2>Quick Start</h2>
-                <p>Clone the repository and install dependencies:</p>
-                <pre><code>git clone https://github.com/atom/SoccerTrack-v2.git
+                <h2>Getting Started</h2>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">1. Download the Dataset</h3>
+                <p>Choose your preferred platform (GitHub or Hugging Face) and download the dataset files.</p>
+                
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">2. Clone the Repository</h3>
+                <pre><code>git clone https://github.com/AtomScott/SoccerTrack-v2.git
 cd SoccerTrack-v2
 pip install -r requirements-dev.txt</code></pre>
                 
-                <p style="margin-top: 1.5rem;">Run a basic tracking visualization:</p>
+                <h3 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 0.5rem;">3. Visualize Tracking Data</h3>
                 <pre><code>python -m src.main command=plot-coordinates-on-video \
   plot_coordinates_on_video.match_id=117093</code></pre>
+                
+                <p style="margin-top: 1rem;">
+                    See the <code>scripts/</code> directory for data preprocessing pipelines, feature extraction, 
+                    model training configurations, and evaluation benchmarks. All experiments are fully reproducible.
+                </p>
             </section>
             
-            <section id="reproduction">
-                <h2>Reproducing Experiments</h2>
-                <p>All experiments are fully reproducible. See the <code>scripts/</code> directory for:</p>
+            <section id="license">
+                <h2>License & Terms of Use</h2>
+                <p>
+                    SoccerTrack v2 is released for <strong>research purposes only</strong>. The dataset has been collected 
+                    with approval from the university ethics board, and all data has been de-identified.
+                </p>
                 <ul style="margin-left: 2rem; margin-top: 1rem;">
-                    <li>Data preprocessing pipelines</li>
-                    <li>Feature extraction scripts</li>
-                    <li>Model training configurations</li>
-                    <li>Evaluation benchmarks</li>
+                    <li>No player names are included; identification is jersey-number based only</li>
+                    <li>All matches feature university-level amateur players with informed consent</li>
+                    <li>Commercial use requires separate licensing agreement</li>
                 </ul>
                 <p style="margin-top: 1rem;">
-                    Detailed documentation is available in the 
-                    <a href="https://github.com/atom/SoccerTrack-v2/blob/main/README.md" style="color: #667eea;">README</a>.
+                    Please see the <a href="https://github.com/AtomScott/SoccerTrack-v2/blob/main/LICENSE" style="color: #667eea;">LICENSE</a> 
+                    file for full details.
                 </p>
             </section>
             
             <section id="citation">
                 <h2>Citation</h2>
                 <p>If you use this dataset in your research, please cite:</p>
-                <pre><code>@dataset{soccertrack_v2_2025,
-  title={SoccerTrack-v2: A Comprehensive Tracking and Event Dataset},
-  author={Author Name},
+                <pre><code>@article{soccertrack_v2_2025,
+  title={SoccerTrack v2: A Full-Pitch Multi-View Soccer Dataset for Game State Reconstruction},
+  author={Scott, Atom and others},
+  journal={arXiv preprint arXiv:2508.01802},
   year={2025},
-  publisher={GitHub},
-  url={https://github.com/atom/SoccerTrack-v2}
+  url={https://arxiv.org/abs/2508.01802}
 }</code></pre>
             </section>
             
-            <section id="license">
-                <h2>License</h2>
-                <p>This dataset is released under the [LICENSE]. Please see the repository for full license details.</p>
+            <section id="acknowledgements">
+                <h2>Acknowledgements</h2>
+                <p>
+                    This work was supported by JST SPRING (Grant Number JPMJSP2108) and JSPS KAKENHI. 
+                    We thank all participating teams and universities for their cooperation in data collection.
+                </p>
             </section>
         </main>
         
         <footer>
-            <p>&copy; 2025 SoccerTrack-v2 Project | Made with ⚽ for the research community</p>
+            <p>&copy; 2025 SoccerTrack v2 Project | Made with ⚽ for the research community</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">
+                <a href="https://arxiv.org/abs/2508.01802" style="color: white;">arXiv:2508.01802</a>
+            </p>
         </footer>
     </div>
 </body>
