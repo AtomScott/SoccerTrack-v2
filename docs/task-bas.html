@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAS Task - SoccerTrack v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(59, 130, 246, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #1a1a1a;
+            color: white;
+            padding: 2rem;
+            border-bottom: 3px solid #3b82f6;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .breadcrumb {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .breadcrumb a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        main {
+            padding: 2rem;
+        }
+        
+        h2 {
+            color: #3b82f6;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2:first-child {
+            margin-top: 0;
+        }
+        
+        h3 {
+            color: #1d4ed8;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #3b82f6;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        .highlight-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .diff-box {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        ul {
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        footer {
+            background: #2d2d2d;
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        footer a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+        
+        .action-grid div {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="index.html">SoccerTrack v2</a> / Tasks</p>
+            <h1>⚡ Ball Action Spotting (BAS)</h1>
+        </header>
+        
+        <main>
+            <section id="overview">
+                <h2>Task Overview</h2>
+                <p>
+                    <strong>Input:</strong> Panoramic 4K video (full match)<br>
+                    <strong>Output:</strong> Temporal action labels for 12 ball event classes with global timestamps
+                </p>
+                
+                <div class="highlight-box">
+                    <strong>Alignment with SoccerNet Ball Action Spotting:</strong><br>
+                    ✅ <strong>Same:</strong> 12 action classes, temporal detection, team assignment<br>
+                    ⚠️ <strong>Different:</strong> Panoramic view + full match (not broadcast clips)
+                </div>
+            </section>
+            
+            <section id="io">
+                <h2>Input / Output Definition</h2>
+                
+                <h3>Input</h3>
+                <ul>
+                    <li><code>videos/match_XXXXX.mp4</code> — Full match panoramic video (4K)</li>
+                </ul>
+                
+                <h3>Output (per action)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>time</code></td>
+                            <td>float</td>
+                            <td>Global timestamp in video (seconds)</td>
+                        </tr>
+                        <tr>
+                            <td><code>event_class</code></td>
+                            <td>string</td>
+                            <td>One of 12 action classes (see below)</td>
+                        </tr>
+                        <tr>
+                            <td><code>team</code></td>
+                            <td>string</td>
+                            <td>left / right / null</td>
+                        </tr>
+                        <tr>
+                            <td><code>player_id</code></td>
+                            <td>int/null</td>
+                            <td>Track ID (when available)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>12 Action Classes</h3>
+                <div class="action-grid">
+                    <div>Pass</div>
+                    <div>Drive</div>
+                    <div>Header</div>
+                    <div>High Pass</div>
+                    <div>Out</div>
+                    <div>Cross</div>
+                    <div>Throw In</div>
+                    <div>Shot</div>
+                    <div>Ball Player Block</div>
+                    <div>Player Successful Tackle</div>
+                    <div>Free Kick</div>
+                    <div>Goal</div>
+                </div>
+            </section>
+            
+            <section id="layout">
+                <h2>File Layout</h2>
+                <pre><code>bas/
+├── match_117093.json    # 1 match = 1 annotation file
+├── match_117094.json
+└── ...
+
+videos/
+├── match_117093.mp4
+└── ...</code></pre>
+                
+                <p>Each match has <strong>one annotation file</strong> containing all ball action events.</p>
+            </section>
+            
+            <section id="schema">
+                <h2>Schema & SoccerNet Mapping</h2>
+                
+                <h3>Example JSON Structure</h3>
+                <pre><code>{
+  "match_id": "117093",
+  "fps": 25.0,
+  "actions": [
+    {
+      "time": 12.5,
+      "event_class": "Pass",
+      "team": "left",
+      "player_id": 10
+    },
+    {
+      "time": 45.2,
+      "event_class": "Shot",
+      "team": "right",
+      "player_id": 7
+    },
+    ...
+  ]
+}</code></pre>
+
+                <h3>SoccerNet BAS Correspondence</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SoccerTrack v2</th>
+                            <th>SoccerNet BAS</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>time</code></td>
+                            <td><code>timestamp</code></td>
+                            <td>Global time in seconds</td>
+                        </tr>
+                        <tr>
+                            <td><code>event_class</code></td>
+                            <td><code>label</code></td>
+                            <td>12 action classes</td>
+                        </tr>
+                        <tr>
+                            <td><code>team</code></td>
+                            <td><code>team</code></td>
+                            <td>left / right</td>
+                        </tr>
+                        <tr>
+                            <td><code>player_id</code></td>
+                            <td>—</td>
+                            <td>Unique to SoccerTrack v2</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <section id="evaluation">
+                <h2>Evaluation / Metrics</h2>
+                <p>
+                    Evaluation uses <strong>Average-mAP</strong> at various temporal tolerances (e.g., ±1s, ±2s), 
+                    following the SoccerNet Ball Action Spotting Challenge.
+                </p>
+                <ul>
+                    <li><strong>Tight tolerance:</strong> ±0.5s (precise detection)</li>
+                    <li><strong>Loose tolerance:</strong> ±2s (event detection)</li>
+                </ul>
+                <p>
+                    <em>Official devkit: Coming soon</em>
+                </p>
+            </section>
+            
+            <section id="differences">
+                <h2>Differences vs SoccerNet BAS</h2>
+                
+                <div class="diff-box">
+                    <strong>Key Differences:</strong>
+                    <ul>
+                        <li><strong>Camera view:</strong> Panoramic (full-pitch visibility) vs. broadcast (partial/zoomed)</li>
+                        <li><strong>Duration:</strong> Full match (~90 min) vs. half/clip segments</li>
+                        <li><strong>Additional info:</strong> Player IDs available (linked to GSR tracks)</li>
+                        <li><strong>Camera setup:</strong> Fixed panoramic vs. moving broadcast camera</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>
+                <a href="index.html">← Back to main page</a> | 
+                <a href="https://www.soccer-net.org/tasks/ball-action-spotting">SoccerNet BAS Challenge</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
+
