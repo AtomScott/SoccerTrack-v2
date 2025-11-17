@@ -351,24 +351,27 @@
             
             <section id="tasks">
                 <h2>Tasks & Benchmarks</h2>
-                <div class="features">
-                    <div class="feature">
-                        <h3>🎯 Multi-Object Tracking (MOT)</h3>
-                        <p>Full-pitch player tracking with persistent IDs across long sequences. Evaluate tracking performance, ID maintenance, and re-identification in complex game scenarios.</p>
-                    </div>
-                    <div class="feature">
-                        <h3>🗺️ Game State Reconstruction (GSR)</h3>
-                        <p>Generate 2D pitch minimaps from panoramic video. Reconstruct complete game state including all player positions, roles, and team assignments for tactical analysis.</p>
-                    </div>
-                    <div class="feature">
-                        <h3>⚡ Ball Action Spotting (BAS)</h3>
-                        <p>Detect and classify 12 types of ball actions from video. Event detection task aligned with global timestamps for comprehensive match analysis.</p>
-                    </div>
-                    <div class="feature">
-                        <h3>🏆 SoccerTrack Challenge</h3>
-                        <p>A subset of matches with bounding box annotations is featured in the <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025" style="color: #ff6b35;">SoccerTrack Challenge 2025</a>.</p>
-                    </div>
-                </div>
+                
+                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 0.5rem;">Game State Reconstruction (GSR)</h3>
+                <p>
+                    Generate 2D pitch minimaps from panoramic video. Reconstruct complete game state including all player positions, 
+                    roles, and team assignments for tactical analysis. This task evaluates the ability to accurately map players 
+                    from video frames to standardized pitch coordinates while maintaining identity and role information.
+                </p>
+                
+                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 0.5rem;">Ball Action Spotting (BAS)</h3>
+                <p>
+                    Detect and classify 12 types of ball actions from video. Event detection task aligned with global timestamps 
+                    for comprehensive match analysis. Actions include Pass, Drive, Shot, Header, High Pass, Out, Cross, Throw In, 
+                    Ball Player Block, Player Successful Tackle, Free Kick, and Goal.
+                </p>
+                
+                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 0.5rem;">Multi-Object Tracking (SoccerTrack Challenge)</h3>
+                <p>
+                    Full-pitch player tracking with persistent IDs across long sequences. Evaluate tracking performance, ID maintenance, 
+                    and re-identification in complex game scenarios. A subset of matches with bounding box annotations is featured in the 
+                    <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025" style="color: #ff6b35; text-decoration: underline;">SoccerTrack Challenge 2025</a>.
+                </p>
             </section>
             
             <section id="format">
