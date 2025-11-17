@@ -251,16 +251,32 @@
             
             <section id="layout">
                 <h2>File Layout</h2>
-                <pre><code>gsr/
-├── match_117093.json    # 1 match = 1 annotation file
-├── match_117094.json
-└── ...
-
-videos/
-├── match_117093.mp4
-└── ...</code></pre>
+                <pre><code>production/
+├── videos/
+│   ├── 117093.mp4
+│   ├── 117094.mp4
+│   └── ...
+├── gsr/
+│   ├── 117093/
+│   │   └── 117093.json
+│   ├── 117094/
+│   │   └── 117094.json
+│   └── ...
+├── bas/
+├── mot/
+└── raw/
+    ├── 117093/
+    │   ├── 117093_keypoints.json
+    │   ├── 117093_mapx.npy
+    │   ├── 117093_mapy.npy
+    │   └── ...
+    └── ...</code></pre>
                 
-                <p>Each match has <strong>one annotation file</strong> containing all frames.</p>
+                <p>
+                    Each match has <strong>one annotation file</strong> in its own directory. 
+                    Unlike SoccerNet-GSR which uses <code>img1/</code> for image frames, we reference the video directly 
+                    from <code>videos/</code> to save storage space.
+                </p>
             </section>
             
             <section id="schema">
