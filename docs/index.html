@@ -24,17 +24,18 @@
         .container {
             max-width: 1000px;
             margin: 0 auto;
-            background: white;
+            background: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(255, 107, 53, 0.2);
             overflow: hidden;
         }
         
         header {
-            background: linear-gradient(135deg, #ff6b35 0%, #10b981 100%);
+            background: #1a1a1a;
             color: white;
             padding: 3rem 2rem;
             text-align: center;
+            border-bottom: 3px solid #ff6b35;
         }
         
         h1 {
@@ -98,16 +99,19 @@
         .btn {
             display: inline-block;
             padding: 1rem 2rem;
-            background: linear-gradient(135deg, #ff6b35 0%, #10b981 100%);
+            background: #ff6b35;
             color: white;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
-            transition: transform 0.2s;
+            transition: all 0.3s;
             margin: 0.5rem;
+            border: 2px solid #ff6b35;
         }
         
         .btn:hover {
+            background: transparent;
+            color: #ff6b35;
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
         }
@@ -175,9 +179,14 @@
         .stat {
             text-align: center;
             padding: 1.5rem;
-            background: linear-gradient(135deg, #ff6b35 0%, #10b981 100%);
+            background: #2d2d2d;
             color: white;
             border-radius: 8px;
+            border: 2px solid #ff6b35;
+        }
+        
+        .stat:nth-child(even) {
+            border-color: #10b981;
         }
         
         .stat-number {
