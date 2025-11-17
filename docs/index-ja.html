@@ -222,13 +222,13 @@
     <div class="container">
         <header style="position: relative;">
             <div class="lang-switcher">
-                <a href="index.html" class="lang-btn active">🇬🇧 EN</a>
-                <a href="index-ja.html" class="lang-btn">🇯🇵 日本語</a>
+                <a href="index.html" class="lang-btn">🇬🇧 EN</a>
+                <a href="index-ja.html" class="lang-btn active">🇯🇵 日本語</a>
             </div>
             <h1>⚽ SoccerTrack v2</h1>
-            <p class="subtitle">A Full-Pitch Multi-View Soccer Dataset for Game State Reconstruction</p>
+            <p class="subtitle">ゲーム状態再構築のためのフルピッチ・マルチビューサッカーデータセット</p>
             <p style="margin-top: 1rem; font-size: 1.1rem; opacity: 0.95;">
-                10 full-length panoramic 4K matches with per-frame Game State Reconstruction (GSR) and Ball Action Spotting (BAS) labels for soccer analytics
+                フレーム単位のゲーム状態再構築（GSR）およびボールアクション検出（BAS）ラベル付き、10試合分のパノラマ4K映像（フルマッチ）
             </p>
             <div class="badges">
                 <a href="https://arxiv.org/abs/2508.01802" class="badge">📄 Paper (arXiv)</a>
@@ -241,63 +241,57 @@
         
         <main>
             <section id="tldr">
-                <h2>TL;DR</h2>
+                <h2>概要</h2>
                 <ul style="margin-left: 2rem; line-height: 2;">
-                    <li><strong>10 full matches</strong> (~900 minutes) of 4K panoramic full-pitch footage covering entire playing field</li>
-                    <li><strong>Per-frame GSR annotations</strong>: 2D pitch coordinates, track IDs, jersey numbers, roles, and team assignments</li>
-                    <li><strong>Ball Action Spotting</strong>: 12 action classes (Pass, Drive, Shot, Header, Cross, etc.) with global timestamps</li>
-                    <li><strong>Three benchmark tasks</strong>: Multi-Object Tracking (MOT), Game State Reconstruction (GSR), Ball Action Spotting (BAS)</li>
-                    <li><strong>Open access</strong>: Available on GitHub and Hugging Face for reproducible research</li>
+                    <li><strong>10試合分のフルマッチ</strong>（約900分）の4Kパノラマ映像で、ピッチ全体をカバー</li>
+                    <li><strong>フレーム単位のGSRアノテーション</strong>：2Dピッチ座標、トラックID、背番号、役割、チーム割り当て</li>
+                    <li><strong>ボールアクション検出</strong>：12種類のアクションクラス（パス、ドリブル、シュート、ヘディング、クロスなど）にグローバルタイムスタンプ付き</li>
+                    <li><strong>3つのベンチマークタスク</strong>：Multi-Object Tracking（MOT）、Game State Reconstruction（GSR）、Ball Action Spotting（BAS）</li>
+                    <li><strong>オープンアクセス</strong>：GitHubとHugging Faceで公開、再現可能な研究を実現</li>
                 </ul>
             </section>
             
             <section id="visuals">
-                <h2>Dataset Visuals</h2>
+                <h2>データセット画像</h2>
                 
-                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 1rem;">Panoramic 4K Coverage</h3>
+                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 1rem;">パノラマ4K映像</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
-                        <img src="placeholder-panorama-day.jpg" alt="Panoramic view - Day match" style="width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #ff6b35 0%, #fbbf24 100%); display: flex; align-items: center; justify-content: center;">
-                        <p style="padding: 1rem; text-align: center; margin: 0;">Daytime Match - Full Pitch Coverage</p>
+                        <img src="placeholder-panorama-day.jpg" alt="パノラマビュー - 昼の試合" style="width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #ff6b35 0%, #fbbf24 100%); display: flex; align-items: center; justify-content: center;">
+                        <p style="padding: 1rem; text-align: center; margin: 0;">昼の試合 - フルピッチカバレッジ</p>
                     </div>
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
-                        <img src="placeholder-panorama-night.jpg" alt="Panoramic view - Night match" style="width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); display: flex; align-items: center; justify-content: center;">
-                        <p style="padding: 1rem; text-align: center; margin: 0;">Night Match - Stadium Conditions</p>
+                        <img src="placeholder-panorama-night.jpg" alt="パノラマビュー - 夜の試合" style="width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); display: flex; align-items: center; justify-content: center;">
+                        <p style="padding: 1rem; text-align: center; margin: 0;">夜の試合 - スタジアム環境</p>
                     </div>
                 </div>
                 
-                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 1rem;">GSR Annotations Example</h3>
+                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 1rem;">GSRアノテーション例</h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
-                    <img src="placeholder-gsr-minimap.jpg" alt="GSR minimap with player positions" style="width: 100%; height: 400px; object-fit: cover; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center;">
-                    <p style="padding: 1rem; text-align: center; margin: 0;">2D Pitch Minimap with Player Positions & Track IDs</p>
+                    <img src="placeholder-gsr-minimap.jpg" alt="選手位置付きGSRミニマップ" style="width: 100%; height: 400px; object-fit: cover; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center;">
+                    <p style="padding: 1rem; text-align: center; margin: 0;">2Dピッチミニマップ with 選手位置 & トラックID</p>
                 </div>
                 
-                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 1rem;">Demo Video</h3>
+                <h3 style="color: #ff6b35; margin-top: 1.5rem; margin-bottom: 1rem;">デモ動画</h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
                     <video controls style="width: 100%; height: auto; background: #000;" poster="placeholder-video-thumb.jpg">
                         <source src="placeholder-demo-video.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
+                        お使いのブラウザは動画タグに対応していません。
                     </video>
-                    <p style="padding: 1rem; text-align: center; margin: 0;">Sample Tracking Visualization with GSR Overlay</p>
+                    <p style="padding: 1rem; text-align: center; margin: 0;">GSRオーバーレイ付きトラッキング可視化サンプル</p>
                 </div>
             </section>
             
             <section id="overview">
-                <h2>What is SoccerTrack v2?</h2>
+                <h2>SoccerTrack v2とは？</h2>
                 <p>
-                    SoccerTrack v2 addresses critical gaps in existing soccer datasets by providing full-pitch panoramic coverage 
-                    with comprehensive per-frame annotations. Unlike broadcast-view datasets limited by occlusions and partial field coverage, 
-                    our dataset captures the entire pitch using panoramic 4K cameras.
+                    SoccerTrack v2は、フルピッチのパノラマカバレッジと包括的なフレーム単位アノテーションを提供することで、既存のサッカーデータセットの重要なギャップに対処します。オクルージョンや部分的なフィールドカバレッジに制限される放送視点のデータセットとは異なり、本データセットはパノラマ4Kカメラを使用してピッチ全体を捉えています。
                 </p>
                 <p style="margin-top: 1rem;">
-                    The dataset features <strong>10 university-level amateur matches</strong> recorded with BePro camera systems, 
-                    providing approximately 900 minutes of gameplay. Each frame is annotated with detailed game state information 
-                    including player positions in 2D pitch coordinates, persistent track IDs, jersey numbers, player roles 
-                    (player/goalkeeper/referee), and team assignments.
+                    本データセットには、BeProカメラシステムで記録された<strong>大学レベルのアマチュア試合10試合分</strong>が含まれ、約900分のゲームプレイを提供します。各フレームには、2Dピッチ座標での選手位置、永続的なトラックID、背番号、選手の役割（プレイヤー/ゴールキーパー/審判）、チーム割り当てなどの詳細なゲーム状態情報がアノテーションされています。
                 </p>
                 <p style="margin-top: 1rem;">
-                    Beyond tracking, SoccerTrack v2 includes <strong>Ball Action Spotting</strong> annotations covering 12 action classes 
-                    aligned to the video timeline, enabling comprehensive tactical analysis and event detection research.
+                    トラッキングに加えて、SoccerTrack v2には動画タイムラインに整合した<strong>12種類のアクションクラスをカバーするボールアクション検出</strong>アノテーションが含まれており、包括的な戦術分析とイベント検出研究を可能にします。
                 </p>
             </section>
             
@@ -392,9 +386,9 @@
             </section>
             
             <section id="download">
-                <h2>Download Dataset</h2>
+                <h2>データセットのダウンロード</h2>
                 <div class="download-section">
-                    <p><strong>Choose your preferred platform:</strong></p>
+                    <p><strong>お好みのプラットフォームを選択してください：</strong></p>
                     <div style="text-align: center; margin-top: 1.5rem;">
                         <a href="https://www.kaggle.com/datasets/atomscott/soccertrack-v2" class="btn">📊 Kaggle</a>
                         <a href="https://huggingface.co/datasets/atomscott/soccertrack-v2" class="btn">🤗 Hugging Face</a>
@@ -442,8 +436,8 @@ pip install -r requirements-dev.txt</code></pre>
             </section>
             
             <section id="citation">
-                <h2>Citation</h2>
-                <p>If you use this dataset in your research, please cite:</p>
+                <h2>引用</h2>
+                <p>本データセットを研究で使用する場合は、以下を引用してください：</p>
                 <pre><code>@article{soccertrack_v2_2025,
   title={SoccerTrack v2: A Full-Pitch Multi-View Soccer Dataset for Game State Reconstruction},
   author={Scott, Atom and others},
@@ -454,16 +448,16 @@ pip install -r requirements-dev.txt</code></pre>
             </section>
             
             <section id="acknowledgements">
-                <h2>Acknowledgements</h2>
+                <h2>謝辞</h2>
                 <p>
-                    This work was supported by JST SPRING (Grant Number JPMJSP2108) and JSPS KAKENHI. 
-                    We thank all participating teams and universities for their cooperation in data collection.
+                    本研究は、JST SPRING（助成番号 JPMJSP2108）およびJSPS科研費の支援を受けて実施されました。
+                    データ収集にご協力いただいたすべての参加チームおよび大学に感謝いたします。
                 </p>
             </section>
         </main>
         
         <footer>
-            <p>&copy; 2025 SoccerTrack v2 Project | Made with ⚽ for the research community</p>
+            <p>&copy; 2025 SoccerTrack v2 Project | サッカー研究コミュニティのために ⚽</p>
             <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">
                 <a href="https://arxiv.org/abs/2508.01802" style="color: white;">arXiv:2508.01802</a>
             </p>
