@@ -1,3 +1,4 @@
+# /home/nakamura/SoccerTrack-v2/src/calibration/generate_calibration_mappings.py
 """Module for generating camera calibration mappings from keypoint annotations."""
 
 import json
@@ -68,11 +69,11 @@ def generate_calibration_mappings(
     """
     Generate calibration mappings from keypoints and save them.
 
-    Args:
-        match_id: The ID of the match
-        keypoints_path: Path to the keypoints JSON file
-        video_path: Path to the video file (used for dimensions)
-        output_dir: Directory to save the calibration files
+    Outputs:
+      - {match_id}_mapx.npy, {match_id}_mapy.npy
+      - {match_id}_calibrated_keypoints.json
+      - {match_id}_camera_intrinsics.npz
+      - {match_id}_homography.npy   # NEW: pitch plane -> calibrated image homography
     """
     # Convert paths to Path objects
     keypoints_path = Path(keypoints_path)
@@ -87,7 +88,7 @@ def generate_calibration_mappings(
         logger.error("Input files missing")
         return
 
-    # Load keypoints
+    # Load keypoints (world & distorted image)
     objpoints, imgpoints, original_keypoints = load_keypoints(keypoints_path)
 
     # Get video dimensions
@@ -99,7 +100,7 @@ def generate_calibration_mappings(
         return
     image_height, image_width, _ = frame.shape
 
-    # Camera calibration
+    # Camera calibration (fisheye)
     logger.info("Starting camera calibration")
     K = np.zeros((3, 3))
     D = np.zeros((4, 1))
@@ -129,16 +130,18 @@ def generate_calibration_mappings(
     new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
         K, D, (image_width, image_height), np.eye(3), balance=1
     )
-    mapx, mapy = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), new_K, (image_width, image_height), cv2.CV_16SC2)
+    mapx, mapy = cv2.fisheye.initUndistortRectifyMap(
+        K, D, np.eye(3), new_K, (image_width, image_height), cv2.CV_16SC2
+    )
 
-    # Calibrate keypoints
+    # Calibrate keypoints (distorted -> rectified image coordinates)
     calibrated_keypoints = calibrate_keypoints(imgpoints, K, D, new_K)
 
     # Save mappings
     np.save(output_dir / f"{match_id}_mapx.npy", mapx)
     np.save(output_dir / f"{match_id}_mapy.npy", mapy)
 
-    # Save calibrated keypoints
+    # Save calibrated keypoints as JSON (same keys, new (u,v))
     calibrated_keypoints_dict = {}
     for (key, _), calibrated_point in zip(original_keypoints.items(), calibrated_keypoints):
         calibrated_keypoints_dict[key] = calibrated_point.tolist()
@@ -149,8 +152,6 @@ def generate_calibration_mappings(
     logger.info(f"Saved mapx, mapy, and calibrated keypoints to {output_dir}")
 
     # SAVE CAMERA INTRINSICS
-    # We include K, D, new_K, plus optional rvecs/tvecs and the RMS (retval).
-    # We'll store them all in an .npz file for easy reloading.
     np.savez(
         output_dir / f"{match_id}_camera_intrinsics.npz",
         K=K,
@@ -161,6 +162,27 @@ def generate_calibration_mappings(
         rms=retval,
     )
     logger.info(f"Saved camera intrinsics to {output_dir / f'{match_id}_camera_intrinsics.npz'}")
+
+    # ========= NEW: compute homography (pitch plane -> calibrated image) =========
+    try:
+        # objpoints: (N,1,3) with z=0 => (N,2)
+        world_points_2d = objpoints.reshape(-1, 3)[:, :2]          # (N, 2)
+        image_points_2d = calibrated_keypoints.astype(np.float32)  # (N, 2)
+
+        if world_points_2d.shape[0] < 4:
+            logger.error(
+                f"Not enough points to compute homography: got {world_points_2d.shape[0]}, need at least 4."
+            )
+        else:
+            H, mask = cv2.findHomography(world_points_2d, image_points_2d, method=cv2.RANSAC)
+            if H is None:
+                logger.error("Failed to compute homography matrix (cv2.findHomography returned None).")
+            else:
+                homography_path = output_dir / f"{match_id}_homography.npy"
+                np.save(homography_path, H)
+                logger.info(f"Saved homography matrix to: {homography_path}")
+    except Exception as e:
+        logger.error(f"Exception while computing homography: {e}")
 
 
 def main():

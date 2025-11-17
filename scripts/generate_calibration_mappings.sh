@@ -17,6 +17,6 @@ echo "Generating calibration mappings for match ${MATCH_ID}..."
 uv run python -m src.main \
     command=generate_calibration_mappings \
     generate_calibration_mappings.match_id="$MATCH_ID" \
-    generate_calibration_mappings.keypoints_path="data/raw/${MATCH_ID}/${MATCH_ID}_keypoints.json" \
-    generate_calibration_mappings.video_path="data/raw/${MATCH_ID}/${MATCH_ID}_panorama_1st_half.mp4" \
-    generate_calibration_mappings.output_dir="data/interim/${MATCH_ID}"
+    generate_calibration_mappings.keypoints_path="/data/share/SoccerTrack-v2/data/raw/${MATCH_ID}/${MATCH_ID}_keypoints.json" \
+    generate_calibration_mappings.video_path="/data/share/SoccerTrack-v2/data/raw/${MATCH_ID}/${MATCH_ID}_panorama_1st_half.mp4" \
+    generate_calibration_mappings.output_dir="/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}"

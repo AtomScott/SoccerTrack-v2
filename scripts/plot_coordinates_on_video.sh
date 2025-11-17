@@ -30,7 +30,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Set up base paths
-BASE_DIR="data/interim/$MATCH_ID"
+BASE_DIR="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID"
 mkdir -p "$BASE_DIR"
 
 # Define arrays for variants

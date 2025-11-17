@@ -14,9 +14,9 @@ echo "Processing first half (calibrated)..."
 uv run python -m src.main \
     command=convert_pitch_plane_to_image_plane \
     convert_pitch_plane_to_image_plane.match_id=$MATCH_ID \
-    convert_pitch_plane_to_image_plane.input_csv_path="data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_1st_half.csv" \
-    convert_pitch_plane_to_image_plane.homography_path="data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
-    convert_pitch_plane_to_image_plane.output_dir="data/interim/$MATCH_ID" \
+    convert_pitch_plane_to_image_plane.input_csv_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_1st_half.csv" \
+    convert_pitch_plane_to_image_plane.homography_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
+    convert_pitch_plane_to_image_plane.output_dir="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID" \
     convert_pitch_plane_to_image_plane.event_period=FIRST_HALF \
     convert_pitch_plane_to_image_plane.calibrated=true
 
@@ -31,12 +31,12 @@ echo "Processing first half (distorted)..."
 uv run python -m src.main \
     command=convert_pitch_plane_to_image_plane \
     convert_pitch_plane_to_image_plane.match_id=$MATCH_ID \
-    convert_pitch_plane_to_image_plane.input_csv_path="data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_1st_half.csv" \
-    convert_pitch_plane_to_image_plane.homography_path="data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
-    convert_pitch_plane_to_image_plane.output_dir="data/interim/$MATCH_ID" \
+    convert_pitch_plane_to_image_plane.input_csv_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_1st_half.csv" \
+    convert_pitch_plane_to_image_plane.homography_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
+    convert_pitch_plane_to_image_plane.output_dir="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID" \
     convert_pitch_plane_to_image_plane.event_period=FIRST_HALF \
     convert_pitch_plane_to_image_plane.calibrated=false \
-    convert_pitch_plane_to_image_plane.camera_intrinsics_path="data/interim/$MATCH_ID/${MATCH_ID}_camera_intrinsics.npz"
+    convert_pitch_plane_to_image_plane.camera_intrinsics_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_camera_intrinsics.npz"
 
 # Check if first half distorted conversion was successful
 if [ $? -ne 0 ]; then
@@ -49,9 +49,9 @@ echo "Processing second half (calibrated)..."
 uv run python -m src.main \
     command=convert_pitch_plane_to_image_plane \
     convert_pitch_plane_to_image_plane.match_id=$MATCH_ID \
-    convert_pitch_plane_to_image_plane.input_csv_path="data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_2nd_half.csv" \
-    convert_pitch_plane_to_image_plane.homography_path="data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
-    convert_pitch_plane_to_image_plane.output_dir="data/interim/$MATCH_ID" \
+    convert_pitch_plane_to_image_plane.input_csv_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_2nd_half.csv" \
+    convert_pitch_plane_to_image_plane.homography_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
+    convert_pitch_plane_to_image_plane.output_dir="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID" \
     convert_pitch_plane_to_image_plane.event_period=SECOND_HALF \
     convert_pitch_plane_to_image_plane.calibrated=true
 
@@ -66,12 +66,12 @@ echo "Processing second half (distorted)..."
 uv run python -m src.main \
     command=convert_pitch_plane_to_image_plane \
     convert_pitch_plane_to_image_plane.match_id=$MATCH_ID \
-    convert_pitch_plane_to_image_plane.input_csv_path="data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_2nd_half.csv" \
-    convert_pitch_plane_to_image_plane.homography_path="data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
-    convert_pitch_plane_to_image_plane.output_dir="data/interim/$MATCH_ID" \
+    convert_pitch_plane_to_image_plane.input_csv_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_pitch_plane_coordinates_2nd_half.csv" \
+    convert_pitch_plane_to_image_plane.homography_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_homography.npy" \
+    convert_pitch_plane_to_image_plane.output_dir="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID" \
     convert_pitch_plane_to_image_plane.event_period=SECOND_HALF \
     convert_pitch_plane_to_image_plane.calibrated=false \
-    convert_pitch_plane_to_image_plane.camera_intrinsics_path="data/interim/$MATCH_ID/${MATCH_ID}_camera_intrinsics.npz"
+    convert_pitch_plane_to_image_plane.camera_intrinsics_path="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID/${MATCH_ID}_camera_intrinsics.npz"
 
 # Check if second half distorted conversion was successful
 if [ $? -ne 0 ]; then

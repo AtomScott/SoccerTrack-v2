@@ -167,19 +167,19 @@ log_string:
   string: "Hello, world!"
 
 # Video preprocessing
-trim_video_into_halves:
-  padding_frames: 30  # Number of frames to pad at start/end of each half
+# trim_video_into_halves:
+#   padding_frames: 30  # Number of frames to pad at start/end of each half
 
 # Coordinate conversion
-convert_raw_to_pitch_plane:
-  pitch_length: 105.0  # meters
-  pitch_width: 68.0   # meters
+# convert_raw_to_pitch_plane:
+#   pitch_length: 105.0  # meters
+#   pitch_width: 68.0   # meters
 
 # Camera calibration
-generate_calibration_mappings:
-  min_matches: 10
-  ransac_threshold: 3.0
-  confidence: 0.99
+# generate_calibration_mappings:
+#   min_matches: 10
+#   ransac_threshold: 3.0
+#   confidence: 0.99
 
 calibrate_camera:
   interpolation: cubic  # Options: linear, cubic

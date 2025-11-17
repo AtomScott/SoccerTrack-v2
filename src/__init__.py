@@ -5,6 +5,7 @@ from .example import log_string
 from .visualization.plot_coordinates_on_video import plot_coordinates_on_video
 from .visualization.plot_bboxes_on_video import plot_bboxes_on_video
 from .detection.yolov8 import detect_objects
+# from .detection.rfdetr import detect_objects_rfdetr
 from .data_utils.create_yolo_dataset import create_yolo_dataset
 from .video_utils.trim_video_into_halves import trim_video_into_halves
 from .coordinate_conversion.convert_raw_to_pitch_plane import convert_raw_to_pitch_plane
@@ -18,6 +19,7 @@ __all__ = [
     "plot_coordinates_on_video",
     "plot_bboxes_on_video",
     "detect_objects",
+    # "detect_objects_rfdetr",
     "create_yolo_dataset",
     "trim_video_into_halves",
     "convert_raw_to_pitch_plane",

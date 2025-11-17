@@ -10,8 +10,8 @@ fi
 MATCH_ID=$1
 
 # Set up paths
-BASE_DIR="data/interim/$MATCH_ID"
-WEIGHTS_PATH="models/model=yolov8m-imgsz=2048.pt"
+BASE_DIR="/data/share/SoccerTrack-v2/data/interim/$MATCH_ID"
+WEIGHTS_PATH="/data/share/SoccerTrack-v2/models/model=yolov8m-imgsz=2048.pt"
 
 # Check if required files exist
 if [ ! -f "$WEIGHTS_PATH" ]; then
