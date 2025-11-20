@@ -17,13 +17,13 @@ if [ "$2" = "--first-frame-only" ]; then
 fi
 
 # Ensure required directories exist
-mkdir -p "data/interim/${MATCH_ID}"
+mkdir -p "/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}"
 
 # Function to calibrate a video
 calibrate_video() {
     local half=$1
-    local input_video="data/interim/${MATCH_ID}/${MATCH_ID}_panorama_${half}_half.mp4"
-    local output_path="data/interim/${MATCH_ID}/${MATCH_ID}_calibrated_panorama_${half}_half"
+    local input_video="/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}/${MATCH_ID}_panorama_${half}_half.mp4"
+    local output_path="/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}/${MATCH_ID}_calibrated_panorama_${half}_half"
     
     # Add appropriate extension
     if [ "$FIRST_FRAME_ONLY" = true ]; then
@@ -57,20 +57,20 @@ calibrate_video() {
 }
 
 # Check if mapping files exist
-if [ ! -f "data/interim/calibrated_keypoints/${MATCH_ID}/${MATCH_ID}_mapx.npy" ] || \
-   [ ! -f "data/interim/calibrated_keypoints/${MATCH_ID}/${MATCH_ID}_mapy.npy" ]; then
+if [ ! -f "/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}/${MATCH_ID}_mapx.npy" ] || \
+   [ ! -f "/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}/${MATCH_ID}_mapy.npy" ]; then
     echo "Error: Mapping files not found. Please run keypoints calibration first:"
     echo "./scripts/calibration/generate_calibration_mappings.sh ${MATCH_ID}"
     exit 1
 fi
 
 # Check if input files exist
-if [ ! -f "data/interim/${MATCH_ID}/${MATCH_ID}_panorama_1st_half.mp4" ]; then
+if [ ! -f "/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}/${MATCH_ID}_panorama_1st_half.mp4" ]; then
     echo "Error: First half video not found at data/interim/${MATCH_ID}/${MATCH_ID}_panorama_1st_half.mp4"
     exit 1
 fi
 
-if [ ! -f "data/interim/${MATCH_ID}/${MATCH_ID}_panorama_2nd_half.mp4" ]; then
+if [ ! -f "/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}/${MATCH_ID}_panorama_2nd_half.mp4" ]; then
     echo "Error: Second half video not found at data/interim/${MATCH_ID}/${MATCH_ID}_panorama_2nd_half.mp4"
     exit 1
 fi

@@ -8,6 +8,7 @@ if [ $# -eq 0 ]; then
 fi
 
 MATCH_ID=$1
+BASE_DIR="/data/share/SoccerTrack-v2/data/interim/${MATCH_ID}"
 
 # Define arrays for variants
 HALVES=("first_half" "second_half")
@@ -61,13 +62,13 @@ for HALF in "${HALVES[@]}"; do
             --match_id "${MATCH_ID}" \
             --conf_threshold 0.3
 
-        # For sports ball class
-        uv run python src/data_association/analyze_bbox_dimensions.py \
-            --detections_path "$DETECTIONS_PATH" \
-            --output_path "$BASE_DIR/${MATCH_ID}_bbox_models_${VIDEO_SUFFIX}_${TYPE}_sportsball.joblib" \
-            --match_id "$MATCH_ID" \
-            --conf_threshold 0.3 \
-            --target_class "sports ball"
+        # # For sports ball class
+        # uv run python src/data_association/analyze_bbox_dimensions.py \
+        #     --detections_path "$DETECTIONS_PATH" \
+        #     --output_path "$BASE_DIR/${MATCH_ID}_bbox_models_${VIDEO_SUFFIX}_${TYPE}_sportsball.joblib" \
+        #     --match_id "$MATCH_ID" \
+        #     --conf_threshold 0.3 \
+        #     --target_class "sports ball"
 
         # Then create ground truth MOT file using the regression models
         if [ $? -eq 0 ]; then
