@@ -40,6 +40,31 @@ def load_keypoints(keypoints_path: Path | str) -> Tuple[np.ndarray, np.ndarray, 
     objpoints = objpoints.reshape(-1, 1, 3)
     return objpoints, imgpoints, image_points_dict
 
+def log_keypoints_stats(objpoints: np.ndarray, imgpoints: np.ndarray) -> None:
+    """ワールド/画像キーポイントの分布をログに出す"""
+    wp = objpoints.reshape(-1, 3)
+    ip = imgpoints.reshape(-1, 2)
+
+    logger.info(
+        f"World points: N={wp.shape[0]}, "
+        f"x=[{wp[:,0].min():.2f}, {wp[:,0].max():.2f}], "
+        f"y=[{wp[:,1].min():.2f}, {wp[:,1].max():.2f}], "
+        f"z unique={np.unique(wp[:,2]).tolist()}"
+    )
+
+    logger.info(
+        f"Image points: N={ip.shape[0]}, "
+        f"x=[{ip[:,0].min():.1f}, {ip[:,0].max():.1f}], "
+        f"y=[{ip[:,1].min():.1f}, {ip[:,1].max():.1f}]"
+    )
+
+    uniq_ip = np.unique(ip, axis=0)
+    if uniq_ip.shape[0] != ip.shape[0]:
+        logger.warning(
+            f"Image points contain duplicates: N={ip.shape[0]}, unique={uniq_ip.shape[0]}"
+        )
+
+
 
 def calibrate_keypoints(imgpoints: np.ndarray, K: np.ndarray, D: np.ndarray, Knew: np.ndarray) -> np.ndarray:
     """
@@ -90,6 +115,7 @@ def generate_calibration_mappings(
 
     # Load keypoints (world & distorted image)
     objpoints, imgpoints, original_keypoints = load_keypoints(keypoints_path)
+    log_keypoints_stats(objpoints, imgpoints)
 
     # Get video dimensions
     cap = cv2.VideoCapture(str(video_path))
@@ -100,31 +126,50 @@ def generate_calibration_mappings(
         return
     image_height, image_width, _ = frame.shape
 
-    # Camera calibration (fisheye)
+        # Camera calibration (fisheye)
     logger.info("Starting camera calibration")
     K = np.zeros((3, 3))
     D = np.zeros((4, 1))
-    flags = (
+
+    base_flags = (
         cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC
         + cv2.fisheye.CALIB_FIX_SKEW
-        + cv2.fisheye.CALIB_CHECK_COND
         + cv2.fisheye.CALIB_FIX_K3
         + cv2.fisheye.CALIB_FIX_K4
     )
+    flags_strict = base_flags + cv2.fisheye.CALIB_CHECK_COND
+    flags_loose = base_flags  # CHECK_COND なし
+
     criteria = (cv2.TermCriteria_COUNT + cv2.TermCriteria_EPS, 100, 1e-6)
 
-    retval, K, D, rvecs, tvecs = cv2.fisheye.calibrate(
-        [objpoints],
-        [imgpoints],
-        (image_width, image_height),
-        K,
-        D,
-        None,
-        None,
-        flags=flags,
-        criteria=criteria,
-    )
+    def run_calibrate(flags_used: int):
+        return cv2.fisheye.calibrate(
+            [objpoints],
+            [imgpoints],
+            (image_width, image_height),
+            K,
+            D,
+            None,
+            None,
+            flags=flags_used,
+            criteria=criteria,
+        )
+
+    try:
+        logger.info("Running fisheye.calibrate with CALIB_CHECK_COND (strict mode)")
+        retval, K, D, rvecs, tvecs = run_calibrate(flags_strict)
+    except cv2.error as e:
+        logger.error(f"Calibration failed with CHECK_COND: {e}")
+        # CALIB_CHECK_COND が原因っぽかったらフォールバック
+        if "CALIB_CHECK_COND" in str(e) or "Ill-conditioned" in str(e):
+            logger.warning("Retrying calibration without CALIB_CHECK_COND (loose mode)")
+            retval, K, D, rvecs, tvecs = run_calibrate(flags_loose)
+        else:
+            # 別のエラーならそのまま投げる
+            raise
+
     logger.info(f"Calibration RMS error: {retval}")
+
 
     # Generate undistortion maps
     new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(
