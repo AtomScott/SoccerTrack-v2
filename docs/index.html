@@ -245,6 +245,7 @@
                 <a href="https://huggingface.co/datasets/atomscott/soccertrack-v2" class="badge">🤗 Hugging Face</a>
                 <a href="https://www.kaggle.com/datasets/atomscott/soccertrack-v2" class="badge">📊 Kaggle</a>
                 <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025" class="badge">🏆 Challenge (STC 2025)</a>
+                <a href="https://drive.google.com/drive/folders/1N2Qx2qkFgRtpbHitl2Vh6sLVYGgqkWwn?usp=sharing" class="badge">💾 Google Drive</a>
             </div>
         </header>
         
@@ -266,25 +267,28 @@
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">Panoramic 4K Coverage</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
-                        <img src="placeholder-panorama-day.jpg" alt="Panoramic view - Day match" style="width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #ff6b35 0%, #fbbf24 100%); display: flex; align-items: center; justify-content: center;">
+                        <img src="assets/panorama-day.jpg" alt="Panoramic view - Day match" style="width: 100%; height: auto; object-fit: cover;">
                         <p style="padding: 1rem; text-align: center; margin: 0;">Daytime Match - Full Pitch Coverage</p>
                     </div>
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
-                        <img src="placeholder-panorama-night.jpg" alt="Panoramic view - Night match" style="width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%); display: flex; align-items: center; justify-content: center;">
+                        <img src="assets/panorama-night.jpg" alt="Panoramic view - Night match" style="width: 100%; height: auto; object-fit: cover;">
                         <p style="padding: 1rem; text-align: center; margin: 0;">Night Match - Stadium Conditions</p>
                     </div>
                 </div>
                 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">GSR Annotations Example</h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
-                    <img src="placeholder-gsr-minimap.jpg" alt="GSR minimap with player positions" style="width: 100%; height: 400px; object-fit: cover; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center;">
+                    <video controls autoplay muted loop style="width: 100%; height: auto; background: #000;">
+                        <source src="assets/demo-minimap.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
                     <p style="padding: 1rem; text-align: center; margin: 0;">2D Pitch Minimap with Player Positions & Track IDs</p>
                 </div>
                 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">Demo Video</h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
-                    <video controls style="width: 100%; height: auto; background: #000;" poster="placeholder-video-thumb.jpg">
-                        <source src="placeholder-demo-video.mp4" type="video/mp4">
+                    <video controls style="width: 100%; height: auto; background: #000;">
+                        <source src="assets/demo-tracking.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
                     <p style="padding: 1rem; text-align: center; margin: 0;">Sample Tracking Visualization with GSR Overlay</p>
@@ -356,7 +360,7 @@
                     <a href="task-gsr.html" style="color: #10b981; text-decoration: none;">Game State Reconstruction (GSR) →</a>
                 </h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
-                    <img src="placeholder-task-gsr.jpg" alt="GSR Task Visualization" style="width: 100%; height: 250px; object-fit: cover; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <img src="assets/task-gsr.jpg" alt="GSR Task Visualization" style="width: 100%; height: auto; object-fit: cover;">
                     <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">GSR: Panoramic view → 2D pitch coordinates with player roles</p>
                 </div>
                 <p>
@@ -372,7 +376,7 @@
                     <a href="task-bas.html" style="color: #10b981; text-decoration: none;">Ball Action Spotting (BAS) →</a>
                 </h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
-                    <img src="placeholder-task-bas.jpg" alt="BAS Task Visualization" style="width: 100%; height: 250px; object-fit: cover; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                    <img src="assets/task-bas.jpg" alt="BAS Task Visualization" style="width: 100%; height: auto; object-fit: cover;">
                     <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">BAS: Temporal action detection with 12 ball event classes</p>
                 </div>
                 <p>
@@ -388,7 +392,7 @@
                     <a href="task-mot.html" style="color: #10b981; text-decoration: none;">Multi-Object Tracking (SoccerTrack Challenge) →</a>
                 </h3>
                 <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
-                    <img src="placeholder-task-mot.jpg" alt="MOT Task Visualization" style="width: 100%; height: 250px; object-fit: cover; background: linear-gradient(135deg, #ff6b35 0%, #dc2626 100%);">
+                    <img src="assets/task-mot.jpg" alt="MOT Task Visualization" style="width: 100%; height: auto; object-fit: cover;">
                     <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">MOT: Persistent player tracking with bounding boxes and IDs</p>
                 </div>
                 <p>
@@ -456,7 +460,7 @@
                     <div style="text-align: center; margin-top: 1.5rem;">
                         <a href="https://www.kaggle.com/datasets/atomscott/soccertrack-v2" class="btn">📊 Kaggle</a>
                         <a href="https://huggingface.co/datasets/atomscott/soccertrack-v2" class="btn">🤗 Hugging Face</a>
-                        <a href="https://drive.google.com/drive/folders/YOUR_FOLDER_ID" class="btn">💾 Google Drive</a>
+                        <a href="https://drive.google.com/drive/folders/1N2Qx2qkFgRtpbHitl2Vh6sLVYGgqkWwn?usp=sharing" class="btn">💾 Google Drive</a>
                     </div>
                 </div>
             </section>
