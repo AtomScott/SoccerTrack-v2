@@ -522,10 +522,11 @@
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS Annotation Fields</h3>
                 <ul style="margin-left: 2rem;">
-                    <li><code>time</code>: Global timestamp aligned to video timeline</li>
-                    <li><code>event_class</code>: One of 12 action classes</li>
-                    <li><code>team</code>: Team performing the action</li>
-                    <li><code>player_id</code>: Track ID (when available)</li>
+                    <li><code>gameTime</code>: Event time in match clock format (half - mm:ss)</li>
+                    <li><code>position</code>: Event timestamp in milliseconds (global timeline)</li>
+                    <li><code>label</code>: Action class (one of 12 predefined classes)</li>
+                    <li><code>team</code>: Team performing the action (left / right)</li>
+                    <li><code>player_id</code>: ID of the player who performed the action</li>
                 </ul>
             </section>
 

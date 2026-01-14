@@ -436,7 +436,7 @@
 
             <section id="format">
                 <h2>Data Format & Folder Structure</h2>
-                <p>The dataset is organized as follows:</p>
+                <p>データセットの構成は以下のようになっております：</p>
                 <pre><code>SoccerTrack-v2/
 ├── videos/          # Panoramic 4K video files (1 MP4 per match)
 │   ├── 117092/
@@ -484,10 +484,11 @@
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS Annotation Fields</h3>
                 <ul style="margin-left: 2rem;">
-                    <li><code>time</code>: Global timestamp aligned to video timeline</li>
-                    <li><code>event_class</code>: One of 12 action classes</li>
-                    <li><code>team</code>: Team performing the action</li>
-                    <li><code>player_id</code>: Track ID (when available)</li>
+                    <li><code>gameTime</code>: 試合時間（前後半 - 分:秒）</li>
+                    <li><code>position</code>: イベント発生時刻（ミリ秒）</li>
+                    <li><code>label</code>: プレーの種類（全12クラス）</li>
+                    <li><code>team</code>: プレーを行ったチーム（left / right）</li>
+                    <li><code>player_id</code>: プレーをした選手のID</li>
                 </ul>
             </section>
 
