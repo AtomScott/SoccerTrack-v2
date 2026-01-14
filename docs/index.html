@@ -476,31 +476,36 @@
             <section id="format">
                 <h2>Data Format & Folder Structure</h2>
                 <p>The dataset is organized as follows:</p>
-                <pre><code>production/
+                <pre><code>SoccerTrack-v2/
 ├── videos/          # Panoramic 4K video files (1 MP4 per match)
+│   ├── 117092/
+│   │   ├── 117092_panorama_1st_half.mp4
+│   │   └── 117092_panorama_2nd_half.mp4
 │   ├── 117093.mp4
 │   └── ...
 ├── gsr/             # Game State Reconstruction annotations
+│   ├── 117092/
+│   │   ├── 117092_1st.json
+│   │   └── 117092_2nd.json
 │   ├── 117093/
-│   │   └── 117093.json
 │   └── ...
 ├── bas/             # Ball Action Spotting annotations
+│   ├── 117092/
+│   │   └── 117092_12_class_events.json
 │   ├── 117093/
-│   │   └── 117093.json
 │   └── ...
 ├── mot/             # Multi-Object Tracking annotations (MOTChallenge format)
-│   ├── 117093/
+│   ├── 117092/
 │   │   ├── gt/
 │   │   │   └── gt.txt
 │   │   └── seqinfo.ini
 │   └── ...
 └── raw/             # Original calibration data and source files
-    ├── 117093/
-    │   ├── 117093_keypoints.json
-    │   ├── 117093_mapx.npy
-    │   ├── 117093_mapy.npy
-    │   ├── 117093_12_class_events.json
-    │   ├── 117093_tracker_box_data.xml
+    ├── 117092/
+    │   ├── 117092_keypoints.json
+    │   ├── 117092_mapx.npy
+    │   ├── 117092_mapy.npy
+    │   ├── 117092_tracker_box_data.xml
     │   └── ...
     └── ...</code></pre>
 

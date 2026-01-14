@@ -438,10 +438,37 @@
                 <h2>Data Format & Folder Structure</h2>
                 <p>The dataset is organized as follows:</p>
                 <pre><code>SoccerTrack-v2/
-├── videos/          # Panoramic 4K video files (1-n MP4s per match)
-├── gsr/             # Per-frame GSR annotations (JSON/CSV)
-├── bas/             # Ball Action Spotting event annotations (JSON/CSV)
-└── splits/          # Train/val/test split definitions (match-level)</code></pre>
+├── videos/          # Panoramic 4K video files (1 MP4 per match)
+│   ├── 117092/
+│   │   ├── 117092_panorama_1st_half.mp4
+│   │   └── 117092_panorama_2nd_half.mp4
+│   ├── 117093.mp4
+│   └── ...
+├── gsr/             # Game State Reconstruction annotations
+│   ├── 117092/
+│   │   ├── 117092_1st.json
+│   │   └── 117092_2nd.json
+│   ├── 117093/
+│   └── ...
+├── bas/             # Ball Action Spotting annotations
+│   ├── 117092/
+│   │   └── 117092_12_class_events.json
+│   ├── 117093/
+│   └── ...
+├── mot/             # Multi-Object Tracking annotations (MOTChallenge format)
+│   ├── 117092/
+│   │   ├── gt/
+│   │   │   └── gt.txt
+│   │   └── seqinfo.ini
+│   └── ...
+└── raw/             # Original calibration data and source files
+    ├── 117092/
+    │   ├── 117092_keypoints.json
+    │   ├── 117092_mapx.npy
+    │   ├── 117092_mapy.npy
+    │   ├── 117092_tracker_box_data.xml
+    │   └── ...
+    └── ...</code></pre>
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR Annotation Fields</h3>
                 <ul style="margin-left: 2rem;">
