@@ -472,13 +472,14 @@
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR Annotation Fields</h3>
                 <ul style="margin-left: 2rem;">
-                    <li><code>frame</code>: Frame number</li>
-                    <li><code>time</code>: Timestamp in video</li>
-                    <li><code>player_id</code>: Unique track ID (persistent throughout match)</li>
-                    <li><code>x, y</code>: 2D pitch coordinates in meters</li>
-                    <li><code>role</code>: player / goalkeeper / referee / other</li>
-                    <li><code>team_side</code>: left / right / null</li>
-                    <li><code>jersey_number</code>: 0–99 / null</li>
+                    <li><code>image_id</code>: 各動画内のフレーム番号</li>
+                    <li><code>track_id</code>: 試合を通して各選手に一貫して付与されるトラッキングID</li>
+                    <li><code>player_id</code>: 選手に固有に割り当てられている識別用ID</li>
+                    <li><code>role</code>: 対象の役割（player / goalkeeper / referee / other）</li>
+                    <li><code>jersey_number</code>: 選手の背番号（0–99 または null）</li>
+                    <li><code>team_side</code>: 所属チーム（left / right / null）</li>
+                    <li><code>x, y</code>: ピッチ上の選手座標（メートル単位、bbox_pitch.x_bottom_middle および
+                        bbox_pitch.y_bottom_middle）</li>
                 </ul>
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS Annotation Fields</h3>
