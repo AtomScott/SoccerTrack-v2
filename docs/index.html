@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SoccerTrack v2: 10 full-length 4K panoramic soccer matches with per-frame GSR and ball action spotting annotations">
+    <meta name="description"
+        content="SoccerTrack v2: 10 full-length 4K panoramic soccer matches with per-frame GSR and ball action spotting annotations">
     <title>SoccerTrack v2 - Full-Pitch Soccer Dataset for Game State Reconstruction</title>
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://atomscott.github.io/SoccerTrack-v2/">
     <meta property="og:title" content="SoccerTrack v2 - Full-Pitch Soccer Dataset">
-    <meta property="og:description" content="10 full-length 4K panoramic soccer matches with per-frame game state reconstruction and ball action spotting annotations. Open access for research.">
+    <meta property="og:description"
+        content="10 full-length 4K panoramic soccer matches with per-frame game state reconstruction and ball action spotting annotations. Open access for research.">
     <meta property="og:image" content="https://atomscott.github.io/SoccerTrack-v2/assets/og-image.jpg">
     <meta property="og:site_name" content="SoccerTrack v2">
-    
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://atomscott.github.io/SoccerTrack-v2/">
     <meta name="twitter:title" content="SoccerTrack v2 - Full-Pitch Soccer Dataset">
-    <meta name="twitter:description" content="10 full-length 4K panoramic soccer matches with per-frame game state reconstruction and ball action spotting annotations.">
+    <meta name="twitter:description"
+        content="10 full-length 4K panoramic soccer matches with per-frame game state reconstruction and ball action spotting annotations.">
     <meta name="twitter:image" content="https://atomscott.github.io/SoccerTrack-v2/assets/og-image.jpg">
-    
+
     <!-- Additional SEO -->
-    <meta name="keywords" content="soccer, football, dataset, tracking, MOT, game state reconstruction, ball action spotting, sports analytics, computer vision">
+    <meta name="keywords"
+        content="soccer, football, dataset, tracking, MOT, game state reconstruction, ball action spotting, sports analytics, computer vision">
     <meta name="author" content="Atom Scott">
     <link rel="canonical" href="https://atomscott.github.io/SoccerTrack-v2/">
     <style>
@@ -31,7 +36,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
@@ -40,7 +45,7 @@
             min-height: 100vh;
             padding: 2rem;
         }
-        
+
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -49,7 +54,7 @@
             box-shadow: 0 20px 60px rgba(16, 185, 129, 0.2);
             overflow: hidden;
         }
-        
+
         header {
             background: #1a1a1a;
             color: white;
@@ -57,26 +62,26 @@
             text-align: center;
             border-bottom: 3px solid #10b981;
         }
-        
+
         h1 {
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
             font-weight: 700;
         }
-        
+
         .subtitle {
             font-size: 1.2rem;
             opacity: 0.95;
         }
-        
+
         main {
             padding: 2rem;
         }
-        
+
         section {
             margin-bottom: 2.5rem;
         }
-        
+
         h2 {
             color: #10b981;
             margin-bottom: 1rem;
@@ -84,7 +89,7 @@
             border-bottom: 2px solid #10b981;
             padding-bottom: 0.5rem;
         }
-        
+
         .badges {
             display: flex;
             gap: 1rem;
@@ -92,7 +97,7 @@
             justify-content: center;
             margin-top: 1.5rem;
         }
-        
+
         .badge {
             display: inline-block;
             padding: 0.5rem 1rem;
@@ -103,19 +108,19 @@
             font-weight: 600;
             transition: transform 0.2s;
         }
-        
+
         .badge:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
-        
+
         .download-section {
             background: #f8f9fa;
             padding: 2rem;
             border-radius: 8px;
             margin: 2rem 0;
         }
-        
+
         .btn {
             display: inline-block;
             padding: 1rem 2rem;
@@ -128,37 +133,37 @@
             margin: 0.5rem;
             border: 2px solid #10b981;
         }
-        
+
         .btn:hover {
             background: transparent;
             color: #10b981;
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
         }
-        
+
         .btn-secondary {
             background: #6c757d;
         }
-        
+
         .features {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-top: 1.5rem;
         }
-        
+
         .feature {
             background: #f8f9fa;
             padding: 1.5rem;
             border-radius: 8px;
             border-left: 4px solid #10b981;
         }
-        
+
         .feature h3 {
             color: #10b981;
             margin-bottom: 0.5rem;
         }
-        
+
         code {
             background: #f4f4f4;
             padding: 0.2rem 0.5rem;
@@ -166,7 +171,7 @@
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
         }
-        
+
         pre {
             background: #2d2d2d;
             color: #f8f8f2;
@@ -175,27 +180,27 @@
             overflow-x: auto;
             margin: 1rem 0;
         }
-        
+
         pre code {
             background: none;
             color: inherit;
             padding: 0;
         }
-        
+
         footer {
             background: #2d2d2d;
             color: white;
             padding: 2rem;
             text-align: center;
         }
-        
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1rem;
             margin: 1.5rem 0;
         }
-        
+
         .stat {
             text-align: center;
             padding: 1.5rem;
@@ -204,29 +209,29 @@
             border-radius: 8px;
             border: 2px solid #10b981;
         }
-        
+
         .stat:nth-child(even) {
             border-color: #ff6b35;
         }
-        
+
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
             display: block;
         }
-        
+
         .stat-label {
             font-size: 0.9rem;
             opacity: 0.9;
         }
-        
+
         .lang-switcher {
             position: absolute;
             top: 1rem;
             right: 1rem;
             z-index: 100;
         }
-        
+
         .lang-btn {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -240,13 +245,15 @@
             display: inline-block;
             transition: all 0.2s;
         }
-        
-        .lang-btn:hover, .lang-btn.active {
+
+        .lang-btn:hover,
+        .lang-btn.active {
             background: white;
             color: #10b981;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header style="position: relative;">
@@ -257,84 +264,106 @@
             <h1>⚽ SoccerTrack v2</h1>
             <p class="subtitle">A Full-Pitch Multi-View Soccer Dataset for Game State Reconstruction</p>
             <p style="margin-top: 1rem; font-size: 1.1rem; opacity: 0.95;">
-                10 full-length panoramic 4K matches with per-frame Game State Reconstruction (GSR) and Ball Action Spotting (BAS) labels for soccer analytics
+                10 full-length panoramic 4K matches with per-frame Game State Reconstruction (GSR) and Ball Action
+                Spotting (BAS) labels for soccer analytics
             </p>
             <div class="badges">
                 <a href="https://arxiv.org/abs/2508.01802" class="badge">📄 Paper (arXiv)</a>
                 <a href="https://github.com/AtomScott/SoccerTrack-v2" class="badge">📦 GitHub</a>
-                <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025" class="badge">🏆 Challenge (STC 2025)</a>
-                <a href="https://drive.google.com/drive/folders/1N2Qx2qkFgRtpbHitl2Vh6sLVYGgqkWwn?usp=sharing" class="badge">💾 Google Drive</a>
+                <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025" class="badge">🏆 Challenge (STC
+                    2025)</a>
+                <a href="https://drive.google.com/drive/folders/1N2Qx2qkFgRtpbHitl2Vh6sLVYGgqkWwn?usp=sharing"
+                    class="badge">💾 Google Drive</a>
             </div>
         </header>
-        
+
         <main>
             <section id="tldr">
                 <h2>TL;DR</h2>
                 <ul style="margin-left: 2rem; line-height: 2;">
-                    <li><strong>10 full matches</strong> (~900 minutes) of 4K panoramic full-pitch footage covering entire playing field</li>
-                    <li><strong>Per-frame GSR annotations</strong>: 2D pitch coordinates, track IDs, jersey numbers, roles, and team assignments</li>
-                    <li><strong>Ball Action Spotting</strong>: 12 action classes (Pass, Drive, Shot, Header, Cross, etc.) with global timestamps</li>
-                    <li><strong>Three benchmark tasks</strong>: Multi-Object Tracking (MOT), Game State Reconstruction (GSR), Ball Action Spotting (BAS)</li>
-                    <li><strong>Open access</strong>: Available on GitHub and Google Drive for reproducible research</li>
+                    <li><strong>10 full matches</strong> (~900 minutes) of 4K panoramic full-pitch footage covering
+                        entire playing field</li>
+                    <li><strong>Per-frame GSR annotations</strong>: 2D pitch coordinates, track IDs, jersey numbers,
+                        roles, and team assignments</li>
+                    <li><strong>Ball Action Spotting</strong>: 12 action classes (Pass, Drive, Shot, Header, Cross,
+                        etc.) with global timestamps</li>
+                    <li><strong>Three benchmark tasks</strong>: Multi-Object Tracking (MOT), Game State Reconstruction
+                        (GSR), Ball Action Spotting (BAS)</li>
+                    <li><strong>Open access</strong>: Available on GitHub and Google Drive for reproducible research
+                    </li>
                 </ul>
             </section>
-            
+
             <section id="visuals">
                 <h2>Dataset Visuals</h2>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">Panoramic 4K Coverage</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
-                        <img src="assets/panorama-day.jpg" alt="Panoramic view - Day match" style="width: 100%; height: auto; object-fit: cover;">
+                        <img src="assets/panorama-day.jpg" alt="Panoramic view - Day match"
+                            style="width: 100%; height: auto; object-fit: cover;">
                         <p style="padding: 1rem; text-align: center; margin: 0;">Daytime Match - Full Pitch Coverage</p>
                     </div>
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
-                        <img src="assets/panorama-night.jpg" alt="Panoramic view - Night match" style="width: 100%; height: auto; object-fit: cover;">
+                        <img src="assets/panorama-night.jpg" alt="Panoramic view - Night match"
+                            style="width: 100%; height: auto; object-fit: cover;">
                         <p style="padding: 1rem; text-align: center; margin: 0;">Night Match - Stadium Conditions</p>
                     </div>
                 </div>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">GSR Annotations Example</h3>
-                <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
+                <div
+                    style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
                     <video controls autoplay muted loop style="width: 100%; height: auto; background: #000;">
                         <source src="assets/demo-minimap.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
-                    <p style="padding: 1rem; text-align: center; margin: 0;">2D Pitch Minimap with Player Positions & Track IDs</p>
+                    <p style="padding: 1rem; text-align: center; margin: 0;">2D Pitch Minimap with Player Positions &
+                        Track IDs</p>
                 </div>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">Demo Video</h3>
-                <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
+                <div
+                    style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
                     <video controls style="width: 100%; height: auto; background: #000;">
-                        <source src="assets/demo-tracking.mp4" type="video/mp4">
+                        <source src="assets/demo-gsr_and_bas.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
-                    <p style="padding: 1rem; text-align: center; margin: 0;">Sample Tracking Visualization with GSR Overlay</p>
+                    <p style="padding: 1rem; text-align: center; margin: 0;">Sample Tracking Visualization with GSR
+                        Overlay</p>
                 </div>
             </section>
-            
+
             <section id="overview">
                 <h2>What is SoccerTrack v2?</h2>
                 <p>
-                    SoccerTrack v2 addresses critical gaps in existing soccer datasets by providing full-pitch panoramic coverage 
-                    with comprehensive per-frame annotations. Unlike broadcast-view datasets limited by occlusions and partial field coverage, 
+                    SoccerTrack v2 addresses critical gaps in existing soccer datasets by providing full-pitch panoramic
+                    coverage
+                    with comprehensive per-frame annotations. Unlike broadcast-view datasets limited by occlusions and
+                    partial field coverage,
                     our dataset captures the entire pitch using panoramic 4K cameras.
                 </p>
                 <p style="margin-top: 1rem;">
-                    The dataset features <strong>10 university-level amateur matches</strong> recorded with BePro camera systems, 
-                    providing approximately 900 minutes of gameplay. Each frame is annotated with detailed game state information 
-                    including player positions in 2D pitch coordinates, persistent track IDs, jersey numbers, player roles 
+                    The dataset features <strong>10 university-level amateur matches</strong> recorded with BePro camera
+                    systems,
+                    providing approximately 900 minutes of gameplay. Each frame is annotated with detailed game state
+                    information
+                    including player positions in 2D pitch coordinates, persistent track IDs, jersey numbers, player
+                    roles
                     (player/goalkeeper/referee), and team assignments.
                 </p>
                 <p style="margin-top: 1rem;">
-                    Beyond tracking, SoccerTrack v2 includes <strong>Ball Action Spotting</strong> annotations covering 12 action classes 
-                    aligned to the video timeline, enabling comprehensive tactical analysis and event detection research.
+                    Beyond tracking, SoccerTrack v2 includes <strong>Ball Action Spotting</strong> annotations covering
+                    12 action classes
+                    aligned to the video timeline, enabling comprehensive tactical analysis and event detection
+                    research.
                 </p>
             </section>
-            
+
             <section id="contents">
                 <h2>Dataset Contents</h2>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">Matches & Videos</h3>
                 <ul style="margin-left: 2rem;">
                     <li><strong>10 university-level amateur matches</strong></li>
@@ -342,8 +371,9 @@
                     <li><strong>4K panoramic MP4</strong> videos with full-pitch coverage</li>
                     <li>Camera setup: BePro Cerberus (2 matches) + 3-camera panoramic systems (8 matches)</li>
                 </ul>
-                
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR (Game State Reconstruction) Annotations</h3>
+
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR (Game State Reconstruction)
+                    Annotations</h3>
                 <p>Per-frame annotations including:</p>
                 <ul style="margin-left: 2rem;">
                     <li><strong>2D pitch coordinates</strong> (meters) for all players</li>
@@ -352,10 +382,12 @@
                     <li><strong>Team assignments</strong>: left, right, or null</li>
                     <li><strong>Jersey numbers</strong>: 0–99 or null</li>
                 </ul>
-                
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS (Ball Action Spotting) Annotations</h3>
+
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS (Ball Action Spotting)
+                    Annotations</h3>
                 <p><strong>12 action classes</strong> with global timestamps:</p>
-                <div style="margin-left: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                <div
+                    style="margin-left: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
                     <div>• Pass</div>
                     <div>• Drive</div>
                     <div>• Header</div>
@@ -370,142 +402,170 @@
                     <div>• Goal</div>
                 </div>
             </section>
-            
+
             <section id="tasks">
                 <h2>Tasks & Benchmarks</h2>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">
-                    <a href="task-gsr.html" style="color: #10b981; text-decoration: none;">Game State Reconstruction (GSR) →</a>
+                    <a href="task-gsr.html" style="color: #10b981; text-decoration: none;">Game State Reconstruction
+                        (GSR) →</a>
                 </h3>
-                <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
-                    <img src="assets/task-gsr.jpg" alt="GSR Task Visualization" style="width: 100%; height: auto; object-fit: cover;">
-                    <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">GSR: Panoramic view → 2D pitch coordinates with player roles</p>
+                <div
+                    style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
+                    <img src="assets/task-gsr.jpg" alt="GSR Task Visualization"
+                        style="width: 100%; height: auto; object-fit: cover;">
+                    <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">GSR:
+                        Panoramic view → 2D pitch coordinates with player roles</p>
                 </div>
                 <p>
-                    Generate 2D pitch minimaps from panoramic video. Reconstruct complete game state including all player positions, 
-                    roles, and team assignments for tactical analysis. This task evaluates the ability to accurately map players 
+                    Generate 2D pitch minimaps from panoramic video. Reconstruct complete game state including all
+                    player positions,
+                    roles, and team assignments for tactical analysis. This task evaluates the ability to accurately map
+                    players
                     from video frames to standardized pitch coordinates while maintaining identity and role information.
                 </p>
                 <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-                    <em>Inspired by <a href="https://www.soccer-net.org/tasks/game-state-reconstruction" style="color: #10b981;">SoccerNet GSR Challenge</a></em>
+                    <em>Inspired by <a href="https://www.soccer-net.org/tasks/game-state-reconstruction"
+                            style="color: #10b981;">SoccerNet GSR Challenge</a></em>
                 </p>
-                
+
                 <h3 style="color: #10b981; margin-top: 2rem; margin-bottom: 0.5rem;">
-                    <a href="task-bas.html" style="color: #10b981; text-decoration: none;">Ball Action Spotting (BAS) →</a>
+                    <a href="task-bas.html" style="color: #10b981; text-decoration: none;">Ball Action Spotting (BAS)
+                        →</a>
                 </h3>
-                <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
-                    <img src="assets/task-bas.jpg" alt="BAS Task Visualization" style="width: 100%; height: auto; object-fit: cover;">
-                    <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">BAS: Temporal action detection with 12 ball event classes</p>
+                <div
+                    style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
+                    <img src="assets/task-bas.jpg" alt="BAS Task Visualization"
+                        style="width: 100%; height: auto; object-fit: cover;">
+                    <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">BAS:
+                        Temporal action detection with 12 ball event classes</p>
                 </div>
                 <p>
-                    Detect and classify 12 types of ball actions from video. Event detection task aligned with global timestamps 
-                    for comprehensive match analysis. Actions include Pass, Drive, Shot, Header, High Pass, Out, Cross, Throw In, 
+                    Detect and classify 12 types of ball actions from video. Event detection task aligned with global
+                    timestamps
+                    for comprehensive match analysis. Actions include Pass, Drive, Shot, Header, High Pass, Out, Cross,
+                    Throw In,
                     Ball Player Block, Player Successful Tackle, Free Kick, and Goal.
                 </p>
                 <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-                    <em>Inspired by <a href="https://www.soccer-net.org/tasks/ball-action-spotting" style="color: #10b981;">SoccerNet BAS Challenge</a></em>
+                    <em>Inspired by <a href="https://www.soccer-net.org/tasks/ball-action-spotting"
+                            style="color: #10b981;">SoccerNet BAS Challenge</a></em>
                 </p>
-                
+
                 <h3 style="color: #10b981; margin-top: 2rem; margin-bottom: 0.5rem;">
-                    <a href="task-mot.html" style="color: #10b981; text-decoration: none;">Multi-Object Tracking (SoccerTrack Challenge) →</a>
+                    <a href="task-mot.html" style="color: #10b981; text-decoration: none;">Multi-Object Tracking
+                        (SoccerTrack Challenge) →</a>
                 </h3>
-                <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
-                    <img src="assets/task-mot.jpg" alt="MOT Task Visualization" style="width: 100%; height: auto; object-fit: cover;">
-                    <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">MOT: Persistent player tracking with bounding boxes and IDs</p>
+                <div
+                    style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
+                    <img src="assets/task-mot.jpg" alt="MOT Task Visualization"
+                        style="width: 100%; height: auto; object-fit: cover;">
+                    <p style="padding: 0.75rem; text-align: center; margin: 0; font-size: 0.9rem; color: #666;">MOT:
+                        Persistent player tracking with bounding boxes and IDs</p>
                 </div>
                 <p>
-                    Full-pitch player tracking with persistent IDs across long sequences. Evaluate tracking performance, ID maintenance, 
-                    and re-identification in complex game scenarios. A subset of matches with bounding box annotations is featured in the 
-                    <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025" style="color: #10b981; text-decoration: underline;">SoccerTrack Challenge 2025</a>.
+                    Full-pitch player tracking with persistent IDs across long sequences. Evaluate tracking performance,
+                    ID maintenance,
+                    and re-identification in complex game scenarios. A subset of matches with bounding box annotations
+                    is featured in the
+                    <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025"
+                        style="color: #10b981; text-decoration: underline;">SoccerTrack Challenge 2025</a>.
                 </p>
             </section>
-            
+
             <section id="format">
                 <h2>Data Format & Folder Structure</h2>
                 <p>The dataset is organized as follows:</p>
-                <pre><code>production/
+                <pre><code>SoccerTrack-v2/
 ├── videos/          # Panoramic 4K video files (1 MP4 per match)
+│   ├── 117092/
+│   │   ├── 117092_panorama_1st_half.mp4
+│   │   └── 117092_panorama_2nd_half.mp4
 │   ├── 117093.mp4
 │   └── ...
 ├── gsr/             # Game State Reconstruction annotations
+│   ├── 117092/
+│   │   ├── 117092_1st.json
+│   │   └── 117092_2nd.json
 │   ├── 117093/
-│   │   └── 117093.json
 │   └── ...
 ├── bas/             # Ball Action Spotting annotations
+│   ├── 117092/
+│   │   └── 117092_12_class_events.json
 │   ├── 117093/
-│   │   └── 117093.json
 │   └── ...
 ├── mot/             # Multi-Object Tracking annotations (MOTChallenge format)
-│   ├── 117093/
+│   ├── 117092/
 │   │   ├── gt/
 │   │   │   └── gt.txt
 │   │   └── seqinfo.ini
 │   └── ...
 └── raw/             # Original calibration data and source files
-    ├── 117093/
-    │   ├── 117093_keypoints.json
-    │   ├── 117093_mapx.npy
-    │   ├── 117093_mapy.npy
-    │   ├── 117093_12_class_events.json
-    │   ├── 117093_tracker_box_data.xml
+    ├── 117092/
+    │   ├── 117092_keypoints.json
+    │   ├── 117092_mapx.npy
+    │   ├── 117092_mapy.npy
+    │   ├── 117092_tracker_box_data.xml
     │   └── ...
     └── ...</code></pre>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR Annotation Fields</h3>
                 <ul style="margin-left: 2rem;">
-                    <li><code>frame</code>: Frame number</li>
-                    <li><code>time</code>: Timestamp in video</li>
-                    <li><code>player_id</code>: Unique track ID (persistent throughout match)</li>
-                    <li><code>x, y</code>: 2D pitch coordinates in meters</li>
-                    <li><code>role</code>: player / goalkeeper / referee / other</li>
-                    <li><code>team_side</code>: left / right / null</li>
-                    <li><code>jersey_number</code>: 0–99 / null</li>
+                    <li><code>image_id</code>: Frame index in the video sequence</li>
+                    <li><code>track_id</code>: Unique track ID (persistent throughout match)</li>
+                    <li><code>player_id</code>: Unique player identifier assigned to the real-world player</li>
+                    <li><code>role</code>: Entity role (player / goalkeeper / referee / other)</li>
+                    <li><code>jersey_number</code>: Player jersey number (0–99 or null)</li>
+                    <li><code>team_side</code>: Team affiliation (left / right / null)</li>
+                    <li><code>x, y</code>: Player position on pitch in meters (bottom-center of bbox_pitch)</li>
                 </ul>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS Annotation Fields</h3>
                 <ul style="margin-left: 2rem;">
-                    <li><code>time</code>: Global timestamp aligned to video timeline</li>
-                    <li><code>event_class</code>: One of 12 action classes</li>
-                    <li><code>team</code>: Team performing the action</li>
-                    <li><code>player_id</code>: Track ID (when available)</li>
+                    <li><code>gameTime</code>: Event time in match clock format (half - mm:ss)</li>
+                    <li><code>position</code>: Event timestamp in milliseconds (global timeline)</li>
+                    <li><code>label</code>: Action class (one of 12 predefined classes)</li>
+                    <li><code>team</code>: Team performing the action (left / right)</li>
+                    <li><code>player_id</code>: ID of the player who performed the action</li>
                 </ul>
             </section>
-            
+
             <section id="download">
                 <h2>Download Dataset</h2>
                 <div class="download-section">
                     <p><strong>Choose your preferred platform:</strong></p>
                     <div style="text-align: center; margin-top: 1.5rem;">
-                        <a href="https://drive.google.com/drive/folders/1N2Qx2qkFgRtpbHitl2Vh6sLVYGgqkWwn?usp=sharing" class="btn">💾 Google Drive</a>
+                        <a href="https://drive.google.com/drive/folders/1N2Qx2qkFgRtpbHitl2Vh6sLVYGgqkWwn?usp=sharing"
+                            class="btn">💾 Google Drive</a>
                     </div>
                 </div>
             </section>
-            
+
             <section id="quickstart">
                 <h2>Getting Started</h2>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">1. Download the Dataset</h3>
                 <p>Download the dataset files from Google Drive.</p>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">2. Clone the Repository</h3>
                 <pre><code>git clone https://github.com/AtomScott/SoccerTrack-v2.git
 cd SoccerTrack-v2
 pip install -r requirements-dev.txt</code></pre>
-                
+
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">3. Visualize Tracking Data</h3>
                 <pre><code>python -m src.main command=plot-coordinates-on-video \
   plot_coordinates_on_video.match_id=117093</code></pre>
-                
+
                 <p style="margin-top: 1rem;">
-                    See the <code>scripts/</code> directory for data preprocessing pipelines, feature extraction, 
+                    See the <code>scripts/</code> directory for data preprocessing pipelines, feature extraction,
                     model training configurations, and evaluation benchmarks. All experiments are fully reproducible.
                 </p>
             </section>
-            
+
             <section id="license">
                 <h2>License & Terms of Use</h2>
                 <p>
-                    SoccerTrack v2 is released under the <strong>MIT License</strong>. The dataset has been collected 
+                    SoccerTrack v2 is released under the <strong>MIT License</strong>. The dataset has been collected
                     with approval from the university ethics board, and all data has been de-identified.
                 </p>
                 <ul style="margin-left: 2rem; margin-top: 1rem;">
@@ -514,11 +574,12 @@ pip install -r requirements-dev.txt</code></pre>
                     <li>Free for both academic research and commercial use</li>
                 </ul>
                 <p style="margin-top: 1rem;">
-                    Please see the <a href="https://github.com/AtomScott/SoccerTrack-v2/blob/main/LICENSE" style="color: #10b981;">LICENSE</a> 
+                    Please see the <a href="https://github.com/AtomScott/SoccerTrack-v2/blob/main/LICENSE"
+                        style="color: #10b981;">LICENSE</a>
                     file for full details.
                 </p>
             </section>
-            
+
             <section id="citation">
                 <h2>Citation</h2>
                 <p>If you use this dataset in your research, please cite:</p>
@@ -530,22 +591,24 @@ pip install -r requirements-dev.txt</code></pre>
   url={https://arxiv.org/abs/2508.01802}
 }</code></pre>
             </section>
-            
+
             <section id="acknowledgements">
                 <h2>Acknowledgements</h2>
                 <p>
-                    This work was supported by JST SPRING (Grant Number JPMJSP2108) and JSPS KAKENHI. 
+                    This work was supported by JST SPRING (Grant Number JPMJSP2108) and JSPS KAKENHI.
                     We thank all participating teams and universities for their cooperation in data collection.
                 </p>
                 <p style="margin-top: 1.5rem;">
-                    Note: I've started a startup called <a href="https://playbox.co.jp/" style="color: #10b981; font-weight: 600;">Playbox</a>, 
-                    making human movement computable through cutting-edge sports video analysis technology. 
-                    Check out our <a href="https://playbox.co.jp/" style="color: #10b981;">automatic camera systems and AI-powered analysis tools</a> 
+                    Note: I've started a startup called <a href="https://playbox.co.jp/"
+                        style="color: #10b981; font-weight: 600;">Playbox</a>,
+                    making human movement computable through cutting-edge sports video analysis technology.
+                    Check out our <a href="https://playbox.co.jp/" style="color: #10b981;">automatic camera systems and
+                        AI-powered analysis tools</a>
                     for soccer and other sports! ⚽
                 </p>
             </section>
         </main>
-        
+
         <footer>
             <p>&copy; 2025 SoccerTrack v2 Project | Made with ⚽ for the research community</p>
             <p style="margin-top: 0.5rem; font-size: 0.9rem; opacity: 0.8;">
@@ -554,5 +617,5 @@ pip install -r requirements-dev.txt</code></pre>
         </footer>
     </div>
 </body>
-</html>
 
+</html>
