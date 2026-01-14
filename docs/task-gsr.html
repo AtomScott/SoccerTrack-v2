@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSR Task - SoccerTrack v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(16, 185, 129, 0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: #1a1a1a;
+            color: white;
+            padding: 2rem;
+            border-bottom: 3px solid #10b981;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .breadcrumb {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .breadcrumb a {
+            color: #10b981;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        main {
+            padding: 2rem;
+        }
+        
+        h2 {
+            color: #10b981;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2:first-child {
+            margin-top: 0;
+        }
+        
+        h3 {
+            color: #059669;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #10b981;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        .highlight-box {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .diff-box {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        ul {
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+        }
+        
+        li {
+            margin: 0.5rem 0;
+        }
+        
+        footer {
+            background: #2d2d2d;
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        footer a {
+            color: #10b981;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="index.html">SoccerTrack v2</a> / Tasks</p>
+            <h1>🗺️ Game State Reconstruction (GSR)</h1>
+        </header>
+        
+        <main>
+            <section id="overview">
+                <h2>Task Overview</h2>
+                <p>
+                    <strong>Input:</strong> Panoramic 4K video (full match)<br>
+                    <strong>Output:</strong> Per-frame game state on 2D pitch minimap (position + role + team + jersey number)
+                </p>
+                
+                <div class="highlight-box">
+                    <strong>Alignment with SoccerNet-GSR:</strong><br>
+                    ✅ <strong>Same:</strong> 2D pitch coordinates, player roles, team assignment, jersey numbers<br>
+                    ⚠️ <strong>Different:</strong> Fixed panoramic camera + full match (not broadcast clips)
+                </div>
+            </section>
+            
+            <section id="io">
+                <h2>Input / Output Definition</h2>
+                
+                <h3>Input</h3>
+                <ul>
+                    <li><code>videos/match_XXXXX.mp4</code> — Full match panoramic video (4K)</li>
+                    <li>Camera: BePro Cerberus (2 matches) or 3-camera panoramic (8 matches)</li>
+                </ul>
+                
+                <h3>Output (per frame)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>frame</code></td>
+                            <td>int</td>
+                            <td>Frame number</td>
+                        </tr>
+                        <tr>
+                            <td><code>time</code></td>
+                            <td>float</td>
+                            <td>Timestamp in video (seconds)</td>
+                        </tr>
+                        <tr>
+                            <td><code>player_id</code></td>
+                            <td>int</td>
+                            <td>Unique track ID (persistent throughout match)</td>
+                        </tr>
+                        <tr>
+                            <td><code>x, y</code></td>
+                            <td>float</td>
+                            <td>2D pitch coordinates in meters</td>
+                        </tr>
+                        <tr>
+                            <td><code>role</code></td>
+                            <td>string</td>
+                            <td>player / goalkeeper / referee / other</td>
+                        </tr>
+                        <tr>
+                            <td><code>team_side</code></td>
+                            <td>string</td>
+                            <td>left / right / null</td>
+                        </tr>
+                        <tr>
+                            <td><code>jersey_number</code></td>
+                            <td>int/null</td>
+                            <td>0–99 or null</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <section id="layout">
+                <h2>File Layout</h2>
+                <pre><code>production/
+├── videos/
+│   ├── 117093.mp4
+│   ├── 117094.mp4
+│   └── ...
+├── gsr/
+│   ├── 117093/
+│   │   └── 117093.json
+│   ├── 117094/
+│   │   └── 117094.json
+│   └── ...
+├── bas/
+├── mot/
+└── raw/
+    ├── 117093/
+    │   ├── 117093_keypoints.json
+    │   ├── 117093_mapx.npy
+    │   ├── 117093_mapy.npy
+    │   └── ...
+    └── ...</code></pre>
+                
+                <p>
+                    Each match has <strong>one annotation file</strong> in its own directory. 
+                    Unlike SoccerNet-GSR which uses <code>img1/</code> for image frames, we reference the video directly 
+                    from <code>videos/</code> to save storage space.
+                </p>
+            </section>
+            
+            <section id="schema">
+                <h2>Schema & SoccerNet Mapping</h2>
+                
+                <h3>Example JSON Structure</h3>
+                <pre><code>{
+  "match_id": "117093",
+  "fps": 25.0,
+  "annotations": [
+    {
+      "frame": 0,
+      "time": 0.0,
+      "objects": [
+        {
+          "player_id": 1,
+          "x": 52.5,
+          "y": 34.0,
+          "role": "player",
+          "team_side": "left",
+          "jersey_number": 10
+        },
+        ...
+      ]
+    },
+    ...
+  ]
+}</code></pre>
+
+                <h3>SoccerNet-GSR Correspondence</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SoccerTrack v2</th>
+                            <th>SoccerNet-GSR</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>x, y</code></td>
+                            <td><code>x_pos, y_pos</code></td>
+                            <td>Pitch coordinates (meters)</td>
+                        </tr>
+                        <tr>
+                            <td><code>team_side</code></td>
+                            <td><code>left / right</code></td>
+                            <td>Team assignment</td>
+                        </tr>
+                        <tr>
+                            <td><code>jersey_number</code></td>
+                            <td><code>jersey_number</code></td>
+                            <td>0–99</td>
+                        </tr>
+                        <tr>
+                            <td><code>role</code></td>
+                            <td><code>role</code></td>
+                            <td>player/goalkeeper/referee/other</td>
+                        </tr>
+                        <tr>
+                            <td><code>player_id</code></td>
+                            <td><code>track_id</code></td>
+                            <td>Persistent across full match</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <section id="evaluation">
+                <h2>Evaluation / Metrics</h2>
+                <p>
+                    Evaluation uses <strong>GS-HOTA</strong> (Game State Higher Order Tracking Accuracy), 
+                    following the SoccerNet-GSR Challenge definition.
+                </p>
+                <p>
+                    <em>Official devkit: Coming soon</em>
+                </p>
+            </section>
+            
+            <section id="differences">
+                <h2>Differences vs SoccerNet-GSR</h2>
+                
+                <div class="diff-box">
+                    <strong>Key Differences:</strong>
+                    <ul>
+                        <li><strong>Camera view:</strong> Panoramic (full-pitch) vs. broadcast (partial view with occlusions)</li>
+                        <li><strong>Duration:</strong> Full match (~90 min) vs. short clips</li>
+                        <li><strong>Camera setup:</strong> Fixed BePro/3-camera system vs. moving broadcast camera</li>
+                        <li><strong>Level:</strong> University amateur matches vs. professional leagues</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>
+                <a href="index.html">← Back to main page</a> | 
+                <a href="https://www.soccer-net.org/tasks/game-state-reconstruction">SoccerNet-GSR Challenge</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
+
