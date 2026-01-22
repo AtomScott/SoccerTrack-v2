@@ -260,10 +260,22 @@
                 <a href="index-ja.html" class="lang-btn active">🇯🇵 日本語</a>
             </div>
             <h1>⚽ SoccerTrack v2</h1>
-            <p class="subtitle">ゲーム状態再構築のためのフルピッチ・マルチビューサッカーデータセット</p>
-            <p style="margin-top: 1rem; font-size: 1.1rem; opacity: 0.95;">
-                フレーム単位のゲーム状態再構築（GSR）およびボールアクション検出（BAS）ラベル付き、10試合分のパノラマ4K映像（フルマッチ）
-            </p>
+            <p class="subtitle">Game State Reconstructionのためのフルピッチ映像サッカーデータセット</p>
+            <div
+                style="margin-top: 1rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; font-size: 1.1rem; opacity: 0.95;">
+                <span
+                    style="background: rgba(255, 255, 255, 0.1); padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
+                    フレーム単位のGSRラベル
+                </span>
+                <span
+                    style="background: rgba(255, 255, 255, 0.1); padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
+                    時系列のBASラベル
+                </span>
+                <span
+                    style="background: rgba(255, 255, 255, 0.1); padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">
+                    10試合分のパノラマ4K映像
+                </span>
+            </div>
             <div class="badges">
                 <a href="https://arxiv.org/abs/2508.01802" class="badge">📄 Paper (arXiv)</a>
                 <a href="https://github.com/AtomScott/SoccerTrack-v2" class="badge">📦 GitHub</a>
@@ -278,41 +290,41 @@
             <section id="tldr">
                 <h2>概要</h2>
                 <ul style="margin-left: 2rem; line-height: 2;">
-                    <li><strong>10試合分のフルマッチ</strong>（約900分）の4Kパノラマ映像で、ピッチ全体をカバー</li>
-                    <li><strong>フレーム単位のGSRアノテーション</strong>：2Dピッチ座標、トラックID、背番号、役割、チーム割り当て</li>
-                    <li><strong>ボールアクション検出</strong>：12種類のアクションクラス（パス、ドリブル、シュート、ヘディング、クロスなど）にグローバルタイムスタンプ付き</li>
+                    <li><strong>10試合分のフルマッチ</strong>（約900分）のパノラマ4K映像でピッチ全体をカバー</li>
+                    <li><strong>フレーム単位のGSRアノテーション</strong>：2Dピッチ座標・トラッキングID・背番号・役割・チーム</li>
+                    <li><strong>ボールアクション検出</strong>：時系列の12種類のアクション（パス、ドリブル、シュート、ヘディング、クロス...）</li>
                     <li><strong>3つのベンチマークタスク</strong>：Multi-Object Tracking（MOT）、Game State Reconstruction（GSR）、Ball
                         Action Spotting（BAS）</li>
-                    <li><strong>オープンアクセス</strong>：GitHubとGoogle Driveで公開、再現可能な研究を実現</li>
+                    <li><strong>オープンアクセス</strong>：GitHubとGoogle Driveで公開・再現可能な研究を実現</li>
                 </ul>
             </section>
 
             <section id="visuals">
                 <h2>データセット画像</h2>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">パノラマ4K映像</h3>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">4Kパノラマ映像</h3>
                 <div
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
                         <img src="assets/panorama-day.jpg" alt="パノラマビュー - 昼の試合"
                             style="width: 100%; height: auto; object-fit: cover;">
-                        <p style="padding: 1rem; text-align: center; margin: 0;">昼の試合 - フルピッチカバレッジ</p>
+                        <p style="padding: 1rem; text-align: center; margin: 0;">昼の試合 - ピッチ全体をカバー</p>
                     </div>
                     <div style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
                         <img src="assets/panorama-night.jpg" alt="パノラマビュー - 夜の試合"
                             style="width: 100%; height: auto; object-fit: cover;">
-                        <p style="padding: 1rem; text-align: center; margin: 0;">夜の試合 - スタジアム環境</p>
+                        <p style="padding: 1rem; text-align: center; margin: 0;">夜の試合 - 多様なスタジアム環境</p>
                     </div>
                 </div>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">GSRアノテーション例</h3>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">GSRアノテーションのサンプル</h3>
                 <div
                     style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0; margin-bottom: 2rem;">
                     <video controls autoplay muted loop style="width: 100%; height: auto; background: #000;">
                         <source src="assets/demo-minimap.mp4" type="video/mp4">
                         お使いのブラウザは動画タグに対応していません。
                     </video>
-                    <p style="padding: 1rem; text-align: center; margin: 0;">2Dピッチミニマップ with 選手位置 & トラックID</p>
+                    <p style="padding: 1rem; text-align: center; margin: 0;">選手の2次元ピッチ座標・各選手に割り当てられたID</p>
                 </div>
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 1rem;">デモ動画</h3>
@@ -322,7 +334,7 @@
                         <source src="assets/demo-gsr_and_bas.mp4" type="video/mp4">
                         お使いのブラウザは動画タグに対応していません。
                     </video>
-                    <p style="padding: 1rem; text-align: center; margin: 0;">GSRオーバーレイ付きトラッキング可視化サンプル</p>
+                    <p style="padding: 1rem; text-align: center; margin: 0;">パノラマ映像へのGSR・BASアノテーションの可視化</p>
                 </div>
             </section>
 
@@ -330,42 +342,41 @@
                 <h2>SoccerTrack v2とは？</h2>
                 <p>
                     SoccerTrack
-                    v2は、フルピッチのパノラマカバレッジと包括的なフレーム単位アノテーションを提供することで、既存のサッカーデータセットの重要なギャップに対処します。オクルージョンや部分的なフィールドカバレッジに制限される放送視点のデータセットとは異なり、本データセットはパノラマ4Kカメラを使用してピッチ全体を捉えています。
+                    v2は、ピッチ全体が映るパノラマ映像とフレーム単位での複数種類のアノテーションを提供することで、既存のサッカーデータセットとの明確な差別化を実現しています。ピッチの一部しか映らない放送映像のデータセットとは異なり、本データセットは<strong>ピッチ全体を捉えるパノラマ4K映像</strong>によって構成されています。
                 </p>
                 <p style="margin-top: 1rem;">
-                    本データセットには、BeProカメラシステムで記録された<strong>大学レベルのアマチュア試合10試合分</strong>が含まれ、約900分のゲームプレイを提供します。各フレームには、2Dピッチ座標での選手位置、永続的なトラックID、背番号、選手の役割（プレイヤー/ゴールキーパー/審判）、チーム割り当てなどの詳細なゲーム状態情報がアノテーションされています。
+                    本データセットには、BeProカメラシステムで撮影された<strong>大学レベルのアマチュア10試合分</strong>が含まれ、合計約900分の試合映像を提供します。各フレームには、2次元ピッチ座標での選手位置、一貫したトラッキングID、背番号、選手の役割（プレイヤー/ゴールキーパー/審判）、所属チームなどの詳細な試合情報が付与されています。
                 </p>
                 <p style="margin-top: 1rem;">
                     トラッキングに加えて、SoccerTrack
-                    v2には動画タイムラインに整合した<strong>12種類のアクションクラスをカバーするボールアクション検出</strong>アノテーションが含まれており、包括的な戦術分析とイベント検出研究を可能にします。
+                    v2には動画の時系列に沿った<strong>12種類のアクションを判定するボールアクション検出</strong>のデータも含まれており、包括的な戦術分析とイベント検出の研究を可能にします。
                 </p>
             </section>
 
             <section id="contents">
-                <h2>Dataset Contents</h2>
+                <h2>データセットの内容</h2>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">Matches & Videos</h3>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">試合映像</h3>
                 <ul style="margin-left: 2rem;">
-                    <li><strong>10 university-level amateur matches</strong></li>
-                    <li>Approximately <strong>900 minutes</strong> of gameplay</li>
-                    <li><strong>4K panoramic MP4</strong> videos with full-pitch coverage</li>
-                    <li>Camera setup: BePro Cerberus (2 matches) + 3-camera panoramic systems (8 matches)</li>
+                    <li><strong>大学レベルのアマチュア試合 10試合</strong></li>
+                    <li>約<strong>900分</strong>に達する総試合時間</li>
+                    <li>ピッチ全体をカバーする<strong>パノラマ4K映像</strong></li>
+                    <li>映像の種類：BePro Cerberus（2試合） + 3カメラパノラマシステム（8試合）</li>
                 </ul>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR (Game State Reconstruction)
-                    Annotations</h3>
-                <p>Per-frame annotations including:</p>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">GSR（Game State Reconstruction）
+                </h3>
+                <p>以下の情報を含むフレームごとのアノテーション：</p>
                 <ul style="margin-left: 2rem;">
-                    <li><strong>2D pitch coordinates</strong> (meters) for all players</li>
-                    <li><strong>Unique track IDs</strong> persistent throughout the match</li>
-                    <li><strong>Player roles</strong>: player, goalkeeper, referee, other</li>
-                    <li><strong>Team assignments</strong>: left, right, or null</li>
-                    <li><strong>Jersey numbers</strong>: 0–99 or null</li>
+                    <li>全選手の<strong>2次元ピッチ座標</strong>（メートル単位）</li>
+                    <li><strong>トラッキングID</strong>：試合を通して一貫して選手に割り当てられる</li>
+                    <li><strong>選手の役割</strong>：フィールドプレーヤー、ゴールキーパー、審判、その他</li>
+                    <li><strong>チーム</strong>：Left または Right</li>
+                    <li><strong>背番号</strong>：0〜99、または無し</li>
                 </ul>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS (Ball Action Spotting)
-                    Annotations</h3>
-                <p><strong>12 action classes</strong> with global timestamps:</p>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">BAS（Ball Action Spotting）</h3>
+                <p>時系列に並んだ<strong>12種類のアクションラベル</strong>：</p>
                 <div
                     style="margin-left: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
                     <div>• Pass</div>
@@ -386,7 +397,9 @@
             <section id="tasks">
                 <h2>タスク & ベンチマーク</h2>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">ゲーム状態再構築（GSR）</h3>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">ゲーム状態再構築/Game State
+                    Reconstruction（GSR）
+                </h3>
                 <div
                     style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
                     <img src="assets/task-gsr.jpg" alt="GSRタスク可視化"
@@ -395,14 +408,15 @@
                         パノラマ映像 → 選手役割付き2Dピッチ座標</p>
                 </div>
                 <p>
-                    パノラマ映像から2Dピッチミニマップを生成します。戦術分析のため、すべての選手位置、役割、チーム割り当てを含む完全なゲーム状態を再構築します。このタスクでは、映像フレームから標準化されたピッチ座標へ選手を正確にマッピングし、アイデンティティと役割情報を維持する能力を評価します。
+                    パノラマ映像から二次元ピッチ情報を生成します。戦術分析のため、すべての選手座標、役割、所属チームを含む完全なゲーム状態の再構築を目指します。このタスクでは、映像の各フレームからピッチ座標へ選手を正確にマッピングし、トラッキング精度と選手情報を維持する能力を評価します。
                 </p>
                 <p style="margin-top: 0.5rem; font-size: 0.9rem;">
                     <em><a href="https://www.soccer-net.org/tasks/game-state-reconstruction"
                             style="color: #10b981;">SoccerNet GSR Challenge</a>にインスパイアされています</em>
                 </p>
 
-                <h3 style="color: #10b981; margin-top: 2rem; margin-bottom: 0.5rem;">ボールアクション検出（BAS）</h3>
+                <h3 style="color: #10b981; margin-top: 2rem; margin-bottom: 0.5rem;">ボールアクション検出/Ball Action
+                    Spotting（BAS）</h3>
                 <div
                     style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
                     <img src="assets/task-bas.jpg" alt="BASタスク可視化"
@@ -418,8 +432,9 @@
                             style="color: #10b981;">SoccerNet BAS Challenge</a>にインスパイアされています</em>
                 </p>
 
-                <h3 style="color: #10b981; margin-top: 2rem; margin-bottom: 0.5rem;">マルチオブジェクトトラッキング（SoccerTrack
-                    Challenge）</h3>
+                <h3 style="color: #10b981; margin-top: 2rem; margin-bottom: 0.5rem;">マルチオブジェクトトラッキング/Multi-Object
+                    Tracking(MOT)→SoccerTrack
+                    Challenge</h3>
                 <div
                     style="background: #f8f9fa; border-radius: 8px; overflow: hidden; border: 2px solid #10b981; margin-bottom: 1rem;">
                     <img src="assets/task-mot.jpg" alt="MOTタスク可視化"
@@ -428,7 +443,7 @@
                         バウンディングボックスとIDを用いた永続的な選手トラッキング</p>
                 </div>
                 <p>
-                    長いシーケンスにわたって永続的なIDを持つフルピッチの選手トラッキング。複雑なゲームシナリオにおけるトラッキング性能、ID維持、再識別を評価します。バウンディングボックスアノテーション付きの一部の試合は、
+                    長い時間にわたって一貫したIDを付与する選手トラッキングタスク。複雑なゲーム状況におけるID維持、再識別などのトラッキング性能を評価します。本データセットの一部の試合データは
                     <a href="https://sites.google.com/g.sp.m.is.nagoya-u.ac.jp/stc2025"
                         style="color: #10b981; text-decoration: underline;">SoccerTrack Challenge 2025</a>で使用されています。
                 </p>
@@ -506,21 +521,20 @@
             <section id="quickstart">
                 <h2>Getting Started</h2>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">1. Download the Dataset</h3>
-                <p>Download the dataset files from Google Drive.</p>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">1. データセットのダウンロード</h3>
+                <p>Google Driveからデータセットファイルをダウンロードしてください。</p>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">2. Clone the Repository</h3>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">2. リポジトリのクローン</h3>
                 <pre><code>git clone https://github.com/AtomScott/SoccerTrack-v2.git
 cd SoccerTrack-v2
 pip install -r requirements-dev.txt</code></pre>
 
-                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">3. Visualize Tracking Data</h3>
+                <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">3. トラッキングデータの可視化</h3>
                 <pre><code>python -m src.main command=plot-coordinates-on-video \
   plot_coordinates_on_video.match_id=117093</code></pre>
 
                 <p style="margin-top: 1rem;">
-                    See the <code>scripts/</code> directory for data preprocessing pipelines, feature extraction,
-                    model training configurations, and evaluation benchmarks. All experiments are fully reproducible.
+                    <code>scripts/</code> ディレクトリには、データ前処理パイプライン・特徴抽出・モデル学習設定・評価ベンチマークなどが含まれています。すべての実験は完全に再現可能です。
                 </p>
             </section>
 
