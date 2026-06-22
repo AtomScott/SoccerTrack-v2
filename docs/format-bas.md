@@ -31,7 +31,7 @@ Top-level object:
       "position": "750000",
       "label": "Pass",
       "team": "left",
-      "player_id": 117093_L_9,
+      "player_id": "117093_L_9",
       "visibility": "visible"
     },
     ...

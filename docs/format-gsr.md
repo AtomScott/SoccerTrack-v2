@@ -26,7 +26,7 @@ Each annotation is a flat JSON object:
 {
   "image_id": 12480,
   "track_id": 7,
-  "player_id": 117092_L_9,
+  "player_id": "117092_L_9",
   "role": "player",
   "jersey_number": 9,
   "team_side": "left",
@@ -56,7 +56,7 @@ Any field not listed above should be treated as forward-compatible metadata and 
 - **Units**: metres.
 - **Origin**: centre of the pitch (`x = 0, y = 0`).
 - **Axes**: `x` grows towards the right side of the pitch as seen from the main broadcast camera; `y` grows towards the top of the pitch in the same view. Right-handed.
-- **Pitch dimensions**: assumed `105 m × 68 m` (FIFA standard), unless a per-match override is specified in `docs/metadata.json`. The four corners of the pitch rectangle lie at `(±52.5, ±34.0)`.
+- **Pitch dimensions**: assumed `105 m × 68 m` (FIFA standard). Any per-match override, when one is recorded, lives in the per-match metadata table [`docs/matches.json`](matches.json); the current skeleton does not yet populate pitch-dimension fields, so treat `105 × 68` as authoritative until then. The four corners of the pitch rectangle lie at `(±52.5, ±34.0)`.
 - **Goal lines**: `x = ±52.5`. **Sidelines**: `y = ±34.0`. **Halfway line**: `x = 0`.
 
 Positions outside the rectangle are legal (balls / players can leave the field of play). Clip only for visualisation, never before metric computation.

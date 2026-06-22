@@ -1,0 +1,3 @@
+# Keeps the logs/ directory in version control so Slurm can write
+# --output=/.../logs/%x-%j.out / --error=... without the job failing to launch
+# (Slurm does not create the output directory itself).
