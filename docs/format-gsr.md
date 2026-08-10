@@ -103,6 +103,8 @@ Positions outside the rectangle are legal (balls / players can leave the field o
 - `image_id = 0` is the first frame of the half video, which has already been trimmed to start at kickoff by the pipeline (`scripts/trim_video_into_halves.sh`).
 - To cross-reference a GSR frame against a BAS event at global timestamp `t_ms`, convert BAS `position` (milliseconds from kickoff of the **half encoded in `gameTime`**) to `image_id = round(t_ms / 40)` on the matching half file. Tolerance for alignment is `±1` frame (`±40 ms`).
 
+  > **⚠ This is wrong for half 2.** BAS `position` is absolute from the start of the *match*, not from the half's kickoff — verified on 117093, whose half-2 events run 2,700,760–5,506,280 ms. `round(t_ms / 40)` therefore lands 67,500 frames late for every half-2 event. Subtract the preceding halves first, or use `Event.t_ms_in_half` from `src.data_utils.soccertrack_v2`. Same defect as in `docs/format-bas.md`; see the divergence notice there.
+
 ## Parsing example
 
 Minimal Python:
