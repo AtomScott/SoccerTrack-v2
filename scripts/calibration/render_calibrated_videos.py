@@ -140,6 +140,43 @@ def render(src_video: Path, dst: Path, mapx, mapy, cw, ch, fps, encoder, cq, log
     return dst, n, time.time() - t0
 
 
+def _verify(data: Path, out_root: Path, matches: list[str]) -> int:
+    """Check every expected output exists, decodes, and matches its source frame count.
+
+    Frame count is the check that matters: a truncated render still opens and still plays,
+    so file existence alone proves nothing. A mismatch means the encode was interrupted.
+    """
+    print(f"{'match':8} {'half':5} {'src frames':>11} {'out frames':>11} {'size':>9}  verdict")
+    print("-" * 72)
+    ok = bad = 0
+    for m in matches:
+        for half in HALVES:
+            src = data / "interim" / m / f"{m}_panorama_{half}_half.mp4"
+            dst = out_root / m / f"{m}_calibrated_panorama_{half}_half.mp4"
+            if not dst.exists():
+                print(f"{m:8} {half:5} {'':>11} {'':>11} {'':>9}  MISSING")
+                bad += 1
+                continue
+            cs = cv2.VideoCapture(str(src)); ns = int(cs.get(cv2.CAP_PROP_FRAME_COUNT)); cs.release()
+            cd = cv2.VideoCapture(str(dst))
+            nd = int(cd.get(cv2.CAP_PROP_FRAME_COUNT))
+            readable, _ = cd.read()
+            cd.release()
+            gb = dst.stat().st_size / 1e9
+            if not readable:
+                verdict, bad = "UNREADABLE", bad + 1
+            elif abs(nd - ns) > 60:
+                # >60 frames (2s+) means a genuinely truncated or over-long encode. Smaller
+                # deltas are container/index rounding: cv2's CAP_PROP_FRAME_COUNT on the
+                # source is itself an estimate, so exact equality is not expected.
+                verdict, bad = f"FRAME MISMATCH ({nd - ns:+d})", bad + 1
+            else:
+                verdict, ok = (f"ok ({nd - ns:+d})" if nd != ns else "ok"), ok + 1
+            print(f"{m:8} {half:5} {ns:11d} {nd:11d} {gb:8.2f}G  {verdict}")
+    print(f"\n{ok} verified, {bad} problem(s)")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="/data/share/SoccerTrack-v2/data")
@@ -152,8 +189,16 @@ def main() -> int:
     ap.add_argument("--cq", type=int, default=23)
     ap.add_argument("--force", action="store_true", help="re-render, backing up any existing output")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--verify", action="store_true",
+                    help="do not render; check every expected output exists, decodes, and has "
+                         "the same frame count as its source")
     ap.add_argument("--log", default="outputs/render_calibrated_videos.log")
     args = ap.parse_args()
+
+    if args.verify:
+        return _verify(Path(args.data),
+                       Path(args.out_root) if args.out_root else Path(args.data) / "interim",
+                       args.matches)
 
     data = Path(args.data)
     out_root = Path(args.out_root) if args.out_root else data / "interim"
