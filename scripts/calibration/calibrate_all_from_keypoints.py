@@ -54,7 +54,22 @@ FLAGS = (cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC
 CRITERIA = (cv2.TermCriteria_COUNT + cv2.TermCriteria_EPS, 100, 1e-6)
 
 
-def load_keypoints(data: Path, match: str):
+def load_keypoints(data: Path, match: str, corrections: Path):
+    """Load a match's keypoints, preferring a corrected copy committed to the repo.
+
+    A file under data_corrections/ is authoritative over the dataset. That keeps the fix
+    stored as data -- reviewable as a diff, and independent of who can write to the shared
+    data mount. The in-code KEYPOINT_SWAPS below is a fallback for the case where someone
+    runs this without the corrections directory; it applies the same edit and says so.
+    """
+    corrected = corrections / f"{match}_keypoints.json"
+    if corrected.exists():
+        with open(corrected) as f:
+            d = json.load(f)
+        keys = list(d)
+        pitch = np.array([[*map(float, k.strip("()").split(","))] for k in keys], float)
+        return keys, pitch, np.array(list(d.values()), float), [f"loaded {corrected}"]
+
     with open(data / "raw" / match / f"{match}_keypoints.json") as f:
         d = json.load(f)
     keys = list(d)
@@ -65,7 +80,7 @@ def load_keypoints(data: Path, match: str):
         if a in d and b in d:
             i, j = keys.index(a), keys.index(b)
             image[[i, j]] = image[[j, i]]
-            applied.append(f"{a}<->{b}")
+            applied.append(f"in-code swap {a}<->{b} (data_corrections/ copy absent)")
     return keys, pitch, image, applied
 
 
@@ -106,6 +121,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="/data/share/SoccerTrack-v2/data")
     ap.add_argument("--out", default="outputs/calibration_all")
+    ap.add_argument("--corrections", default="data_corrections",
+                    help="repo dir of corrected annotation files; authoritative over --data")
     ap.add_argument("--matches", nargs="*", default=MATCHES)
     ap.add_argument("--frame", type=int, default=30000)
     ap.add_argument("--canvas-width", type=int, default=4096)
@@ -114,11 +131,12 @@ def main() -> int:
 
     data = Path(args.data)
     out = Path(args.out)
+    corrections = Path(args.corrections)
     out.mkdir(parents=True, exist_ok=True)
     rows = []
 
     for m in args.matches:
-        keys, pitch, image, applied = load_keypoints(data, m)
+        keys, pitch, image, applied = load_keypoints(data, m, corrections)
         frame, src = grab(data, m, args.frame)
         if frame is None:
             rows.append(dict(match=m, status="NOFRAME", note="no readable video"))
