@@ -24,6 +24,15 @@ Role = Literal["player", "goalkeeper", "referee", "other"]
 TeamSide = Literal["left", "right"]
 
 FPS: int = 25
+
+# Nominal length of one half in milliseconds. BAS `position` values and the `gameTime`
+# clock are ABSOLUTE from the start of the match, not relative to the half -- verified on
+# 117093, whose half-2 events run 2,700,760..5,506,280 ms with gameTime "2 - 45:00" rather
+# than restarting near zero. docs/format-bas.md and the paper both state the opposite
+# ("milliseconds from kickoff of the half indicated in gameTime") and give a cross-reference
+# formula of floor(position/40), which misaligns every half-2 event by 45 minutes. Whichever
+# of the two is made authoritative, the other must change.
+HALF_MS: int = 45 * 60 * 1000
 BAS_LABELS: tuple[str, ...] = (
     "Pass",
     "Drive",
@@ -82,9 +91,27 @@ class Event:
     visibility: Optional[str] = None
 
     @property
+    def t_ms_in_half(self) -> int:
+        """Milliseconds since kickoff *of this half*.
+
+        `t_ms` is absolute from the start of the match (see HALF_MS), so the per-half video
+        offset needs the whole halves before it subtracted.
+
+        APPROXIMATE. This subtracts a NOMINAL 45-minute half, but real halves run over: with
+        stoppage, half-2 events reach ~48 minutes of in-half time and a few sit slightly
+        before the nominal boundary, giving small negative values. For frame-exact alignment
+        use the per-period frameStart in <match>_tracker_box_metadata.xml instead of this.
+        """
+        return self.t_ms - (self.half - 1) * HALF_MS
+
+    @property
     def image_id(self) -> int:
-        """Frame index in the half video (assuming FPS = 25)."""
-        return int(round(self.t_ms * FPS / 1000))
+        """Frame index within this half's video (assuming FPS = 25).
+
+        Uses t_ms_in_half, not t_ms. Using the absolute time here -- as this property did
+        before -- put every half-2 event 67,500 frames late.
+        """
+        return int(round(self.t_ms_in_half * FPS / 1000))
 
 
 @dataclass
@@ -175,17 +202,60 @@ def _player_from(r: dict) -> Player:
     )
 
 
+# The released BAS files spell labels in UPPER CASE ("HIGH PASS") while BAS_LABELS -- and
+# the paper -- use Title Case ("High Pass"). The label *set* is identical, so this is purely
+# a casing mismatch. Canonicalise on read so the public API keeps the documented spelling.
+_BAS_LABEL_BY_CASEFOLD = {label.casefold(): label for label in BAS_LABELS}
+
+# Likewise the event array is called "actions" in the released files, not "annotations".
+_BAS_EVENT_KEYS = ("actions", "annotations")
+
+
 def _parse_bas(path: Path) -> Iterator[Event]:
+    """Parse one match's BAS events.
+
+    Tolerates two divergences between the released files and what docs/format-bas.md and
+    the paper describe, because as shipped this function could not read a single real file:
+
+      * the event array is keyed "actions", not "annotations" (KeyError on every file);
+      * labels are UPPER CASE, not Title Case (ValueError on every event, since unknown
+        labels raise rather than being skipped).
+
+    Both are accepted; labels are canonicalised to the documented Title Case spelling. An
+    unrecognised label still raises -- silently dropping events would understate recall.
+    """
     if not path.exists():
         raise FileNotFoundError(f"BAS annotation not found: {path}")
     data = json.loads(path.read_text())
-    for a in data["annotations"]:
-        half_str, clock = a["gameTime"].split(" - ")
-        label = a["label"]
-        if label not in BAS_LABELS:
-            raise ValueError(f"Unknown BAS label in {path.name}: {label!r}")
+    for key in _BAS_EVENT_KEYS:
+        if key in data:
+            events = data[key]
+            break
+    else:
+        raise KeyError(
+            f"{path.name} has none of {_BAS_EVENT_KEYS}; top-level keys are {sorted(data)}"
+        )
+    for a in events:
+        gt = str(a["gameTime"])
+        if " - " in gt:
+            half_str, clock = gt.split(" - ", 1)
+            half = int(half_str)
+        else:
+            # Three matches (117092, 132831, 132877) carry a third block of events whose
+            # gameTime omits the half prefix entirely ("90:01"). Their `position` continues
+            # past 5,400,000 ms, i.e. beyond 90 minutes, so they are a third period. Infer
+            # the period from the clock rather than dropping the events silently.
+            clock = gt
+            half = int(int(a["position"]) // HALF_MS) + 1
+        raw = a["label"]
+        label = _BAS_LABEL_BY_CASEFOLD.get(str(raw).casefold())
+        if label is None:
+            raise ValueError(
+                f"Unknown BAS label in {path.name}: {raw!r}. Expected one of {BAS_LABELS} "
+                "(case-insensitive)."
+            )
         yield Event(
-            half=int(half_str),
+            half=half,
             clock=clock,
             t_ms=int(a["position"]),
             label=label,
