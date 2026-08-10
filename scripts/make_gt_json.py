@@ -29,7 +29,6 @@ from collections import Counter
 import json
 from loguru import logger
 
-
 def parse_arguments():
     """
     Parse command line arguments.
@@ -42,8 +41,22 @@ def parse_arguments():
     parser.add_argument("--num_class", required=True, help="Number of event classes (e.g., '12', '14')")
     return parser.parse_args()
 
+def main():
+    args = parse_arguments()
+    match_ids = [str(match_id) for match_id in args.match_id.split(",")]
+    num_class = str(args.num_class)
+    raw_data_path = "data/raw"
+    translate_csv_path = "data/interim/filtered_event_frequency.csv"
+    translate_event_df = pd.read_csv(translate_csv_path)
 
-def make_json(translate_event_df: pd.DataFrame, event_df: pd.DataFrame, output_json_path: str) -> None:
+    for match_id in match_ids:
+        # Read the event data
+        event_path = os.path.join(raw_data_path, match_id, f"{match_id}_player_nodes.csv")
+        event_df = pd.read_csv(event_path)
+        output_json_path = os.path.join(raw_data_path, match_id, f"{match_id}_{num_class}_class_events.json")
+        make_json(translate_event_df, event_df, output_json_path, num_class)
+
+def make_json(translate_event_df: pd.DataFrame, event_df: pd.DataFrame, output_json_path: str, num_class: str) -> None:
     """
     Convert event data from CSV to JSON format for a specific match.
 
@@ -62,12 +75,12 @@ def make_json(translate_event_df: pd.DataFrame, event_df: pd.DataFrame, output_j
 
     # Process each row in the event DataFrame
     for _, row in event_df.iterrows():
-        event_type = row["event_types"]
+        event_type = row["filtered_event_types"]
         event_time = row["event_time"]
         event_period = row["event_period"]
 
         # Find matching event in translation DataFrame
-        matched_event = translate_event_df[translate_event_df["Event"] == str(event_type).split(" ")[0]]
+        matched_event = translate_event_df[translate_event_df["Event"] == str(event_type)]
 
         if (not matched_event.empty) and (matched_event[num_class + "_class_event"] != "Nan").any().any():
             label = matched_event[num_class + "_class_event"].values[0]
@@ -102,18 +115,5 @@ def make_json(translate_event_df: pd.DataFrame, event_df: pd.DataFrame, output_j
 
     logger.info(f"Created JSON file: {output_json_path}")
 
-
 if __name__ == "__main__":
-    args = parse_arguments()
-    match_ids = [str(match_id) for match_id in args.match_id.split(",")]
-    num_class = str(args.num_class)
-    raw_data_path = "data/raw"
-    translate_csv_path = "data/interim/event_frequency.csv"
-    translate_event_df = pd.read_csv(translate_csv_path)
-
-    for match_id in match_ids:
-        # Read the event data
-        event_path = os.path.join(raw_data_path, match_id, f"{match_id}_player_nodes.csv")
-        event_df = pd.read_csv(event_path)
-        output_json_path = os.path.join(raw_data_path, match_id, f"{match_id}_{num_class}_class_events.json")
-        make_json(translate_event_df, event_df, output_json_path)
+    main()

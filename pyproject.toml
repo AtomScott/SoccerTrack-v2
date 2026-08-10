@@ -26,6 +26,7 @@ dependencies = [
     "ruff>=0.7.4",
     "scikit-learn>=1.5.2",
     "setuptools>=75.1.0",
+    "soccernet>=0.1.61",
     # NOTE: `sn-gamestate` is intentionally NOT listed here. It is the optional
     # SoccerNet Game State Reconstruction toolkit used only by
     # `src.evaluation.gs_hota.run_upstream_gs_hota`, which imports it lazily and

@@ -1,9 +1,9 @@
 """
-Script to overlay labels on frames in a video based on specified annotations from a JSON file.
+Script to overlay possessions on frames in a video based on specified annotations from a JSON file.
 
 This script reads video data and corresponding event annotations in JSON format, identifies the frames
-where events occur, and overlays labels on these frames for a specified number of frames (default: 5 frames).
-The output video is saved with the labels applied, and processing is limited to the first 2 minutes of the video.
+where events occur, and overlays possessions on these frames for a specified number of frames (default: 5 frames).
+The output video is saved with the possessions applied, and processing is limited to the first 2 minutes of the video.
 
 The annotations JSON follows the structure:
 {
@@ -12,7 +12,7 @@ The annotations JSON follows the structure:
     "annotations": [
         {
             "gameTime": "1 - mm:ss",
-            "label": "event_label",
+            "possession": "event_possession",
             "position": "frame_number",
             "team": "",
             "visibility": ""
@@ -38,55 +38,46 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--match_id', help="Match ID for the video and annotation files")
-    parser.add_argument('--num_class', help="Number of event classes, e.g., '12' or '14'")
     return parser.parse_args()
 
 def main():
     # Example usage
     args = parse_arguments()
     match_ids = [str(match_id) for match_id in args.match_id.split(",")]
-    num_class = str(args.num_class)
     
     for match_id in match_ids:
-        original_tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_pitch_plane_coordinates.csv'
         filtered_tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_filtered_pitch_plane_coordinates.csv'
-        labels_path = f'data/raw/{match_id}/{match_id}_{num_class}_class_events.json'
-        detections_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{num_class}_class_events_detection.json'
         player_to_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_player_to_player.json'
-        # output_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{event_class}_detection.json'
-        output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_event_detection.mp4'
+        nearest_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_nearest_player_data.csv'
+        output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_player_to_player.mp4'
 
         # ファイルを読み込み
-        original_tracking_df = pd.read_csv(original_tracking_path)
         filtered_tracking_df = pd.read_csv(filtered_tracking_path)
-        original_tracking_df.reset_index
+        nearest_player_df = pd.read_csv(nearest_player_path)
         filtered_tracking_df.reset_index
-        with open(labels_path, 'r') as f:
-            labels_df = json.load(f)
-        with open(detections_path, 'r') as f:
-            detections_df = json.load(f)
+        nearest_player_df.reset_index
         with open(player_to_player_path, 'r') as f:
             player_to_player_df = json.load(f)
         
-        visualize_event_tracking(filtered_tracking_df, labels_df, detections_df, player_to_player_df, output_video_path)
+        visualize_player_to_player(filtered_tracking_df, player_to_player_df, output_video_path)
 
-def visualize_event_tracking(filtered_tracking_df: pd.DataFrame, labels_df: pd.DataFrame, detections_df: pd.DataFrame, player_to_player: pd.DataFrame, output_path: str) -> None:
+def visualize_player_to_player(filtered_tracking_df: pd.DataFrame, player_to_player: pd.DataFrame, output_path: str) -> None:
     """
-    Process a video and overlay event labels and detections at specified frames.
+    Process a video and overlay event possessions and detections at specified frames.
     Also highlights the player closest to the ball in orange.
 
     Args:
         tracking_df (pd.DataFrame): DataFrame containing tracking data.
-        labels_df (pd.DataFrame): DataFrame containing event labels.
+        possessions_df (pd.DataFrame): DataFrame containing event possessions.
         detections_df (pd.DataFrame): DataFrame containing detection data.
         output_path (str): Path to save the processed video.
     """
     # パラメータ設定
-    video_duration_seconds = 300  # 動画の再生時間（秒）
+    video_duration_seconds = 180  # 動画の再生時間（秒）
+    video_start_position = 10000
     fps = 25  # フレームレート
     frame_width, frame_height = 1150, 780  # サッカーコートの表示サイズ
     court_width, court_height = 105, 68  # 座標のサッカーコートの表示サイズ
-    one_side_team_id = 9701
 
     # サッカーコートの背景画像を生成（緑の長方形として簡易的に作成）
     court = np.zeros((frame_height, frame_width, 3), dtype=np.uint8)
@@ -97,16 +88,10 @@ def visualize_event_tracking(filtered_tracking_df: pd.DataFrame, labels_df: pd.D
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 
-    labels = labels_df['annotations']
-    detections = detections_df['predictions']
-    label_num = 0
-    detection_num = 0
-    last_label_frame = 0
-    last_detection_frame = 0
     possession_num = 0
 
     # フレームごとに選手とボールの位置を描画
-    for frame_num in range(fps * video_duration_seconds):
+    for frame_num in range(video_start_position, fps * video_duration_seconds + video_start_position):
         frame_data = filtered_tracking_df[filtered_tracking_df['match_time'] / 40.0 == frame_num]
         frame = court.copy()  # サッカーコートの背景をコピー
 
@@ -119,11 +104,11 @@ def visualize_event_tracking(filtered_tracking_df: pd.DataFrame, labels_df: pd.D
             if row['id'] == 'ball':
                 cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)  # ボールの位置
             else:
-                color = (255, 0, 0) if row['teamId'] == one_side_team_id else (0, 255, 0)  # チームごとに色分け
+                color = (255, 0, 0) if row['teamId'] == 9701 else (0, 255, 0)  # チームごとに色分け
                 cv2.circle(frame, (x, y), 5, color, -1)  # 選手の位置
                 cv2.circle(frame, (x, y), int(1 * frame_width / court_width), color, 1) # 選手の円（Possession zone）
 
-        '''# ポゼッションラベルの表示処理（labels_df）
+        # イベントラベルの表示処理（possessions_df）
         possession = player_to_player[possession_num]
         possession_str = possession['state']
         possession_start = possession['start']
@@ -131,42 +116,14 @@ def visualize_event_tracking(filtered_tracking_df: pd.DataFrame, labels_df: pd.D
         possession_start_position = float(possession_start['match_time'])
         possession_end_position = float(possession_end['match_time'])
         start_players = possession_start['players']
-        start_player_id = start_players[0]['player_id']
+        start_player_id = start_players['player_id']
         # 40で四捨五入してポジションを計算
         corrected_possession_start_position = position_error_correction(possession_start_position)
         corrected_possession_end_position = position_error_correction(possession_end_position)
         if corrected_possession_start_position <= frame_num < corrected_possession_end_position:   
             display_possession(frame, possession_str, start_player_id, str(frame_num * 40), possession_type='possession')
         elif frame_num == corrected_possession_end_position:
-            possession_num += 1'''
-
-        # イベントラベルの表示処理（labels_df）
-        label = labels[label_num]
-        label_str = label['label']
-        label_position = float(label['position'])
-        # 40で四捨五入してポジションを計算
-        corrected_label_position = position_error_correction(label_position)
-        if frame_num == corrected_label_position:
-            last_label_frame = frame_num + 20
-            display_label_str = label_str
-            display_label_position = corrected_label_position
-            label_num += 1
-        elif frame_num < last_label_frame:
-            display_label(frame, display_label_str, str(display_label_position * 40), str(frame_num * 40), label_type='label')
-
-        # 検出ラベルの表示処理（detections_df）
-        detection = detections[detection_num]
-        detection_str = detection['label']
-        detection_position = float(detection['position'])
-        # 誤差補正し、40で四捨五入してポジションを計算
-        corrected_detection_position = position_error_correction(detection_position)
-        if frame_num == corrected_detection_position:
-            last_detection_frame = frame_num + 20
-            display_detection_str = detection_str
-            display_detection_position = corrected_detection_position
-            detection_num += 1
-        elif frame_num < last_detection_frame:
-            display_label(frame, display_detection_str, str(display_detection_position * 40), str(frame_num * 40), label_type='detection')
+            possession_num += 1
 
         out.write(frame)  # フレームを書き出し
 
@@ -198,34 +155,6 @@ def soccer_court(court, frame_width, frame_height):
     cv2.rectangle(court, (0, frame_height // 2 - goal_width // 2), (goal_height, frame_height // 2 + goal_width // 2), line_color, line_thickness)
     cv2.rectangle(court, (frame_width - goal_height, frame_height // 2 - goal_width // 2), (frame_width, frame_height // 2 + goal_width // 2), line_color, line_thickness)
 
-def display_label(frame, label, time, frame_num, label_type='label'):
-    """
-    Display a label or detection on a video frame.
-    Args:
-        frame (ndarray): The video frame to modify.
-        label (str): The text label to overlay on the frame.
-        label_type (str): The type of label ('label' or 'detection').
-    """
-    if label_type == 'label':
-        display_position = (30, 600)  # ラベルの表示位置
-        color = (128, 0, 0)
-        '''# 時間（position）とフレーム番号（frame_num）を描画
-        time_position = (80, 500)
-        frame_num_position = (80, 400)
-        cv2.putText(frame, time, time_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)
-        cv2.putText(frame, frame_num, frame_num_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)'''
-    elif label_type == 'detection':
-        display_position = (30, 700)  # 検出ラベルの表示位置（ラベルと重ならない位置）
-        color = (0, 0, 128)
-        '''# 時間（position）とフレーム番号（frame_num）を描画
-        time_position = (750, 500)
-        frame_num_position = (750, 400)
-        cv2.putText(frame, time, time_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)
-        cv2.putText(frame, frame_num, frame_num_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)'''
-    else:
-        return
-    cv2.putText(frame, label, display_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)
-
 def display_possession(frame, possession, player_id, frame_num, possession_type='possession'):
     """
     Display a possession or detection on a video frame.
@@ -235,15 +164,15 @@ def display_possession(frame, possession, player_id, frame_num, possession_type=
         possession_type (str): The type of possession ('possession' or 'detection').
     """
     if possession_type == 'possession':
-        state_position = (800, 650)  # ラベルの表示位置
-        player_id_position = (800, 700)  # ラベルの表示位置
+        state_position = (780, 600)  # ラベルの表示位置
+        player_id_position = (780, 700)  # ラベルの表示位置
         color = (128, 0, 0)
-        frame_num_position = (800, 600)
-        cv2.putText(frame, frame_num, frame_num_position, cv2.FONT_HERSHEY_SIMPLEX, 2, color, 1)
+        frame_num_position = (780, 500)
+        cv2.putText(frame, frame_num, frame_num_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)
     else:
         return
-    cv2.putText(frame, possession, state_position, cv2.FONT_HERSHEY_SIMPLEX, 2, color, 1)
-    cv2.putText(frame, str(player_id), player_id_position, cv2.FONT_HERSHEY_SIMPLEX, 2, color, 1)
+    cv2.putText(frame, possession, state_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)
+    cv2.putText(frame, player_id, player_id_position, cv2.FONT_HERSHEY_SIMPLEX, 3, color, 2)
 
 def position_error_correction(position):
     remainder = position % 40
