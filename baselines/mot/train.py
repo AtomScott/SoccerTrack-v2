@@ -55,19 +55,19 @@ SoccerTrack v2 keys GSR/BAS per half but MOT sequences per ``<match_id>``. Becau
 the released MOT ground truth is per-half (``data/mot/<match>/<half>/gt/gt.txt``,
 see baselines/gsr/config.yaml), and TrackEval pairs a ``gt/gt.txt`` against a
 ``data.txt`` by *sequence name*, we score **each half as its own sequence** named
-``<match>_<half>`` (e.g. ``117099_1st``) — exactly the convention docs/format-mot.md
+``<match>_<half>`` (e.g. ``128057_1st``) — exactly the convention docs/format-mot.md
 recommends for separately-evaluated halves. Predictions are written in the native
 MOTChallenge ``trackers/<tracker>/data/<seq>.txt`` layout that TrackEval expects::
 
     <pred_root>/<tracker>/data/<match>_<half>.txt
 
-(e.g. ``<pred_root>/bytetrack/data/117099_1st.txt``). For this to be scoreable,
+(e.g. ``<pred_root>/bytetrack/data/128057_1st.txt``). For this to be scoreable,
 the ground truth must sit at ``<gt_root>/<match>_<half>/gt/gt.txt`` with a
 ``seqinfo.ini`` per sequence, and :mod:`src.evaluation.mot_hota` must set
 ``SKIP_SPLIT_FOL=True`` so neither side is nested under a ``MOT17-custom`` split
 folder (it does). The companion ``baselines/mot/eval.py`` reads
 ``cfg.data.test_matches`` as the list of sequence names, so ``config.yaml`` lists
-the per-half sequence names there (e.g. ``117099_1st``) and :func:`sequence_name`
+the per-half sequence names there (e.g. ``128057_1st``) and :func:`sequence_name`
 keeps the train.py naming in lockstep.
 
 Run::
@@ -111,7 +111,7 @@ _MOT_VISIBILITY = 1     # predictions report full visibility (unknown -> 1).
 # --------------------------------------------------------------------------- #
 
 def sequence_name(match_id: str | int, half: int) -> str:
-    """Sequence name for one half, e.g. ``("117099", 1) -> "117099_1st"``.
+    """Sequence name for one half, e.g. ``("128057", 1) -> "128057_1st"``.
 
     This is the key TrackEval uses to pair a prediction ``data.txt`` against a
     ground-truth ``gt/gt.txt`` (docs/format-mot.md). It must match the per-half
@@ -129,7 +129,7 @@ def parse_test_sequence(seq: str | int) -> tuple[str, int]:
 
     The MOT evaluator (baselines/mot/eval.py) consumes ``cfg.data.test_matches``
     as TrackEval **sequence names**, so to keep train.py and eval.py in lockstep
-    we list per-half sequence names there (e.g. ``117099_1st``) and recover the
+    we list per-half sequence names there (e.g. ``128057_1st``) and recover the
     match id + half here for video/ground-truth resolution.
 
     Accepts ``"<match>_1st"`` / ``"<match>_2nd"``. A bare ``"<match>"`` (no half
@@ -141,7 +141,7 @@ def parse_test_sequence(seq: str | int) -> tuple[str, int]:
     if not sep or suffix not in _SUFFIX_HALF:
         raise ValueError(
             f"test sequence {s!r} must end in a half suffix "
-            f"({'/'.join(_HALF_SUFFIX.values())}), e.g. '117099_1st'. "
+            f"({'/'.join(_HALF_SUFFIX.values())}), e.g. '128057_1st'. "
             "List per-half sequence names in cfg.data.test_matches."
         )
     return base, _SUFFIX_HALF[suffix]

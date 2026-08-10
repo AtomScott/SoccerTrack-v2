@@ -37,7 +37,7 @@ Use the helper script to fetch from Hugging Face (`atomscott/soccertrack-v2`):
 
 ```bash
 ./scripts/download.sh --dest ./data                                    # full dataset
-./scripts/download.sh --dest ./data --match 117099 --match 117100      # subset
+./scripts/download.sh --dest ./data --match 117092 --match 117093      # subset
 ```
 
 `--revision` pins a dataset tag / commit; see `scripts/download.sh --help` for
@@ -50,7 +50,7 @@ Run a quick load against the freshly downloaded data:
 
 ```python
 from src.data_utils.soccertrack_v2 import load_match
-m = load_match("./data", match_id="117099")
+m = load_match("./data", match_id="117093")
 frames = m.gsr_frames(half=1)
 print(len(frames), "GSR frames in 1st half")
 print(len(m.bas_events()), "BAS events")
@@ -89,7 +89,7 @@ running `download.sh` first:
 
 ```python
 from src.data_utils.load_from_hf import load_match_from_hf
-m = load_match_from_hf("117099")
+m = load_match_from_hf("117093")
 ```
 
 `snapshot_download` caches under `HF_HOME` so repeat calls are free.

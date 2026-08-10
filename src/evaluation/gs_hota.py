@@ -16,7 +16,7 @@ This module does **not** reimplement the metric. It:
      (``run_upstream_gs_hota``) so the dependency surface is a single, swappable
      seam.
 
-    python -m src.evaluation.gs_hota --pred PRED_ROOT --gt GT_ROOT --matches 117099 117100
+    python -m src.evaluation.gs_hota --pred PRED_ROOT --gt GT_ROOT --matches 128057 132831
 
 Why the upstream call is isolated behind one function
 -----------------------------------------------------

@@ -9,7 +9,7 @@ Resolved on-disk layout (verified against the installed TrackEval, see below):
 * Predictions:   ``<pred_root>/<tracker>/data/<seq>.txt``
 
 where ``<seq>`` is each ``--matches`` entry (a TrackEval sequence name such as
-``117099_1st``) and ``<tracker>`` is one prediction-run directory under
+``128057_1st``) and ``<tracker>`` is one prediction-run directory under
 ``<pred_root>`` (auto-discovered when ``--tracker`` is not given). This is the
 native MOTChallenge ``trackers/<tracker>/data/<seq>.txt`` convention.
 
@@ -26,7 +26,7 @@ folder for both GT and trackers, so the paths above resolve as documented.
 ``SKIP_SPLIT_FOL=False`` the un-nested layout raises
 ``ini file does not exist: <seq>/seqinfo.ini``; with it True the same data scores.)
 
-    python -m src.evaluation.mot_hota --pred PRED_ROOT --gt GT_ROOT --matches 117099 \\
+    python -m src.evaluation.mot_hota --pred PRED_ROOT --gt GT_ROOT --matches 128057 132831 \\
         --metrics HOTA IDF1 MOTA
 """
 from __future__ import annotations
@@ -49,7 +49,7 @@ def score_many(
         pred_root: directory containing one tracker run sub-dir, predictions at
             ``<pred_root>/<tracker>/data/<seq>.txt``.
         gt_root: directory containing ``<seq>/gt/gt.txt`` + ``<seq>/seqinfo.ini``.
-        match_ids: TrackEval sequence names (e.g. ``["117099_1st", ...]``).
+        match_ids: TrackEval sequence names (e.g. ``["128057_1st", ...]``).
         metrics: subset of ``HOTA`` / ``IDF1`` / ``MOTA`` (default: all three).
         tracker: name of the tracker sub-dir under ``pred_root`` to evaluate. If
             ``None``, TrackEval auto-discovers every sub-dir of ``pred_root``.
