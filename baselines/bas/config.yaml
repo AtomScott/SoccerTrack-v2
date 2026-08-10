@@ -5,18 +5,29 @@ data:
   test_matches:  [128057, 132831]
 
 features:
-  name: mvit_b_16x4
-  stride_s: 1
-  clip_s: 2
+  name: mvit_b_16x4      # torchvision MViT-V1-B, Kinetics-400 weights
+  clip_s: 2              # temporal extent of one clip (seconds)
+  stride_s: 1            # hop between consecutive clip centres (seconds)
+  num_frames: 16         # frames sampled per clip fed to MViT (T dim)
+  crop_size: 224
+  embed_dim: 768         # MViT-V1-B pooled feature dim
 
 spotter:
-  name: t-deed
+  name: t-deed           # compact T-DEED-style per-clip spotter
   hidden: 256
+  window: 15             # consecutive clip-features per training window
   lr: 1.0e-3
   batch_size: 32
   epochs: 20
+  weight_decay: 1.0e-4
+  nms_window_s: 1.0      # within-class NMS radius (seconds)
+  min_confidence: 0.3    # drop decoded peaks below this softmax prob (0.01 floods
+                         # the 13-way softmax with ~0.03 spurious peaks; tune on val)
+  require_above_background: true  # only emit peaks whose fg prob beats background
+  max_peaks_per_class: 0          # cap peaks per class per half (0 = no cap)
 
 eval:
   tolerances_s: [1, 5]
   metric: map
   out: ./outputs/bas_baseline/scores.json
+  pred_root: ./outputs/bas_baseline/preds   # consumed by train.py + eval.py

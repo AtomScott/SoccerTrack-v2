@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "deffcode>=0.2.6",
+    "huggingface-hub>=0.25.0",
     "joblib>=1.4.2",
     "jupyter>=1.1.1",
     "lapx>=0.5.11",
@@ -26,12 +27,37 @@ dependencies = [
     "scikit-learn>=1.5.2",
     "setuptools>=75.1.0",
     "soccernet>=0.1.61",
+    # NOTE: `sn-gamestate` is intentionally NOT listed here. It is the optional
+    # SoccerNet Game State Reconstruction toolkit used only by
+    # `src.evaluation.gs_hota.run_upstream_gs_hota`, which imports it lazily and
+    # raises an actionable RuntimeError when it is absent. Its upstream metadata
+    # hard-pins `requires-python = ">=3.9,<3.10"` and `torch==1.13.1` (no cp312
+    # wheels), so it is *unresolvable* in this project's Python 3.12 / torch 2.5
+    # environment and cannot be locked by uv. Install it separately in its own
+    # Python 3.9 environment to score GS-HOTA; see docs/format-gsr.md.
     "tqdm>=4.66.5",
+    "trackeval",
     "typer-config>=1.4.2",
     "ultralytics>=8.3.35",
     "vidgear>=0.3.3",
     "wandb>=0.19.0",
 ]
+
+# Dev tooling (lint, test, notebooks). Referenced by docs/setup.md
+# (`uv sync --group dev`). `ruff` is also a runtime dep above; listed here too so
+# this group is self-contained.
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.7.4",
+]
+
+# No `[tool.uv.sources]` overrides are needed: `trackeval` and `huggingface-hub`
+# are both on PyPI and resolve normally. `sn-gamestate` is deliberately excluded
+# from the dependency graph (see the note in [project.dependencies] above): its
+# upstream pins (Python 3.9 only, torch==1.13.1) are incompatible with this
+# project's Python 3.12 / torch 2.5 environment, so it cannot be resolved or
+# locked here and must be installed into a separate environment by hand.
 
 # Add this section to make the package installable
 [build-system]

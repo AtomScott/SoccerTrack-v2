@@ -1,29 +1,86 @@
 # GSR baseline config — edit paths, leave structure.
+#
+# Pipeline (see baselines/gsr/train.py): MOT->YOLO dataset -> fine-tune YOLOv8-s
+# -> ByteTrack on test halves -> jersey/role/team Re-ID -> pitch projection ->
+# GSR-format JSON under eval.pred_root/<match>/<match>_{1st,2nd}.json.
+
 data:
-  root: ./data                         # SoccerTrack v2 snapshot root
+  root: ./data                         # SoccerTrack v2 snapshot root (has gsr/, mot/, interim/, ...)
   train_matches: [117092, 117093, 118575, 118576, 118577, 128058, 132877]
   val_matches:   [118578]
   test_matches:  [128057, 132831]      # held out; matches the SoccerTrack Challenge 2025 test split
 
+# Where the per-match MOT ground-truth annotations live (used to build the YOLO
+# detection dataset for fine-tuning). train.py's mot_path() resolves
+#   <root>/<match>/<filename_template>   with {match}=117092, {half}=1st_half|2nd_half
+# The canonical SoccerTrack v2 MOT layout (docs/format-mot.md and
+# src/evaluation/mot_hota.py) is the MOTChallenge gt/gt.txt convention, with each
+# half scored as its own sequence. So the per-half ground truth lives at
+#   data/mot/<match>/<half>/gt/gt.txt   (e.g. data/mot/117092/1st_half/gt/gt.txt)
+# i.e. the documented per-sequence `gt/gt.txt`, one sub-dir per half.
+# filename_template placeholders: {match}, {half} (={1st_half,2nd_half}).
+mot:
+  root: ./data/mot
+  filename_template: "{half}/gt/gt.txt"
+
+# Source panoramic video per half. Must be the CALIBRATED (undistorted) panorama,
+# because the homography below is only valid on calibrated frames (raw
+# <match>_panorama_<half>.mp4 is fisheye-distorted and would mis-project). This
+# matches the repo's real naming in scripts/convert_coordinates_to_bboxes.sh and
+# docs/data_processing.md: data/interim/<match>/<match>_calibrated_panorama_<half>.mp4
+# (flat <match> dir, "calibrated_panorama"). train.py's video_path() resolves
+#   <root>/<match>/<filename_template>   with {match}, {half}={1st_half,2nd_half}.
+video:
+  root: ./data/interim
+  filename_template: "{match}_calibrated_panorama_{half}.mp4"
+
 detector:
   name: yolov8s
-  weights: null                        # set to a path to fine-tuned weights
+  base_weights: yolov8s.pt              # ultralytics base checkpoint to fine-tune from
+  weights: null                         # set to fine-tuned weights to skip training (e.g. outputs/gsr_baseline/detector/yolov8s_gsr/weights/best.pt)
   conf_thresh: 0.35
   iou_thresh: 0.55
   imgsz: 1280
+  epochs: 50
+  batch: 8
+  project: ./outputs/gsr_baseline/detector
+  run_name: yolov8s_gsr
+  dataset_dir: ./outputs/gsr_baseline/yolo_dataset
+  dataset:
+    frame_interval: 5                   # sample every Nth frame when building the YOLO dataset
+    splits: { train: 0.8, val: 0.1, test: 0.1 }
+    frame_width: null                   # null -> keep native resolution
+    frame_height: null
 
 tracker:
-  name: bytetrack
-  match_thresh: 0.8
+  name: bytetrack                       # ultralytics ships bytetrack.yaml / botsort.yaml
+  config: bytetrack.yaml                # path or name of the ultralytics tracker config
+  match_thresh: 0.8                     # (documented for reference; tune via a custom tracker yaml)
   track_buffer: 30
 
 reid:
-  name: clip-reid
-  weights: null
+  name: clip-reid                       # paper uses CLIP-ReID for jersey/role/team tagging
+  weights: null                         # no weights shipped -> train.py falls back to stub_reid (unknown ids)
 
+# Pitch projection. The stored homography is a 3x3 *pitch->image* matrix loaded
+# with np.load (same convention as src/coordinate_conversion and
+# src/data_association). image->pitch uses inv(H) via cv2.perspectiveTransform.
+#
+# NOTE (path reconciliation): the previous starter pointed at
+# raw/<match>/<match>_mapx.npy + mapy.npy. Those are FISHEYE UNDISTORTION REMAP
+# TABLES (dense HxWx2 maps for cv2.remap) produced by
+# src/calibration/generate_calibration_mappings.py — NOT a planar homography, and
+# they cannot be fed to cv2.perspectiveTransform. The pipeline instead uses the
+# repo's homography convention below. Placeholders: {match}.
 homography:
-  source: per_match_mapxy              # use raw/<match>/<match>_mapx.npy + mapy.npy
+  root: ./data/interim/homography
+  filename_template: "{match}_homography.npy"
+
+pitch:
+  length: 105.0                         # metres (FIFA standard, per docs/format-gsr.md)
+  width: 68.0                           # metres
 
 eval:
-  metric: gs-hota                      # via src.evaluation.gs_hota
+  metric: gs-hota                       # via src.evaluation.gs_hota
+  pred_root: ./outputs/gsr_baseline/preds   # GSR JSON written here as <match>/<match>_{1st,2nd}.json
   out: ./outputs/gsr_baseline/scores.json
