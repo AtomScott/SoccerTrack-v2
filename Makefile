@@ -6,7 +6,7 @@ DATA ?= /data/share/SoccerTrack-v2/data
 PYTHON ?= .venv/bin/python
 CALIB_OUT ?= outputs/calibration_all
 
-.PHONY: help format serve-docs calibration calibration-repro calibration-sweep
+.PHONY: help format serve-docs calibration calibration-repro calibration-sweep calibrated-videos tracking-projection
 
 help:
 	@echo "Targets:"
@@ -15,6 +15,8 @@ help:
 	@echo "  make calibration        - calibrate all 10 matches from pitch keypoints + validate"
 	@echo "  make calibration-repro  - re-run into a temp dir and assert the numbers are unchanged"
 	@echo "  make calibration-sweep  - the diagnostic strategy sweep (see docs/calibration-findings.md)"
+	@echo "  make calibrated-videos  - render calibrated per-half panoramas (FORCE=1 to re-render)"
+	@echo "  make tracking-projection- project BePro tracking onto frames to validate the chain"
 	@echo ""
 	@echo "Vars: DATA=$(DATA)  PYTHON=$(PYTHON)  CALIB_OUT=$(CALIB_OUT)"
 
@@ -42,6 +44,17 @@ calibration-repro:
 
 calibration-sweep:
 	./scripts/calibration/test_calibration_strategies.sh
+
+# Render the calibrated per-half panoramas the GSR baseline consumes. Resumable: existing
+# outputs are skipped unless FORCE=1. Roughly 10-15 min per half on the local GPU.
+calibrated-videos:
+	$(PYTHON) scripts/calibration/render_calibrated_videos.py --data $(DATA) $(if $(FORCE),--force,)
+
+# Project BePro tracking positions onto each frame to validate the coordinate chain.
+tracking-projection:
+	$(PYTHON) scripts/calibration/project_tracking_to_image.py --data $(DATA)
+	@echo ""
+	@echo "Now open outputs/tracking_projection/index.html"
 
 format:
 	uv run ruff check src --fix
