@@ -15,3 +15,8 @@ format:
 serve-docs:
 	@echo "Serving docs/ at http://localhost:$(DOCS_PORT)"
 	@cd docs && python3 -m http.server $(DOCS_PORT)
+
+# Prove the GS-HOTA plumbing: score ground truth against itself, which must give 1.0.
+# Pitch space only -- SoccerTrack v2 has no ground-truth detections.
+gs-hota-test:
+	.venv/bin/python tests/test_gs_hota_identity.py
