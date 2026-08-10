@@ -64,7 +64,7 @@ The project includes shell scripts for common operations:
 
 2. **Download the dataset from Hugging Face**
    ```bash
-   ./scripts/download.sh --dest ./data --match 117099 --match 117100
+   ./scripts/download.sh --dest ./data --match 117092 --match 117093
    ```
    Thin wrapper around `huggingface-cli` / `hf` with per-match filtering and revision pinning.
 

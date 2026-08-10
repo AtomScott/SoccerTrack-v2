@@ -545,7 +545,7 @@
 ./scripts/download.sh --dest ./data
 
 # held-out test matches only
-./scripts/download.sh --dest ./data --match 117099 --match 117100</code></pre>
+./scripts/download.sh --dest ./data --match 117092 --match 117093</code></pre>
                 </div>
             </section>
 
@@ -617,9 +617,9 @@ for p in match.gsr_frames(half=1)[0].entities:
                 </p>
 
                 <h3 style="color: #10b981; margin-top: 1.5rem; margin-bottom: 0.5rem;">4. Evaluate</h3>
-                <pre><code>python -m src.evaluation.gs_hota  --pred preds/gsr --gt data/gsr --matches 117099 117100
-python -m src.evaluation.bas_map  --pred preds/bas --gt data/bas --matches 117099 117100
-python -m src.evaluation.mot_hota --pred preds/mot --gt data/mot --matches 117099 117100</code></pre>
+                <pre><code>python -m src.evaluation.gs_hota  --pred preds/gsr --gt data/gsr --matches 128057 132831
+python -m src.evaluation.bas_map  --pred preds/bas --gt data/bas --matches 128057 132831
+python -m src.evaluation.mot_hota --pred preds/mot --gt data/mot --matches 128057 132831</code></pre>
                 <p style="margin-top: 0.75rem;">
                     Starter kits:
                     <a href="https://github.com/AtomScott/SoccerTrack-v2/tree/main/baselines"

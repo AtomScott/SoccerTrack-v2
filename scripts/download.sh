@@ -7,7 +7,7 @@
 #   --dest DIR       Target directory (default: ./data)
 #   --revision REV   Pin to a specific dataset revision / tag / commit (default: main)
 #   --match ID       Repeatable. Restrict download to one or more match IDs
-#                    (e.g. --match 117099 --match 117100). Selects gsr/<id>, bas/<id>,
+#                    (e.g. --match 117092 --match 117093). Selects gsr/<id>, bas/<id>,
 #                    mot/<id>, raw/<id>, videos/<id>*. Mutually exclusive with --include.
 #   --include PAT    Repeatable raw include pattern forwarded to huggingface-cli.
 #

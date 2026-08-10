@@ -59,7 +59,7 @@ The toolkit produces per-match ground truth from raw BePro panoramic recordings.
 
 ```bash
 ./scripts/create_ground_truth.sh 117093          # single match
-./scripts/create_ground_truth.sh 117093 117094   # multiple matches
+./scripts/create_ground_truth.sh 117093 118575   # multiple matches
 ```
 
 Stage-by-stage scripts live under `scripts/` (`trim_video_into_halves.sh`, `convert_raw_to_pitch_plane.sh`, `calibrate_camera.sh`, `convert_pitch_plane_to_image_plane.sh`, `generate_detections.sh`, `convert_coordinates_to_bboxes.sh`, `plot_coordinates_on_video.sh`).

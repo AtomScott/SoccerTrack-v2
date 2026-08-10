@@ -4,7 +4,7 @@ Runs HOTA / IDF1 / MOTA on MOTChallenge-format predictions. Ground truth is the
 `mot/<match_id>/gt/gt.txt` shipped with SoccerTrack v2; predictions must live under
 `<pred_root>/<match_id>/data.txt` in the same format.
 
-    python -m src.evaluation.mot_hota --pred PRED_ROOT --gt GT_ROOT --matches 117099 \\
+    python -m src.evaluation.mot_hota --pred PRED_ROOT --gt GT_ROOT --matches 128057 132831 \\
         --metrics HOTA IDF1 MOTA
 """
 from __future__ import annotations

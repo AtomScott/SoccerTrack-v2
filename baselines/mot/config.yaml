@@ -1,8 +1,8 @@
 data:
   root: ./data
-  train_matches: [117091, 117092, 117093, 117094, 117095, 117096, 117097]
-  val_matches:   [117098]
-  test_matches:  [117099, 117100]
+  train_matches: [117092, 117093, 118575, 118576, 118577, 128058, 132877]
+  val_matches:   [118578]
+  test_matches:  [128057, 132831]
 
 detector:
   name: yolov8s
