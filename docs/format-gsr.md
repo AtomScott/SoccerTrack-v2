@@ -1,5 +1,41 @@
 # GSR annotation format — SoccerTrack v2
 
+> ## ⚠ The released files do not match the schema specified below
+>
+> Verified 2026-08-11 against `production/gsr/117093/117093_1st.json`. The divergence is
+> structural, not cosmetic, and it is why `src/evaluation/gs_hota.py` could not read a single
+> real file until it was fixed. **This notice does not decide which side is authoritative** —
+> either the data is regenerated to match this spec, or this spec (and
+> `sections/02_dataset.tex`, which says the same thing) is corrected to match the data. That
+> is a maintainer decision. Until it is made, the "As shipped" section below is what a
+> consumer actually receives.
+>
+> | this spec says | the files actually contain |
+> |---|---|
+> | a JSON **array** of flat records | a SoccerNet-COCO **object**: `info`, `images`, `annotations`, `categories` |
+> | `image_id` integer, 0-indexed | `image_id` **string**, e.g. `"3000001"` — a sequence prefix plus a 1-indexed 6-digit frame |
+> | `player_id`, `role`, `jersey_number`, `team_side` at top level | all four nested under **`attributes`**, and `jersey` is a **string** (`"12"`), not an integer |
+> | `x`, `y` at top level | absent — the pitch position lives in `bbox_pitch.x_bottom_middle` / `y_bottom_middle` |
+> | `bbox_image` as `[x, y, w, h]` | a **dict**: `{x, y, w, h, x_center, y_center}` |
+> | `bbox_pitch` as `[x, y, w, h]` | a **dict** of six keys: `x/y_bottom_left`, `x/y_bottom_middle`, `x/y_bottom_right` |
+> | — | additional fields not documented here: `id`, `supercategory`, `category_id`, `bbox_pitch_raw` |
+> | — | additional record kinds: `supercategory: "pitch"` (normalised pitch lines) and `"camera"` |
+>
+> Two further notes for anyone consuming the files:
+>
+> * **`bbox_pitch`'s left/middle/right triplet is degenerate** — all three carry identical
+>   values (e.g. `x_bottom_left == x_bottom_middle == x_bottom_right == -23.0999…`). Only the
+>   middle point carries information. The pitch-space GS-HOTA scorer nonetheless requires all
+>   six keys to be present.
+> * **The declared `width`/`height` are wrong for nine of the ten matches.** Every file
+>   declares `3840×1504`, which is `132831`'s geometry. The normalised pitch-line coordinates
+>   are divided by those same constants, so for the eight 4096-wide matches the normalised x
+>   exceeds 1.0 (max 1.025 = 3935/3840). Pixels are recoverable exactly as `norm × 3840` and
+>   `norm × 1504` — but note `bbox_image` is in *true* pixel space, so no single uniform
+>   correction applies to a whole file.
+>
+> Pitch coordinates *are* centre-origin metric as specified below, and that part is confirmed.
+
 This document specifies the Game State Reconstruction (GSR) annotation format shipped with SoccerTrack v2. GSR annotations record, for every annotated frame, where each entity (player, goalkeeper, referee) is on the pitch in 2D metric coordinates, plus persistent identifying attributes (track ID, jersey number, role, team side).
 
 The format is deliberately close to the [SoccerNet GSR](https://www.soccer-net.org/tasks/game-state-reconstruction) convention so that tooling ports across.
@@ -106,3 +142,52 @@ The reference metric is **GS-HOTA** (the SoccerNet GSR variant of HOTA). See [`s
 - [`format-bas.md`](format-bas.md) — Ball Action Spotting format.
 - [`task-gsr.html`](task-gsr.html) — task description and benchmark pointers.
 - [`docs/TODO.md`](TODO.md) — ongoing release checklist.
+
+---
+
+## As shipped (2026-08-11)
+
+Verbatim from `production/gsr/117093/117093_1st.json`, an `object` annotation:
+
+```json
+{
+  "id": "300000001",
+  "image_id": "3000001",
+  "track_id": 1,
+  "supercategory": "object",
+  "category_id": 1,
+  "attributes": {"role": "player", "jersey": "12", "team": "left", "player_id": 170959},
+  "bbox_image":  {"x": 1517, "y": 152, "x_center": 1546.0, "y_center": 173.5, "w": 58, "h": 43},
+  "bbox_pitch":  {"x_bottom_left": -23.0999, "y_bottom_left": -21.76,
+                  "x_bottom_middle": -23.0999, "y_bottom_middle": -21.76,
+                  "x_bottom_right": -23.0999, "y_bottom_right": -21.76},
+  "bbox_pitch_raw": { ... same six keys ... }
+}
+```
+
+Enclosing structure:
+
+```json
+{
+  "info":        {"version": "1.3", "seq_length": 67650, "frame_rate": 25,
+                  "clip_start": "0", "clip_stop": "30000", ...},
+  "images":      [{"image_id": "3000001", "file_name": "...", "width": 3840, "height": 1504,
+                   "is_labeled": true, "has_labeled_person": ..., ...}, ...],
+  "annotations": [ ... object / pitch / camera records ... ],
+  "categories":  [ ... ]
+}
+```
+
+### Practical consequences
+
+* **Do not `json.load` these files.** They are ~2.7 GB per half, needing roughly 20 GB of RAM.
+  Because they are *already* in SoccerNet `Labels-GameState.json` form, the supported path is
+  to symlink them into the scorer's expected layout rather than parse and rewrite them; this
+  is what `src/evaluation/gs_hota.py` does.
+* **`info.clip_start`/`clip_stop` are a leftover 30-second clip header** and disagree with the
+  payload: `clip_stop` reads `30000` ms while `seq_length` reads `67650` frames (45 minutes)
+  and the annotations cover the whole half. Verified harmless — neither `gs_hota.py` nor the
+  upstream SoccerNetGS scorer reads those fields; the frame count is derived from
+  `len(images)`. Do not rely on them.
+* **GS-HOTA is scored in pitch space only.** SoccerTrack v2 has no ground-truth detections, so
+  image-space evaluation is not possible and `bbox_image` must not be used for scoring.
