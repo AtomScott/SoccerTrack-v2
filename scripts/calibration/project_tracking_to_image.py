@@ -13,9 +13,12 @@ WHAT THIS VALIDATES
     match. If the markers land on the players, calibration and tracking agree.
 
     Confirmed conventions (do not "fix" these):
-      * y is used as-is. Flipping it puts every marker on empty grass.
       * pitch origin is a corner, x in [0,105], y in [0,68] -- the same frame the keypoints
         use, which is why the keypoint fit's extrinsics apply directly.
+      * x is never mirrored: for every match, flipping x puts markers on empty grass.
+      * y is NOT uniform. Eight matches use it as-is; 132831 and 132877 need it inverted.
+        And within 132877, the ball stream disagrees with its own player streams. See
+        TRACKING_Y_FLIP and BALL_Y_FLIP_DISAGREES below for the evidence.
 
 FRAME ALIGNMENT
     The XML numbers frames continuously across the match while the video is split per half,
@@ -47,6 +50,37 @@ MATCHES = ["117092", "117093", "118575", "118576", "118577", "118578",
            "128057", "128058", "132831", "132877"]
 KEYPOINT_SWAPS = {"132831": [("(88.5,13.84)", "(105,54.16)")]}
 PITCH_W, PITCH_H = 105.0, 68.0
+
+# The tracking XML's y-axis convention is NOT uniform across the dataset.
+#
+# Determined 2026-08-11 by rendering all four axis variants per match and inspecting
+# them: eight matches place markers on the players with y as-is, while 132831 and
+# 132877 -- the separate, later capture batch, both recorded 2024-04-20 and both with a
+# frameNumber offset of 1 -- require y inverted. Judged at high confidence for all ten,
+# principally on the isolated-goalkeeper test: a keeper standing away from the midfield
+# scrum either carries a marker or he does not, whereas in a crowd every convention
+# lands near *something*.
+#
+# Do NOT try to settle this by measuring "non-grass" content at marker positions. That
+# was tried: the four variants score within a few percent of each other and it picks the
+# wrong convention for 117093. Player pixels are too small a fraction of any sample
+# patch. Use a detector or a human looking at a zoomed crop.
+TRACKING_Y_FLIP = {"132831": True, "132877": True}
+
+# ...and in 132877 the BALL stream disagrees with its own player streams: the players
+# need y inverted, the ball does not.
+#
+# Verified without any reference to the calibration, purely inside the XML, on the
+# premise that a tracked ball is normally at somebody's feet. Over nine sampled frames
+# the ball's stored y leaves it a median 7.51 m from the nearest player, while mirroring
+# only the ball's y gives 1.72 m (per-frame: 8.10/1.72, 7.51/2.21, 16.23/2.10,
+# 9.27/1.72). So whatever is applied to players here must not be applied to the ball.
+#
+# This is a defect in the released tracking data, not a convention to respect -- it is
+# encoded so projections are correct meanwhile, and should be removed once the XML is
+# fixed at source. Note 132831 cannot corroborate it: its ball sits at exactly
+# (0.500, 0.500) at the sampled frame, so it projects identically under every variant.
+BALL_Y_FLIP_DISAGREES = {"132877"}
 
 FLAGS = (cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC
          + cv2.fisheye.CALIB_FIX_SKEW
@@ -119,10 +153,25 @@ def entities_at(xml: Path, frame_number: int, period: str = "FIRST_HALF"):
             for mo in ENTITY_RE.finditer("".join(buf))]
 
 
-def project(ents, rvec, tvec, K, D):
+def project(ents, rvec, tvec, K, D, match: str | None = None):
+    """Project tracking entities to pixels, applying this match's axis convention.
+
+    See TRACKING_Y_FLIP and BALL_Y_FLIP_DISAGREES for why the convention is per-match and
+    why 132877's ball is handled separately from its players.
+    """
     if not ents:
         return []
-    obj = np.array([[[lx * PITCH_W, ly * PITCH_H, 0.0]] for _, _, lx, ly in ents], dtype=np.float32)
+    flip_players = TRACKING_Y_FLIP.get(str(match), False)
+    ball_differs = str(match) in BALL_Y_FLIP_DISAGREES
+
+    rows = []
+    for kind, _pid, lx, ly in ents:
+        flip = flip_players
+        if kind == "ball" and ball_differs:
+            flip = not flip
+        y = (1.0 - ly) if flip else ly
+        rows.append([[lx * PITCH_W, y * PITCH_H, 0.0]])
+    obj = np.array(rows, dtype=np.float32)
     pts, _ = cv2.fisheye.projectPoints(obj, rvec, tvec, K, D)
     pts = pts.reshape(-1, 2)
     return [(e[0], e[1], p) for e, p in zip(ents, pts) if np.isfinite(p).all()]
@@ -167,7 +216,7 @@ def main() -> int:
         if off is None:
             rows.append(dict(match=m, status="NO PERIOD ROW")); print(f"  {m}: no {period} row"); continue
         ents = entities_at(xml, args.frame + off, period)
-        proj = project(ents, rvec, tvec, K, D)
+        proj = project(ents, rvec, tvec, K, D, match=m)
 
         vis = frame.copy()
         inside = 0
@@ -180,8 +229,10 @@ def main() -> int:
             cv2.circle(vis, (x, y), 11, col, 2)
             cv2.drawMarker(vis, (x, y), (0, 0, 0), cv2.MARKER_CROSS, 14, 3)
             cv2.drawMarker(vis, (x, y), col, cv2.MARKER_CROSS, 12, 1)
+        conv = "y-FLIPPED" + (" (ball not flipped)" if m in BALL_Y_FLIP_DISAGREES else "") \
+               if TRACKING_Y_FLIP.get(m, False) else "y as-is"
         label = (f"{m}  {args.half} half frame {args.frame} (xml frameNumber {args.frame+off}, "
-                 f"offset {off})  rms={rms:.2f}  {len(proj)} projected, {inside} in frame")
+                 f"offset {off})  rms={rms:.2f}  {conv}  {len(proj)} projected, {inside} in frame")
         for t, c in ((6, (0, 0, 0)), (2, (255, 255, 255))):
             cv2.putText(vis, label, (20, 46), cv2.FONT_HERSHEY_SIMPLEX, 1.2, c, t, cv2.LINE_AA)
         tag = f"{m}_tracking_{args.half}_{args.frame}"
@@ -189,7 +240,7 @@ def main() -> int:
         cv2.imwrite(str(out / f"{tag}.jpg"),
                     cv2.resize(vis, (int(w * hh / h), hh)), [cv2.IMWRITE_JPEG_QUALITY, 90])
         rows.append(dict(match=m, status="OK", rms=rms, n=len(proj), inside=inside,
-                         offset=off, tag=tag, note=ksrc))
+                         offset=off, tag=tag, note=f"{ksrc}; {conv}"))
         print(f"  {m}: rms={rms:7.2f} offset={off:5d} projected={len(proj):3d} in_frame={inside:3d} ({ksrc})")
 
     with open(out / "summary.tsv", "w") as f:
