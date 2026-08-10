@@ -25,6 +25,7 @@ dependencies = [
     "ruff>=0.7.4",
     "scikit-learn>=1.5.2",
     "setuptools>=75.1.0",
+    "soccernet>=0.1.61",
     "tqdm>=4.66.5",
     "typer-config>=1.4.2",
     "ultralytics>=8.3.35",
