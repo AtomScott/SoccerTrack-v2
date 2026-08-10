@@ -147,7 +147,7 @@ Run:
 ```bash
 python -m src.evaluation.mot_hota \
     --pred PRED_ROOT --gt GT_ROOT \
-    --matches 117099 117100 \
+    --matches 128057 132831 \
     --metrics HOTA IDF1 MOTA
 ```
 

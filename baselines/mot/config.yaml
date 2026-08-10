@@ -11,8 +11,8 @@
 
 data:
   root: ./data                          # SoccerTrack v2 snapshot root (has mot/, interim/, ...)
-  train_matches: [117091, 117092, 117093, 117094, 117095, 117096, 117097]  # bare match ids
-  val_matches:   [117098]                                                   # bare match ids
+  train_matches: [117092, 117093, 118575, 118576, 118577, 128058, 132877]  # bare match ids
+  val_matches:   [118578]                                                   # bare match ids
   # test_matches are TrackEval SEQUENCE NAMES (one per half), not bare match ids:
   # baselines/mot/eval.py passes these straight to TrackEval to pair
   #   <pred_root>/<tracker>/data/<seq>.txt  against  <data.root>/mot/<seq>/gt/gt.txt
@@ -21,7 +21,7 @@ data:
   # nested under a MOT17-custom split folder). train.py's parse_test_sequence()
   # recovers (match_id, half) from each name.
   # docs/format-mot.md: score each half as its own sequence with a distinct name.
-  test_matches:  [117099_1st, 117099_2nd, 117100_1st, 117100_2nd]
+  test_matches:  [128057_1st, 128057_2nd, 132831_1st, 132831_2nd]
 
 # Per-match MOT ground-truth annotations used to BUILD the YOLO detection dataset
 # (train/val matches only). build_yolo_dataset (reused from gsr.train) resolves
@@ -30,22 +30,22 @@ data:
 # !! GROUND-TRUTH PATH CONVENTIONS — read before laying out data/mot !!
 # This tree must satisfy TWO physically different GT path shapes (build vs scoring),
 # and the half token is spelled differently in each. A released data/mot must
-# contain both. The train/val matches (117091-117098) and test matches
-# (117099-117100) are DISJOINT, so the two shapes never collide on one file, but
-# every match folder still has to follow whichever shape its role demands.
+# contain both. The train/val matches and the test matches (128057 and 132831)
+# are DISJOINT, so the two shapes never collide on one file, but every match
+# folder still has to follow whichever shape its role demands.
 #
 # 1) BUILD (this section; train/val matches; half = '1st_half' / '2nd_half'):
 #      <mot.root>/<match>/<half>/gt/gt.txt
-#      e.g. data/mot/117091/1st_half/gt/gt.txt
+#      e.g. data/mot/117092/1st_half/gt/gt.txt
 #    Driven by mot.filename_template below and the {half} values in gsr.train.
 #
 # 2) SCORING (test matches; per-half SEQUENCE name, half token = '1st' / '2nd'):
 #    The evaluator src.evaluation.mot_hota sets SKIP_SPLIT_FOL=True, so TrackEval
 #    reads GT at the un-nested, sequence-named path:
 #      <data.root>/mot/<match>_<half>/gt/gt.txt   (+ a seqinfo.ini per sequence)
-#      e.g. data/mot/117099_1st/gt/gt.txt  and  data/mot/117099_1st/seqinfo.ini
+#      e.g. data/mot/128057_1st/gt/gt.txt  and  data/mot/128057_1st/seqinfo.ini
 #    (Historical note: with TrackEval's default SKIP_SPLIT_FOL=False it would
-#    instead nest under data/mot/MOT17-custom/117099_1st/gt/gt.txt — that nesting
+#    instead nest under data/mot/MOT17-custom/128057_1st/gt/gt.txt — that nesting
 #    is the bug this evaluator now suppresses; do NOT lay out a MOT17-custom dir.)
 #
 # Note the half-suffix mismatch: BUILD uses '1st_half'/'2nd_half' (a sub-dir),

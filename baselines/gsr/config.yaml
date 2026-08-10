@@ -6,17 +6,17 @@
 
 data:
   root: ./data                         # SoccerTrack v2 snapshot root (has gsr/, mot/, interim/, ...)
-  train_matches: [117091, 117092, 117093, 117094, 117095, 117096, 117097]
-  val_matches:   [117098]
-  test_matches:  [117099, 117100]      # held out for the paper
+  train_matches: [117092, 117093, 118575, 118576, 118577, 128058, 132877]
+  val_matches:   [118578]
+  test_matches:  [128057, 132831]      # held out; matches the SoccerTrack Challenge 2025 test split
 
 # Where the per-match MOT ground-truth annotations live (used to build the YOLO
 # detection dataset for fine-tuning). train.py's mot_path() resolves
-#   <root>/<match>/<filename_template>   with {match}=117099, {half}=1st_half|2nd_half
+#   <root>/<match>/<filename_template>   with {match}=117092, {half}=1st_half|2nd_half
 # The canonical SoccerTrack v2 MOT layout (docs/format-mot.md and
 # src/evaluation/mot_hota.py) is the MOTChallenge gt/gt.txt convention, with each
 # half scored as its own sequence. So the per-half ground truth lives at
-#   data/mot/<match>/<half>/gt/gt.txt   (e.g. data/mot/117099/1st_half/gt/gt.txt)
+#   data/mot/<match>/<half>/gt/gt.txt   (e.g. data/mot/117092/1st_half/gt/gt.txt)
 # i.e. the documented per-sequence `gt/gt.txt`, one sub-dir per half.
 # filename_template placeholders: {match}, {half} (={1st_half,2nd_half}).
 mot:
