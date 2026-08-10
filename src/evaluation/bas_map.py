@@ -4,7 +4,7 @@ Computes per-class temporal mean Average Precision at user-supplied tolerance
 windows (1 s and 5 s by default), matching the SoccerNet BAS protocol. Predictions
 must use the same JSON schema as ground truth (see docs/format-bas.md).
 
-    python -m src.evaluation.bas_map --pred PRED_ROOT --gt GT_ROOT --matches 117099 117100 \\
+    python -m src.evaluation.bas_map --pred PRED_ROOT --gt GT_ROOT --matches 128057 132831 \\
         --tolerances 1 5
 """
 from __future__ import annotations

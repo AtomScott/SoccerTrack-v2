@@ -4,7 +4,7 @@
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <match_id1> [match_id2 ...]"
     echo "Example: $0 117093"
-    echo "Example with multiple matches: $0 117093 117094 117095"
+    echo "Example with multiple matches: $0 117093 118575 118576"
     exit 1
 fi
 

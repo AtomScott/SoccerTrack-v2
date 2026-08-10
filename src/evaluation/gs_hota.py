@@ -5,7 +5,7 @@ Thin wrapper around the reference SoccerNet GSR implementation
 metric — we convert SoccerTrack v2's on-disk format into the SoccerNet GSR
 expected layout and call the upstream scorer.
 
-    python -m src.evaluation.gs_hota --pred PRED_ROOT --gt GT_ROOT [--matches 117098 117099]
+    python -m src.evaluation.gs_hota --pred PRED_ROOT --gt GT_ROOT [--matches 128057 132831]
 
 See docs/format-gsr.md for the on-disk annotation layout.
 """

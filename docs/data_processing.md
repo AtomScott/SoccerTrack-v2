@@ -47,7 +47,7 @@ Example:
 
 Process multiple matches:
 ```bash
-./scripts/create_ground_truth.sh 117093 117094 117095
+./scripts/create_ground_truth.sh 117093 118575 118576
 ```
 
 ### Individual Steps
