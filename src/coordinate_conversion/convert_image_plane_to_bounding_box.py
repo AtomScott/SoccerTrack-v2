@@ -5,7 +5,7 @@ import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 from src.csv_utils import load_coordinates
-from src.data_association.analyze_bbox_dimensions import load_bbox_models, estimate_bbox_dimensions
+from src.data_association.analyze_bbox_dimensions import load_bbox_models, estimate_bbox_dimensions_fast
 import numpy as np
 
 
@@ -75,11 +75,10 @@ def convert_image_plane_to_bounding_box(
     coordinates_df = load_coordinates(Path(coordinates_path), match_id, event_period)
 
     # Load bbox models if provided
-    bbox_models = None
+    grid_dict = None
     if bbox_models_path:
         logger.info(f"Loading bbox regression models from {bbox_models_path}")
-        width_model, height_model, ranges = load_bbox_models(bbox_models_path)
-        bbox_models = (width_model, height_model, ranges)
+        grid_dict = load_bbox_models(bbox_models_path)
 
     # Exclude ball if present
     coordinates_df = coordinates_df[coordinates_df["id"] != "ball"]
@@ -102,13 +101,12 @@ def convert_image_plane_to_bounding_box(
         mot_df["y"] = mot_df["y"].interpolate(method="linear")
 
     # Define bounding box dimensions
-    if bbox_models:
-        logger.info("Using regression models for dynamic bbox dimensions")
-        width_model, height_model, ranges = bbox_models
+    if grid_dict:
+        logger.info("Using grid-based model for dynamic bbox dimensions")
         dimensions = []
         total_frames = len(mot_df)
         for i, (x, y) in tqdm(enumerate(zip(mot_df["x"], mot_df["y"])), total=total_frames):
-            dimensions.append(estimate_bbox_dimensions(x, y, width_model, height_model, ranges))
+            dimensions.append(estimate_bbox_dimensions_fast(x, y, grid_dict, grid_dict["ranges"], mode="bilinear"))
         mot_df["bb_width"], mot_df["bb_height"] = zip(*dimensions)
     else:
         logger.info(f"Using fixed bbox dimensions: width={bb_width}, height={bb_height}")

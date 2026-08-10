@@ -22,6 +22,16 @@ sh_scripts/abci
 outputs/abci_logs
 *.pt
 
+# Working media and scratch results dropped at the repo root during experiments.
+# Root-anchored so tracked assets under docs/assets/ and outputs/graph/ are unaffected.
+/*.mp4
+/*.png
+/output/
+notebooks/test/
+
+# Vendored upstream clone with its own .git — install boxmot from PyPI instead
+/boxmot/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
