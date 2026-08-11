@@ -11,7 +11,8 @@ MATCH_ID=$1
 
 # Set up paths
 BASE_DIR="data/interim/$MATCH_ID"
-WEIGHTS_PATH="models/model=yolov8m-imgsz=2048.pt"
+WEIGHTS_PATH="models/yolov8m.pt"
+# WEIGHTS_PATH="models/model=yolov8m-imgsz=2048.pt"
 
 # Check if required files exist
 if [ ! -f "$WEIGHTS_PATH" ]; then
@@ -57,7 +58,7 @@ for HALF in "${HALVES[@]}"; do
             detect_objects.video_path="$VIDEO_PATH" \
             detect_objects.output_path="$OUTPUT_PATH" \
             detect_objects.weights_path="$WEIGHTS_PATH" \
-            detect_objects.vid_stride=200
+            detect_objects.vid_stride=30
         
         # Check if detection was successful
         if [ $? -ne 0 ]; then

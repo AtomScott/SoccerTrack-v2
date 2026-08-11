@@ -19,7 +19,9 @@ _LAZY_EXPORTS: dict[str, str] = {
     "plot_coordinates_on_video": "src.visualization.plot_coordinates_on_video:plot_coordinates_on_video",
     "plot_bboxes_on_video": "src.visualization.plot_bboxes_on_video:plot_bboxes_on_video",
     "detect_objects": "src.detection.yolov8:detect_objects",
-    "create_yolo_dataset": "src.data_utils.create_yolo_dataset:create_yolo_dataset",
+    # Moved out of data_utils into a dedicated src/yolo module.
+    "create_yolo_dataset": "src.yolo:create_yolo_dataset",
+    "train_yolo_model": "src.yolo:train_yolo_model",
     "trim_video_into_halves": "src.video_utils.trim_video_into_halves:trim_video_into_halves",
     "convert_raw_to_pitch_plane": "src.coordinate_conversion.convert_raw_to_pitch_plane:convert_raw_to_pitch_plane",
     "convert_pitch_plane_to_image_plane": (

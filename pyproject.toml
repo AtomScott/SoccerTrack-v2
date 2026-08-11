@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "boxmot>=11.0.8",
     "deffcode>=0.2.6",
     "huggingface-hub>=0.25.0",
     "joblib>=1.4.2",
@@ -19,6 +20,7 @@ dependencies = [
     "opencv-python>=4.10.0.84",
     "openstarlab-preprocessing>=0.1.11",
     "parse>=1.20.2",
+    "pip>=25.0.1",
     "pydrive2>=1.21.1",
     "pyexiftool>=0.5.6",
     "python-dotenv>=1.0.1",

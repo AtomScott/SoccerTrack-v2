@@ -153,15 +153,23 @@ create_ground_truth_mot:
   pitch_length: ${pitch_length}
   pitch_width: ${pitch_width}
 
+# YOLO dataset creation
 create_yolo_dataset:
-  video_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/combined.mp4"
-  mot_path: "/data/share/teamtrack/teamtrack-mot/soccer_side/full/gt.txt"
-  output_dir: "/home/atom/SoccerTrack-v2/data/v1"
-  frame_interval: 1000
-  train_split: 0.8
-  val_split: 0.1
-  test_split: 0.1
-  overwrite: true
+  match_id: null  # Required
+  half: null      # Required: 1st or 2nd
+  frame_interval: 1
+  train_ratio: 0.8  # Ratio of images to use for training
+  base_dir: null  # Optional: defaults to data/interim/{match_id}
+
+# YOLO model training
+train_yolo_model:
+  match_id: null  # Required
+  half: null      # Required: 1st or 2nd
+  model_type: "yolov8n.pt"
+  epochs: 100
+  batch_size: 16
+  imgsz: 640
+  base_dir: null  # Optional: defaults to data/interim/{match_id}
 
 log_string:
   string: "Hello, world!"

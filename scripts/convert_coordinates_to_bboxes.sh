@@ -59,7 +59,9 @@ for HALF in "${HALVES[@]}"; do
             --detections_path "$DETECTIONS_PATH" \
             --output_path "$BBOX_MODELS_PATH" \
             --match_id "${MATCH_ID}" \
-            --conf_threshold 0.3
+            --conf_threshold 0.6 \
+            --grid_size 5 \
+            --interp_factor 50
 
         # Then create ground truth MOT file using the regression models
         if [ $? -eq 0 ]; then
