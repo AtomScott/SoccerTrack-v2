@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -173,6 +174,7 @@ def convert_to_soccernet_gs(
     dst_root: Path,
     match_ids: list[str],
     tracker_name: str = "soccertrack",
+    is_gt: bool = True,
 ) -> Path:
     """Convert a SoccerTrack GSR tree into a SoccerNet GSR folder, on disk.
 
@@ -195,13 +197,81 @@ def convert_to_soccernet_gs(
             if not src.exists():
                 # Halves may be missing in partial snapshots; skip explicitly.
                 continue
-            records = json.loads(src.read_text())
             seq = _sequence_name(str(match_id), half)
+            # The scorer's two sides use DIFFERENT layouts (verified against
+            # sn-trackeval 0.4.0's SoccerNetGS.__init__):
+            #   ground truth : <root>/<seq>/Labels-GameState.json   (a dir per sequence)
+            #   predictions  : <root>/<tracker>/data/<seq>.json      (a flat file)
+            # and it reads GT from the "annotations" key but predictions from
+            # "predictions" (soccernet_gs.py: key = "annotations" if is_gt else
+            # "predictions"). Getting either wrong yields "file not found" or a silent
+            # zero rather than a useful error.
+            if is_gt:
+                dst = dst_root / seq / "Labels-GameState.json"
+            else:
+                dst = dst_root / tracker_name / "data" / f"{seq}.json"
+            dst.parent.mkdir(parents=True, exist_ok=True)
+
+            if _is_already_gamestate(src):
+                # The released production tree is ALREADY in SoccerNet
+                # Labels-GameState.json form, so there is nothing to convert. Parsing it
+                # would be both wrong and ruinous: these files are ~2.7 GB per half, so
+                # json.loads needs roughly 20 GB of RAM, and soccertrack_records_to_gs
+                # expects a flat list and raises TypeError on a dict.
+                #
+                # It is also the only form that satisfies the pitch-space scorer, which
+                # requires six bbox_pitch keys (x/y_bottom_left, _middle, _right) whereas
+                # soccertrack_records_to_gs emits only _middle. So linking is not merely
+                # an optimisation -- re-converting would trip the scorer's assert.
+                if is_gt or _has_predictions_key(src):
+                    if dst.is_symlink() or dst.exists():
+                        dst.unlink()
+                    try:
+                        dst.symlink_to(src.resolve())
+                    except OSError:
+                        shutil.copy2(src, dst)  # filesystems without symlink support
+                    continue
+                raise ValueError(
+                    f"{src} is in Labels-GameState form but stores its detections under "
+                    "'annotations'. The scorer reads predictions from a 'predictions' key, "
+                    "so this file cannot be used as a tracker output as-is. Emit "
+                    "predictions either as the flat record list documented in "
+                    "docs/format-gsr.md, or as Labels-GameState with a 'predictions' key."
+                )
+
+            records = json.loads(src.read_text())
             gs = soccertrack_records_to_gs(records, seq)
-            out_dir = dst_root / seq
-            out_dir.mkdir(parents=True, exist_ok=True)
-            (out_dir / "Labels-GameState.json").write_text(json.dumps(gs, indent=2))
+            if not is_gt:
+                gs["predictions"] = gs.pop("annotations")
+            dst.write_text(json.dumps(gs, indent=2))
     return dst_root
+
+
+def _has_predictions_key(path: Path, probe_bytes: int = 4_000_000) -> bool:
+    """Whether a Labels-GameState file stores detections under "predictions".
+
+    Only the head is probed so gigabyte files are not read. "images" precedes the
+    detections block in every file produced here, so a few MB is ample.
+    """
+    with open(path, "rb") as fh:
+        return b'"predictions"' in fh.read(probe_bytes)
+
+
+def _is_already_gamestate(path: Path) -> bool:
+    """True when *path* is a SoccerNet Labels-GameState dict rather than a flat record list.
+
+    Decided from the first non-whitespace byte so that a multi-gigabyte file is never read
+    into memory: ``{`` is the COCO-style dict SoccerNet expects, ``[`` is the flat
+    SoccerTrack record list documented in docs/format-gsr.md.
+    """
+    with open(path, "rb") as fh:
+        while True:
+            chunk = fh.read(64)
+            if not chunk:
+                return False
+            stripped = chunk.lstrip()
+            if stripped:
+                return stripped[:1] == b"{"
 
 
 # --------------------------------------------------------------------------- #
@@ -237,17 +307,18 @@ def score_many(
         workdir = Path(workdir)
         workdir.mkdir(parents=True, exist_ok=True)
 
-    gt_dst = convert_to_soccernet_gs(gt_root, workdir / "gt", mids)
+    gt_dst = convert_to_soccernet_gs(gt_root, workdir / "gt", mids, is_gt=True)
     pred_dst = convert_to_soccernet_gs(
-        pred_root, workdir / "preds", mids, tracker_name="soccertrack"
+        pred_root, workdir / "preds", mids, tracker_name="soccertrack", is_gt=False
     )
-    return run_upstream_gs_hota(pred_dst, gt_dst, mids)
+    return run_upstream_gs_hota(pred_dst, gt_dst, mids, tracker_name="soccertrack")
 
 
 def run_upstream_gs_hota(
     pred_gs_root: Path,
     gt_gs_root: Path,
     match_ids: list[str],
+    tracker_name: str = "soccertrack",
 ) -> dict:
     """THE single seam onto the upstream SoccerNet GS-HOTA scorer.
 
@@ -283,17 +354,28 @@ def run_upstream_gs_hota(
             "TrackLab pipeline (`tracklab -cn soccernet`)."
         ) from e
 
-    # If a SoccerNetGS TrackEval dataset is available, drive it directly. The
-    # exact config keys track the sn-trackeval fork; kept behind this single seam
-    # so it is the only thing to update if the fork's API shifts.
+    # Drive the SoccerNetGS dataset directly. Kept behind this single seam so it is the
+    # only thing to update if the fork's API shifts.
     #
-    # REGRESSION NOTE (unverified): the dataset_cfg keys below (GT_FOLDER,
-    # TRACKERS_FOLDER, TRACKERS_TO_EVAL, ...) and SoccerNetGS.get_default_dataset_config()
-    # are NOT exercised here — only stock TrackEval (no SoccerNetGS dataset) is
-    # installed in this environment. Stock TrackEval's HOTA *output shape* is
-    # verified (drives _flatten_results / _normalize_metrics); the SoccerNetGS
-    # config wiring must be re-checked against a real sn-trackeval install. The
-    # canonical command (docstring above) is the supported escape hatch meanwhile.
+    # VERIFIED against sn-trackeval 0.4.0 (see tests/test_gs_hota_identity.py, which
+    # scores a real production half against itself and asserts GS-HOTA == 1.0). The four
+    # non-default keys below are each load-bearing:
+    #
+    #   SKIP_SPLIT_FOL=True   Default False makes the dataset look under
+    #                         <GT_FOLDER>/valid/<seq>/ and
+    #                         <TRACKERS_FOLDER>/SoccerNetGS-valid/<tracker>/. Our layout
+    #                         has no split folder, so GT would not be found.
+    #   SEQ_INFO              Without it, sequence discovery lists
+    #                         <GT_FOLDER>/<SPLIT_TO_EVAL> -- note it uses GT_FOLDER and
+    #                         not the split-stripped gt_fol, so it looks for a 'valid'
+    #                         directory even when SKIP_SPLIT_FOL is True and raises
+    #                         "No sequences are selected to be evaluated."
+    #   TRACKER_SUB_FOLDER    Predictions resolve to
+    #                         <TRACKERS_FOLDER>/<tracker>/<sub>/<seq>.json.
+    #   EVAL_SPACE='pitch'    SoccerTrack v2 has NO ground-truth detections, so image
+    #                         space is not scoreable. Pitch space is also the scorer's
+    #                         default; it is pinned explicitly so a future default change
+    #                         cannot silently start reading bounding boxes.
     import trackeval as te  # type: ignore
 
     datasets_mod = getattr(te, "datasets", None)
@@ -307,21 +389,42 @@ def run_upstream_gs_hota(
         )
 
     eval_cfg = te.Evaluator.get_default_eval_config()
-    eval_cfg["PRINT_CONFIG"] = False
-    eval_cfg["TIME_PROGRESS"] = False
+    eval_cfg.update(
+        {
+            "PRINT_CONFIG": False,
+            "TIME_PROGRESS": False,
+            "DISPLAY_LESS_PROGRESS": True,
+            "PRINT_RESULTS": False,
+            "OUTPUT_SUMMARY": False,
+            "OUTPUT_DETAILED": False,
+            "PLOT_CURVES": False,
+            "USE_PARALLEL": False,
+        }
+    )
+    seqs = [_sequence_name(str(m), h) for m in match_ids for h in (1, 2)
+            if (gt_gs_root / _sequence_name(str(m), h) / "Labels-GameState.json").exists()]
+    if not seqs:
+        raise RuntimeError(
+            f"No converted sequences found under {gt_gs_root}. Expected "
+            f"<seq>/Labels-GameState.json for match ids {match_ids}."
+        )
+
     dataset_cfg = SoccerNetGS.get_default_dataset_config()
     dataset_cfg.update(
         {
             "GT_FOLDER": str(gt_gs_root),
             "TRACKERS_FOLDER": str(pred_gs_root),
-            "TRACKERS_TO_EVAL": ["soccertrack"],
+            "TRACKERS_TO_EVAL": [tracker_name],
+            "TRACKER_SUB_FOLDER": "data",
+            "SKIP_SPLIT_FOL": True,
+            "SEQ_INFO": {s: None for s in seqs},
+            "EVAL_SPACE": "pitch",
             "OUTPUT_FOLDER": None,
             "PRINT_CONFIG": False,
         }
     )
-    metric = te.metrics.HOTA() if hasattr(te.metrics, "HOTA") else None
     evaluator = te.Evaluator(eval_cfg)
-    results, _ = evaluator.evaluate([SoccerNetGS(dataset_cfg)], [metric] if metric else [])
+    results, _ = evaluator.evaluate([SoccerNetGS(dataset_cfg)], [te.metrics.HOTA()])
     return _flatten_results(results)
 
 

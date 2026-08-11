@@ -29,16 +29,18 @@ dependencies = [
     "scikit-learn>=1.5.2",
     "setuptools>=75.1.0",
     "soccernet>=0.1.61",
-    # NOTE: `sn-gamestate` is intentionally NOT listed here. It is the optional
-    # SoccerNet Game State Reconstruction toolkit used only by
-    # `src.evaluation.gs_hota.run_upstream_gs_hota`, which imports it lazily and
-    # raises an actionable RuntimeError when it is absent. Its upstream metadata
-    # hard-pins `requires-python = ">=3.9,<3.10"` and `torch==1.13.1` (no cp312
-    # wheels), so it is *unresolvable* in this project's Python 3.12 / torch 2.5
-    # environment and cannot be locked by uv. Install it separately in its own
-    # Python 3.9 environment to score GS-HOTA; see docs/format-gsr.md.
+    # NOTE: `sn-gamestate` is intentionally NOT listed here, and is no longer needed to
+    # score GS-HOTA. Its upstream metadata hard-pins `requires-python = ">=3.9,<3.10"`
+    # and `torch==1.13.1` (no cp312 wheels), so it is unresolvable in this project's
+    # Python 3.12 / torch 2.5 environment. The metric itself lives in `sn-trackeval`
+    # (below), which is pure-Python, installs cleanly on 3.12, and is verified to
+    # produce GS-HOTA here -- see tests/test_gs_hota_identity.py. A separate Python 3.9
+    # environment is therefore NOT required; the earlier note saying otherwise was
+    # written before sn-trackeval was tried.
     "tqdm>=4.66.5",
-    "trackeval",
+    # sn-trackeval, NOT the unrelated PyPI "trackeval": only the SoccerNet fork ships
+    # the SoccerNetGS TrackEval dataset that computes GS-HOTA. Imports as `trackeval`.
+    "sn-trackeval>=0.4.0",
     "typer-config>=1.4.2",
     "ultralytics>=8.3.35",
     "vidgear>=0.3.3",
