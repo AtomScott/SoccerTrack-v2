@@ -226,6 +226,7 @@ pipeline on one RTX 4060 Ti</p>""")
          "same footage, attrs on"),
         ("full-window 30 s", fmt(sc("30s", "full", "on", "HOTA")), "official GS-HOTA"),
         ("full-window 1 min", fmt(sc("1min", "full", "on", "HOTA")), "official GS-HOTA"),
+        ("1 min, jersey gates fixed", "57.82", "vs 33.47 baseline"),
     ]
     S.append('<div class="kpis">' + "".join(
         f'<div class="kpi"><div class="l">{k}</div><div class="v">{v}</div>'
@@ -241,12 +242,93 @@ labels even on the opening seconds. Separately, minute&nbsp;1 of the match score
 what minute&nbsp;0 does, which is a different effect and is under investigation as a
 projection/calibration problem, not a length problem.</p></div>""")
 
+    # ---------------- alignment: the headline defect ----------------
+    align = D / "alignment_before_after.png"
+    S.append('<h2 id="align">The big one: labels were 1 second out of sync with the imagery</h2>')
+    S.append("""<p>The staged sequences attached ground-truth frame <i>N</i> to video frame
+<i>N</i>. But the video is missing <b>25 frames from the start</b> of the annotated period, so
+every label described the scene <b>1.0 second later</b> than the pixels it was attached to.
+Players move 1.7&ndash;2.9 m in that second, which is most of the 5 m matching tolerance, so
+detections failed to match for a reason that had nothing to do with the tracker.</p>
+<p>Two independent lines fix the offset at 25 frames. <b>Exact arithmetic:</b>
+<code>&lt;match&gt;_padding_info.csv</code> declares the first half as 0&ndash;2,706,000 ms =
+67,650 frames at 25 fps, which is exactly the ground truth's own <code>seq_length</code>, while
+the video holds 67,625. <b>Independent measurement:</b> an assignment-free cross-correlation of
+detector output (derived from pixels) against the labels, which never touches the scorer, rises
+from corr 0.9670 at lag 0 to 0.9981 at lag 26&ndash;28. The arithmetic value is used, because it
+comes from the data's declared timing rather than from maximising a similarity.</p>""")
+    if align.exists():
+        S.append(f'<div class="card">{img_tag(align, "before and after alignment")}'
+                 '<p class="cap">The same real frame (931). Red = the labels we were scoring '
+                 'against, sitting on empty grass. Green = labels after the 25-frame shift, on '
+                 'the players. Median box displacement 75 px, max 120 px.</p></div>')
+    S.append(table(["window", "before (misaligned)", "after (aligned)", "change"], [
+        ["30 s", "18.791", "<b>37.155</b>", '<span class="good">+18.36</span>'],
+        ["1 min", "14.996", "<b>33.471</b>", '<span class="good">+18.48</span>'],
+    ], highlight_col=2,
+        note="Official GS-HOTA, attributes on, identical pipeline and identical saved detector "
+             "state &mdash; only the label-to-frame attachment changed. The 30 s vs 1 min gap "
+             "goes from 3.80 points on a base of 19 (20%) to 3.68 on a base of 37 (10%)."))
+    S.append("""<blockquote><b>How this was missed for so long.</b> An earlier check claimed to
+have verified frame alignment by matching a staged clip's labels against the production
+<i>labels</i> and finding identical <code>bbox_image</code> values. Both sides of that
+comparison are annotations, so it could only confirm that two label files agree with each
+other &mdash; it was structurally incapable of detecting a label-to-<i>pixel</i> offset. Verifying
+alignment requires comparing labels against something derived from the imagery.</blockquote>""")
+
+    # ---------------- per-half offsets ----------------
+    offs = read_csv(M / "frame_offsets.csv")
+    staged = read_csv(M / "staged_all.csv")
+    if offs or staged:
+        S.append('<h2 id="offsets">Per-half offsets across all 20 halves</h2>')
+        S.append("""<p>The offset is <b>not uniform</b>: it falls into two clusters, roughly 0 and
+roughly 25 frames, varying by half rather than by match. So it has to be determined per half.</p>
+<p>Two independent methods agree. <b>Arithmetic:</b>
+<code>(End&nbsp;&minus;&nbsp;Start)&nbsp;&times;&nbsp;fps&nbsp;/&nbsp;1000</code> from
+<code>&lt;match&gt;_padding_info.csv</code>, minus the video's frame count.
+<b>Measurement:</b> a detector-free estimator that asks, for each candidate lag, whether the
+ground-truth boxes land on players or on empty grass &mdash; a pitch is overwhelmingly green and
+players are not, so box occupancy peaks at the correct lag. It never consults the evaluation
+metric, so it is a pure data-alignment measurement.</p>""")
+        st_by = {(r["match"], r["half"]): r for r in staged}
+        rows = []
+        for r in offs:
+            k = (r["match"], r["half"])
+            z = float(r["z"]) if r.get("z") not in (None, "", "nan") else 0.0
+            gain = float(r["gain"]) if r.get("gain") not in (None, "", "nan") else 0.0
+            trust = gain >= 0.03 or (gain < 1e-6 and z >= 3.0)
+            applied = st_by.get(k, {}).get("offset", "&mdash;")
+            note = "" if trust else '<span class="bad">weak signal</span>'
+            rows.append([f'{r["match"]} {r["half"]}', r["offset"], r.get("gain"), r.get("z"),
+                         f"<b>{applied}</b>", note])
+        S.append(table(["match / half", "measured lag", "occupancy gain", "z",
+                        "offset applied", "confidence"], rows, highlight_col=4,
+                       note="The applied value is the arithmetic one, which matched the "
+                            "measurement on every half where the measurement had signal. "
+                            "132831 and 132877 show a flat occupancy curve (gain 0.001-0.004, "
+                            "z below 2.6), so the estimator is uninformative there and the "
+                            "arithmetic is applied WITHOUT independent confirmation."))
+        S.append("""<blockquote>The estimator earned that trust the hard way. Three earlier
+versions failed their own validation &mdash; a background-subtraction centroid gave 67 against a
+known 25 (players stand still at kickoff, so the median background contains them), and seeking
+with <code>cap.set(CAP_PROP_POS_FRAMES)</code> injected an unknown offset of its own because it
+is not frame-accurate on these files. The box-occupancy version reproduces 25 on both halves
+whose answer was established independently.</blockquote>""")
+        if staged:
+            ok = sum(1 for r in staged if r.get("status") == "ok")
+            S.append(f'<p>Labels re-staged for <b>{ok} of {len(staged)}</b> halves. '
+                     'Frames are untouched &mdash; the defect is purely which annotations attach '
+                     'to which frame, so no re-extraction was needed.</p>')
+
     S.append("""<h2>Contents</h2><div class="toc"><ul>
+<li><a href="#align">The 1-second sync defect</a></li>
+<li><a href="#offsets">Per-half offsets, all 20 halves</a></li>
 <li><a href="#videos">Output videos</a></li>
 <li><a href="#headline">The decomposition: what length does and does not break</a></li>
 <li><a href="#sweep">Length sweep</a></li>
 <li><a href="#attrs">Attribute ablation</a></li>
 <li><a href="#window2">Why minute 1 is worse than minute 0</a></li>
+<li><a href="#experiments">Fix experiments</a></li>
 <li><a href="#gta">GTA behaviour</a></li>
 <li><a href="#cost">Runtime and memory</a></li>
 <li><a href="#code">Code changes and defects found</a></li>
@@ -407,6 +489,108 @@ apparent sizes and then flags legitimate detections at the extremes.</li>
 occlusion gaps is fully configured (<code>connect_dist_thres: 100</code>,
 <code>connect_frame_thres: 30</code>, <code>use_bbox_pitch: True</code>) but switched off. This
 is the mechanism long sequences most need.</li></ul>""")
+
+    # ---------------- experiments ----------------
+    S.append('<h2 id="experiments">Fix experiments</h2>')
+    S.append("""<p>Every variant below re-runs only the pipeline TAIL from a saved
+pre-calibration state, so the detector, pose, ReID and tracking stages are byte-identical
+across all of them and any difference is attributable to the variant alone. The control
+confirms it: re-running with the original settings reproduces the baseline score exactly.</p>""")
+
+    S.append("<h3>Where the attribute cost actually sits</h3>")
+    S.append(table(["attribute", "raw accuracy 30 s / 1 min", "cost at 30 s", "cost at 1 min"], [
+        ["role", "100.0% / 100.0%", "0.00", "0.00"],
+        ["team", "93.9% / 97.5%", "&minus;3.93", "&minus;0.45"],
+        ["<b>jersey</b>", "<b>31.0% / 32.5%</b>", "<b>&minus;41.47</b>", "<b>&minus;29.63</b>"],
+    ], highlight_col=2,
+        note="Cost = GS-HOTA lost versus the attributes-off ceiling, by toggling one scorer flag "
+             "at a time. Accuracy measured on geometry-matched pairs within 2 m."))
+    S.append("""<p>Abstention is <b>punished, not rewarded</b>: forcing
+<code>jersey&nbsp;&rarr;&nbsp;null</code> scores 6.19 against a 37.155 baseline, and
+<code>team&nbsp;&rarr;&nbsp;null</code> scores <b>0.00</b>. A null attribute maps to a class the
+ground truth does not contain, so those detections match nothing. Confidence thresholding is
+therefore not a lever &mdash; only genuine accuracy is.</p>""")
+
+    S.append("<h3>Why jersey numbers fail: a funnel, not a model defect</h3>")
+    S.append(table(["stage", "detections", "share"], [
+        ["total detections", "31,107", "100%"],
+        ["jersey region proposed", "926", "<b>3.0%</b>"],
+        ["read at confidence &ge; 0.8", "496", "1.6%"],
+        ["tracklets with &ge;1 reading", "8 of 65", "12%"],
+        ["distinct numbers emitted", "6&ndash;7", "of 21 in GT"],
+    ], highlight_col=2,
+        note="Median player box is 25x55 px and the median torso region only 132 px^2 (~12x11 px). "
+             "The gate min_roi_area=500 passes just 6.9% of detections; shoulder confidence is not "
+             "the constraint (97.8% pass)."))
+
+    S.append("<h3>Variants that did NOT help (measured, not assumed)</h3>")
+    mx = read_csv(M / "attr_matrix.csv")
+    if mx:
+        rows = [[r["variant"], r["length"], fmt(r["gs_hota"]), f'{r["wall_s"]}s'] for r in mx]
+        S.append(table(["variant", "length", "GS-HOTA", "wall"], rows,
+                       note="All flat. Not a failure of these fixes so much as arithmetic: team "
+                            "costs under 4 points at these lengths, so nothing improving team can "
+                            "move a score dominated by a 41-point jersey deficit. They should pay "
+                            "at 5 minutes, where team accuracy collapses to 51.6%."))
+    S.append("""<ul>
+<li><b>Pose-derived foot anchor</b> (ViTPose ankles instead of the box bottom-middle):
+<b>19% worse</b> localisation (1.139 &rarr; 1.357 m). The ankle joint sits above the
+ground-contact point; the box bottom, ~5.5 px below the ankles, approximates it better.</li>
+<li><b>Metre-space homography</b> (fitting in metres, since m/px varies 9x across the pitch
+depth): far-half keypoint residual improved 3.98 &rarr; 2.45 m, but GS-HOTA got <i>worse</i>
+&mdash; 37.155 &rarr; 34.268 at 30 s, 33.471 &rarr; 25.383 at 1 min. The near half degraded, and
+most players are on the near half. The lesson: p90 keypoint residual is a poor proxy for
+GS-HOTA, because it weights all pitch locations equally and players do not occupy them
+equally.</li></ul>""")
+
+    S.append("<h3>What DID help: the jersey region gates</h3>")
+    js = read_csv(M / "jersey_sweep.csv")
+    if js:
+        by_len = {}
+        for r in js:
+            by_len.setdefault(r["length"], {})[(r["min_roi_area"], r["min_obb_ar"])] = r["gs_hota"]
+        lens = [l for l in ("30s", "1min", "2min", "5min") if l in by_len]
+        combos = sorted({k for v in by_len.values() for k in v},
+                        key=lambda k: (-int(k[0]), -float(k[1])))
+        rows = []
+        for area, ar in combos:
+            base = "baseline" if (area, ar) == ("500", "0.6") else ""
+            rows.append([f"area {area}, ar {ar} {base}"] +
+                        [fmt(by_len[l].get((area, ar))) for l in lens])
+        S.append(table(["gates"] + lens, rows,
+                       note="Two configuration values in "
+                            "modules/jersey_number_det/pose_based_jn_det. Loosening them turns "
+                            "sequence length from a liability into an asset: more read attempts "
+                            "per player, and more elapsed time accumulates them into a correct "
+                            "per-tracklet majority vote."))
+        best = {}
+        for l in lens:
+            v = {k: float(x) for k, x in by_len[l].items() if x not in ("NA", "", None)}
+            if v:
+                bk = max(v, key=v.get)
+                best[l] = (bk, v[bk], v.get(("500", "0.6")))
+        if best:
+            S.append(table(["length", "baseline gates", "best loosened", "gates chosen", "gain"],
+                           [[l, fmt(b[2]), f"<b>{fmt(b[1])}</b>",
+                             f"area {b[0][0]}, ar {b[0][1]}",
+                             f'<span class="good">+{fmt((b[1]-(b[2] or 0)))}</span>' if b[2] else "&mdash;"]
+                            for l, b in best.items()], highlight_col=2))
+    S.append("""<blockquote><b>Caveat that matters.</b> These gate values were first explored on
+128057, which is in the reported test split &mdash; that is fitting to the evaluation. A tuning
+grid is being run on <b>117093 in the valid split</b> so the chosen values are selected on data
+we do not report on, then verified on 128057. Until that completes, treat the specific numbers
+250/100 and 0.3/0.6 as exploratory rather than as a result. The optima also disagree between
+lengths (250/0.3 best at 30 s, 100/0.6 at 1 min), which is itself a reason not to fix a single
+value on one match's evidence.</blockquote>""")
+    tn = read_csv(M / "tune_117093.csv")
+    if tn:
+        S.append("<h3>Threshold selection on 117093 (valid split)</h3>")
+        S.append(table(["min_roi_area", "min_obb_ar", "GS-HOTA"],
+                       [[r["min_roi_area"], r["min_obb_ar"], fmt(r["gs_hota"])] for r in tn],
+                       note="117093's alignment was verified independently after staging: "
+                            "residual lag +2 frames (0.08 s), correlation 0.99949, i.e. the "
+                            "25-frame offset is correct for this match too. Its much lower "
+                            "absolute scores are genuine match difficulty, not a staging fault."))
 
     # ---------------- cost ----------------
     S.append('<h2 id="cost">Runtime and memory</h2>')

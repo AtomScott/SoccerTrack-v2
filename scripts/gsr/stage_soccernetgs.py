@@ -12,13 +12,23 @@ Everything here follows the known-good precedent already on disk at
   * info.id is made unique (the released files all say "1")
 
 Verified facts this relies on:
-  * image_id "3{N:06d}" is 1-based frame N of <match>_panorama_<half>_half.mp4.
-    Established by matching CLPD-117093's clip_start=969000ms (frame 24226) against
-    production image_id "3024226": identical bbox_image for 21 of 22 tracks.
   * the released width/height (3840x1504) is STALE. bbox_image is really in
     4096x1080 -- byte-identical to the staged clip, x-ratio 1.0000.
-  * the GT annotates ~25 frames PAST the end of the video, so seq_length must be
-    clamped to the video's real frame count or TrackLab will request missing JPEGs.
+  * THE VIDEO IS MISSING FRAMES FROM THE START OF THE ANNOTATED PERIOD, so the ground
+    truth's frame N is NOT video frame N. See the START OFFSET comment in main(). For
+    128057's first half the gap is 25 frames (1.0 s) and ignoring it cost ~36 GS-HOTA
+    points. The offset is derived per half from <match>_padding_info.csv, which exists
+    for all ten matches.
+
+A RETRACTED CLAIM, kept here as a warning:
+    An earlier version of this file asserted that image_id "3{N:06d}" is 1-based frame N
+    of the video, "established by matching CLPD-117093's clip_start=969000ms (frame 24226)
+    against production image_id 3024226: identical bbox_image for 21 of 22 tracks."
+    That check compared a staged LABEL file against the production LABEL file. Both are
+    annotations, so it could only ever confirm that the two label files agree with each
+    other -- it was structurally incapable of detecting a label-to-PIXEL offset, which is
+    the defect that was actually present. To verify alignment you must compare labels
+    against something derived from the imagery.
 """
 from __future__ import annotations
 import argparse, json, subprocess, sys
@@ -42,6 +52,31 @@ def video_frames(p: Path) -> tuple[int,int,int]:
     w,h,n = out.split(",")[:3]
     return int(w), int(h), int(n)
 
+
+def declared_frames(data: Path, match: str, half: str, fps: int = 25) -> int | None:
+    """Frames the annotation period declares, from <match>_padding_info.csv.
+
+    That file gives, per half, Start/End Match Time in milliseconds:
+        Event Period,Period Order,Video,Padding,Start Match Time,End Match Time
+        FIRST_HALF,0,128057,3689000,0,2706000
+    (End - Start) * fps / 1000 is the number of annotated frames, and for 128057's first half
+    that is exactly 67,650 -- the ground truth's own seq_length.
+    """
+    p = data/"raw"/match/f"{match}_padding_info.csv"
+    if not p.exists():
+        return None
+    want = "FIRST_HALF" if half == "1st" else "SECOND_HALF"
+    import csv as _csv
+    with open(p) as fh:
+        for row in _csv.DictReader(fh):
+            if (row.get("Event Period") or "").strip().upper() == want:
+                try:
+                    ms = int(row["End Match Time"]) - int(row["Start Match Time"])
+                except (KeyError, ValueError):
+                    return None
+                return int(round(ms * fps / 1000.0))
+    return None
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="/data/share/SoccerTrack-v2/data")
@@ -53,6 +88,9 @@ def main() -> int:
     ap.add_argument("--nframes", type=int, default=-1, help="-1 = to end of video")
     ap.add_argument("--quality", type=int, default=2, help="ffmpeg -q:v (2 = high)")
     ap.add_argument("--skip-frames", action="store_true", help="labels only")
+    ap.add_argument("--frame-offset", type=int, default=None,
+                    help="GT frames missing from the START of the video. Default: derived from "
+                         "<match>_padding_info.csv as declared_frames - video_frames.")
     a = ap.parse_args()
 
     data = Path(a.data)
@@ -63,6 +101,16 @@ def main() -> int:
             print(f"MISSING: {p}"); return 1
 
     vw, vh, vn = video_frames(vid)
+    decl = declared_frames(data, a.match, a.half)
+    if a.frame_offset is not None:
+        offset = a.frame_offset
+        osrc = "--frame-offset"
+    elif decl is not None:
+        offset = max(0, decl - vn)
+        osrc = f"padding_info.csv ({decl} declared - {vn} in video)"
+    else:
+        offset = 0
+        osrc = "no padding_info.csv; assuming 0"
     seq_id = SEQ_ID[(a.match, a.half)]
     split_id = SPLIT_ID[a.split]
     name = f"CLPD-{a.match}-{a.half}"
@@ -79,17 +127,31 @@ def main() -> int:
     end = vn if a.nframes < 0 else min(vn, start + a.nframes - 1)
     end = min(end, n_img_gt)                      # clamp: GT runs past the video
     count = end - start + 1
-    print(f"GT images {n_img_gt}  declared {declared[0]}x{declared[1]} (stale)  "
-          f"-> staging frames {start}..{end} ({count})", flush=True)
+    print(f"GT images {n_img_gt}  declared {declared[0]}x{declared[1]} (stale)", flush=True)
+    print(f"START OFFSET {offset} frames ({offset/25.0:.2f} s) from {osrc}", flush=True)
+    print(f"  -> video frame k carries GT frame k+{offset}; "
+          f"staging video frames {start}..{end} ({count})", flush=True)
     if n_img_gt > vn:
         print(f"  NOTE: GT annotates {n_img_gt - vn} frames beyond the video; trimmed.", flush=True)
 
-    # Old image_id -> new. Frames are renumbered so the sequence starts at 000001.jpg.
+    # Old image_id -> new, WITH THE START OFFSET APPLIED.
+    #
+    # The video is missing `offset` frames from the START of the annotated period, so video
+    # frame k shows what the ground truth calls frame k + offset. Attaching GT frame k to
+    # video frame k -- which this script originally did -- misaligns labels from imagery by
+    # offset/fps seconds. For 128057 that is 25 frames = 1.0 s, and it cost roughly 36 GS-HOTA
+    # points: scoring frames 27-750 went 40.87 -> 77.04 once the shift was applied.
+    #
+    # Two independent lines fix the value at ~25: exact arithmetic from padding_info.csv
+    # (67,650 declared - 67,625 in the video), and an assignment-free cross-correlation of
+    # detector output against labels, whose correlation peaks at lag 26-27 (0.9670 at lag 0 ->
+    # 0.9981 at the peak, flat across 25-28). The arithmetic value is used because it comes
+    # from the data's declared timing rather than from maximising a similarity.
     remap, images = {}, []
     for i in d["images"]:
-        n = int(i["image_id"][1:])                # "3024226" -> 24226 (1-based frame)
-        if not (start <= n <= end): continue
-        k = n - start + 1
+        n = int(i["image_id"][1:])                # "3024226" -> 24226 (1-based GT frame)
+        if not (start + offset <= n <= end + offset): continue
+        k = n - start - offset + 1               # -> video frame / file number
         new_id = f"{split_id}{seq_id}{k:06d}"
         remap[i["image_id"]] = new_id
         j = dict(i)
