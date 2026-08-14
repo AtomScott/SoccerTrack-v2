@@ -282,7 +282,10 @@ def write_predictions(out_root: Path, match: str, spots_by_half: dict, periods: 
                 "gameTime": f"{half} - {ms_to_clock(s['t_ms'])}",
                 "label": BAS_LABELS[s["cls"]],
                 "position": str(s["t_ms"]),
-                "team": "left",
+                # The model predicts class and time, not which side acted. Emitting a
+                # plausible-looking "left" here would be a fabricated field in a file that
+                # otherwise looks exactly like ground truth.
+                "team": None,
                 "score": round(s["score"], 6),
             })
     actions.sort(key=lambda a: -a["score"])
