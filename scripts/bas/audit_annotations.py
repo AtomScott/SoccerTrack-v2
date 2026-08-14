@@ -5,19 +5,19 @@ WHAT THIS SETTLES
 1.  THERE ARE THREE PERIODS IN THREE MATCHES, NOT TWO EVERYWHERE.
     117092, 132831 and 132877 were played as three 45-minute periods
     (``matchFullTime="8100000"`` in their metadata; 117092 additionally carries an
-    ``EXTRA_FIRST_HALF`` period element with a real frame range). 2,225 events -- 9.4% of
+    ``EXTRA_FIRST_HALF`` period element with a real frame range). 2,232 events -- 9.4% of
     the 23,663 annotated -- fall in that third period. **No third video and no third GSR
     file exist for any of them**, so those events have neither imagery nor tracks. Test
-    match 132831 alone loses 719 of its 3,162 events (22.7%).
+    match 132831 alone loses 721 of its 3,162 events (22.8%).
 
     Scoring against events with no input silently depresses every model's recall by an
     amount that varies per match. They are therefore excluded from the benchmark, and the
-    benchmark size is 21,438 events.
+    benchmark size is 21,431 events.
 
 2.  THE ``gameTime`` HALF PREFIX IS NOT TRUSTWORTHY, AND ``position`` ALONE CANNOT REPLACE IT.
     ``gameTime`` is ``"<period> - <mm:ss>"`` where the clock is ABSOLUTE match time, not
-    time within the period. For the third period the prefix is inconsistent: of the 2,225
-    third-period events, 2,129 carry no prefix at all and 96 carry a prefix of "1" or "2"
+    time within the period. For the third period the prefix is inconsistent: of the 2,232
+    third-period events, 2,129 carry no prefix at all and 103 carry a prefix of "1" or "2"
     with a clock reading past 90 minutes (e.g. ``"1 - 135:27"``).
 
     ``position`` alone cannot disambiguate either, because periods OVERLAP on the nominal

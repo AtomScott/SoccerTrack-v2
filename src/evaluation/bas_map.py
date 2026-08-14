@@ -16,7 +16,7 @@ THREE THINGS THIS EVALUATOR DOES THAT A NAIVE ONE DOES NOT
     makes every prediction a true positive and AP is 1.0 in any order.
 
 2.  IT EXCLUDES EVENTS THAT HAVE NO INPUT DATA. Three matches have a third 45-minute period
-    with no video and no GSR file; 2,225 events (9.4% of all annotations, 22.7% of test
+    with no video and no GSR file; 2,232 events (9.4% of all annotations, 22.8% of test
     match 132831) fall in it. Left in, they are unmatchable ground truth that depresses
     recall by a different amount on every match. See src/data_utils/bas_periods.py.
     tests/test_bas_map_periods.py fails if the filter is removed.

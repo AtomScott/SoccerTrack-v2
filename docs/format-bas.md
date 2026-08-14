@@ -108,12 +108,12 @@ label *set* is identical; `src.data_utils.soccertrack_v2` canonicalises on read.
 **4. Three matches have a THIRD 45-minute period, and nothing was filmed or tracked for it.**
 117092, 132831 and 132877 were played as three periods — 132831 and 132877 declare
 `matchFullTime="8100000"`, and 117092 carries an `EXTRA_FIRST_HALF` period element with a
-real frame range. **2,225 events (9.4% of the 23,663 annotated) fall in that period, and the
+real frame range. **2,232 events (9.4% of the 23,663 annotated) fall in that period, and the
 release contains only `_1st` and `_2nd` videos and GSR files**, so those events have no
 imagery and no tracks. Test match 132831 alone has 721 of them, 22.8% of its annotations.
 
 **5. The `gameTime` period prefix is unreliable, and `position` alone cannot replace it.**
-Of those 2,225 events, 2,129 carry no prefix at all and **96 carry a prefix of `1` or `2`
+Of those 2,232 events, 2,129 carry no prefix at all and **103 carry a prefix of `1` or `2`
 beside a clock past 90 minutes** — e.g. `{"gameTime": "1 - 135:27", "position": "8127120"}`.
 And `position` cannot simply be divided into periods, because periods **overlap on the
 nominal clock**: 118576's first half runs to 48:29 while its second half starts at 45:00.

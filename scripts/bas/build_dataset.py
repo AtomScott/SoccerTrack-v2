@@ -12,7 +12,7 @@ PERIOD HANDLING
     Only periods 1 and 2 are built, because only they have tracks. The period of an event,
     and its frame index, come from configs/bas_periods.json via the rule established in
     scripts/bas/audit_annotations.py: an event belongs to a period when its frame lands
-    inside that period's annotated GSR frame range. Third-period events -- 2,225 of them,
+    inside that period's annotated GSR frame range. Third-period events -- 2,232 of them,
     9.4% of the annotations -- are dropped here, and the count dropped is reported so the
     number never becomes invisible.
 

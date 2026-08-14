@@ -21,7 +21,7 @@ independent of the event files:
   matchTimeStart="5400000" matchTimeEnd="8130000">`, i.e. a real 45.5-minute frame range.
 - `132831`'s raw folder holds `132831_segment_0.mp4`, `_segment_1.mp4` **and** `_segment_2.mp4`.
 
-**2,225 events — 9.4% of the 23,663 annotated — fall in that third period, and no third
+**2,232 events — 9.4% of the 23,663 annotated — fall in that third period, and no third
 video and no third GSR file exist for any of the three matches.** Only
 `<match>_panorama_{1st,2nd}_half.mp4` and `<match>_{1st,2nd}.json` were released.
 
@@ -30,9 +30,14 @@ Per match, as a share of that match's annotations:
 | match | annotated | period 1 | period 2 | period 3 | period 3 share |
 |---|---|---|---|---|---|
 | 117092 | 3,142 | 1,029 | 1,057 | **1,056** | 33.6% |
-| 132831 **(test)** | 3,162 | 1,251 | 1,190 | **721** | 22.8% |
+| 132831 **(test)** | 3,162 | 1,250 | 1,191 | **721** | 22.8% |
 | 132877 | 2,731 | 1,183 | 1,095 | **453** | 16.6% |
-| the other seven | 14,628 | 7,342 | 7,285 | 1 | 0.0% |
+| the other seven | 14,628 | 7,482 | 7,144 | 2 | 0.0% |
+| **total** | **23,663** | **10,944** | **10,487** | **2,232** | **9.4%** |
+
+The two stray period-3 events among the other seven matches are single events in 118576 and
+118577 that land just past the end of their half's tracking. One event is not a period; the
+`--paper-stats` period count requires a block of at least 50 before calling a period played.
 
 The consequence is not cosmetic. Scoring a *perfect* period-1-and-2 prediction against the
 released files gives **mAP@1s 0.8409 instead of 1.0000**, and the entire penalty lands on
@@ -48,8 +53,8 @@ count. **The benchmark is 21,431 events.**
 `gameTime` is `"<period> - <ABSOLUTE mm:ss>"` — the clock does not restart at each half, so a
 second-half event reads `"2 - 45:00"`. That much was already known. What is new:
 
-**The period prefix is unreliable on exactly the three-period matches.** Of the 2,225
-third-period events, 2,129 carry no prefix at all and **96 carry a prefix of `1` or `2` beside
+**The period prefix is unreliable on exactly the three-period matches.** Of the 2,232
+third-period events, 2,129 carry no prefix at all and **103 carry a prefix of `1` or `2` beside
 a clock past 90 minutes** — for example `{"gameTime": "1 - 135:27", "position": "8127120"}`.
 Trusting the prefix puts those events 135 minutes into a 45-minute half.
 
@@ -232,6 +237,38 @@ With `pos_weight` up to 50 the BCE is dominated by confident false positives on 
 classes. In the first full run validation *loss* rose monotonically from epoch 3 while
 validation *mAP* kept improving to epoch 8. Selecting on loss would have discarded the
 better detector. Model selection is on mAP throughout.
+
+### Per-team shape and motion carry almost all of the signal
+
+Feature-group ablation, validation only. Groups are **zeroed rather than removed**, so every
+run has the same input width and the same parameter count — a group that does not matter
+cannot be confused with a smaller model.
+
+| features kept | columns | val mAP@1s | share of full |
+|---|---|---|---|
+| all four groups | 82 | **0.3893** | 100% |
+| team only | 24 | **0.3844** | **98.7%** |
+| everything except contest | 69 | 0.3595 | 92.3% |
+| occupancy only | 36 | 0.2649 | 68.0% |
+| contest only | 13 | 0.2587 | 66.5% |
+
+**24 of the 82 columns get 98.7% of the result.** The `team` group is each side's centroid,
+centroid velocity, dispersion, convex hull, mean and max speed, and defensive/attacking
+line — nothing about the ball proxy. The explicit contest point and the 36-column occupancy
+grid together add 0.005 on top of it.
+
+The two single-group runs are the more interesting comparison. **Occupancy alone contains no
+velocity feature at all** — it is a static player-density grid — and still reaches 68%,
+because the temporal model derives motion from the sequence of grids itself. "No velocity
+features" is not the same as "no motion information" once a TCN is reading 25 s of context.
+
+An earlier version of this ablation was **wrong and had to be redone**. `L_ct_dist` and
+`R_ct_dist` — each team's distance to the contest point — were grouped with `team` because of
+their names, so the "everything except contest" run still saw two contest-derived scalars and
+could not have supported the claim it existed to test. Groups are now defined by provenance
+and partition all 82 columns exactly. The corrected `team_only` (0.3844, genuinely
+contest-free) is barely different from the flawed one (0.3874), so the conclusion survives —
+but it survived by luck, not by construction.
 
 ### The decoding floor is always driven to its minimum
 

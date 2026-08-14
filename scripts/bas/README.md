@@ -56,7 +56,7 @@ HIDDEN=128 DROPOUT=0.2 bash scripts/bas/ablate.sh    # which feature groups matt
 
 ## Three things that will bite anyone who skips the audit
 
-1. **Three matches have a third 45-minute period with no video and no GSR file.** 2,225
+1. **Three matches have a third 45-minute period with no video and no GSR file.** 2,232
    events (9.4%) have no input data. Scoring a perfect period-1-and-2 prediction against
    the released files gives mAP@1s **0.8409 instead of 1.0000**, all of the loss on test
    match 132831. `src/data_utils/bas_periods.py` is the one place that decides this;
@@ -64,7 +64,7 @@ HIDDEN=128 DROPOUT=0.2 bash scripts/bas/ablate.sh    # which feature groups matt
 
 2. **`position` is absolute match time, and periods overlap on that clock.** A first half
    can run to 48:29 while the second half starts at 45:00, so `position // 45min` is wrong.
-   The `gameTime` prefix is also wrong on 96 events. An event's period is decided by whether
+   The `gameTime` prefix is also wrong on 103 events. An event's period is decided by whether
    its frame lands inside that period's annotated GSR range.
 
 3. **Pitch coordinates are quantised to 1.05 m.** A one-frame velocity is 26 m/s of pure

@@ -2,7 +2,7 @@
 
 WHY THIS EXISTS
     Three of the ten matches (117092, 132831, 132877) were played as THREE 45-minute
-    periods. 2,225 events -- 9.4% of all annotations, and 22.7% of test match 132831 -- sit
+    periods. 2,232 events -- 9.4% of all annotations, and 22.8% of test match 132831 -- sit
     in a third period for which no video and no GSR file was ever produced. They are ground
     truth that nothing can match, so they depress recall by an amount that differs per
     match: a model scored on 128057 and 132831 together is penalised on one of the two for

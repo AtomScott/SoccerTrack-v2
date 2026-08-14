@@ -31,7 +31,7 @@ agent writes them." Confirmed with Atom on 2026-08-14.
    0.405 is what a fixed-cadence guess achieves on this test split, because Pass occurs every
    2.4 s and Drive every 2.7 s. The `tab:bas_results` table above includes that row.
 
-3. **The benchmark is 21,431 events, not 23,663.** 2,225 events fall in a third 45-minute
+3. **The benchmark is 21,431 events, not 23,663.** 2,232 events fall in a third 45-minute
    period, in three matches, for which no video and no GSR file exists. Per Atom's decision
    they are excluded from the benchmark and from the headline count. See
    `docs/bas-findings.md` §1.
