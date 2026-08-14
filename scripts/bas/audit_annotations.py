@@ -407,11 +407,76 @@ def check_alignment(data: Path, table: dict, tracks: Path) -> int:
     return 0 if ok_all else 1
 
 
+def paper_stats(data: Path, table: dict) -> None:
+    """The BAS statistics paper/sections/02_results.tex asks for in its TODO.
+
+    Specifically items (c) "total BAS events and their class distribution" and (d)
+    "actor-link coverage for BAS events, overall and per class". Actor-link coverage is a
+    genuine strength of this dataset -- an event that names its actor can be joined to that
+    player's track -- so it is reported per class, because a headline percentage would hide
+    any class where the link is weak.
+    """
+    print()
+    print("=" * 92)
+    print("DATASET STATISTICS FOR THE PAPER  (benchmark = periods 1-2)")
+    print("=" * 92)
+    per_class = Counter()
+    linked = Counter()
+    n_periods_played = Counter()
+    for match in MATCHES:
+        tm = table["matches"][match]
+        by_period = Counter()
+        for ev in read_events(data, match):
+            p, _ = event_period_and_frame(ev, tm)
+            by_period[p] += 1
+            if p not in (1, 2):
+                continue
+            lab = canon_label(ev["label"])
+            per_class[lab] += 1
+            if ev.get("player_id") not in (None, ""):
+                linked[lab] += 1
+        # A period counts as PLAYED only if a substantial block of events sits in it. Two
+        # of the two-period matches have a single event landing just past the end of their
+        # tracking, which the period rule correctly assigns to "no input data" -- but one
+        # event is not a third period, and counting set membership called them three-period
+        # matches.
+        n_periods_played[match] = sum(1 for p, n in by_period.items() if n >= 50)
+    total = sum(per_class.values())
+    tot_linked = sum(linked.values())
+    print(f'{"class":26} {"n":>7} {"share":>7} {"actor-linked":>13} {"link %":>7}')
+    for lab in sorted(BAS_LABELS, key=lambda l: -per_class[l]):
+        print(f'{lab:26} {per_class[lab]:7,} {per_class[lab]/total*100:6.2f}% '
+              f'{linked[lab]:13,} {linked[lab]/max(per_class[lab],1)*100:6.1f}%')
+    print(f'{"TOTAL":26} {total:7,} {100.0:6.2f}% {tot_linked:13,} '
+          f'{tot_linked/total*100:6.1f}%')
+    print()
+    print("  LaTeX row fragments for tab:match_stats (BAS columns):")
+    for match in MATCHES:
+        tm = table["matches"][match]
+        c = Counter()
+        for ev in read_events(data, match):
+            p, _ = event_period_and_frame(ev, tm)
+            if p in (1, 2):
+                c[canon_label(ev["label"])] += 1
+        n_fr = sum(tm["periods"][str(h)]["n_frames"] or 0 for h in (1, 2))
+        print(f'    {match} & {n_periods_played[match]} & {n_fr:,} & '
+              f'{n_fr/25/60:.0f} & {sum(c.values()):,} \\\\   '
+              f'% periods played, tracked frames, minutes, benchmark events')
+    print()
+    print(f"  total tracked frames across the twenty halves: "
+          f"{sum((table['matches'][m]['periods'][str(h)]['n_frames'] or 0) for m in MATCHES for h in (1,2)):,}")
+    print(f"  which at 25 fps is {sum((table['matches'][m]['periods'][str(h)]['n_frames'] or 0) for m in MATCHES for h in (1,2))/25/60:.0f} minutes of tracked play")
+    print(f"  player-frames (22 entities per frame): "
+          f"{sum((table['matches'][m]['periods'][str(h)]['n_frames'] or 0) for m in MATCHES for h in (1,2))*22:,}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", default="/data/share/SoccerTrack-v2/data")
     ap.add_argument("--tracks", default="/data/share/SoccerTrack-v2/data/derived/bas/tracks")
+    ap.add_argument("--paper-stats", action="store_true",
+                    help="print the class distribution and actor-link coverage the paper needs")
     ap.add_argument("--write-periods", nargs="?", const="configs/bas_periods.json",
                     default=None, help="write the period table (default configs/bas_periods.json)")
     ap.add_argument("--check-alignment", action="store_true")
@@ -421,6 +486,8 @@ def main() -> int:
     table = build_period_table(data)
     report(data, table)
     rc = 0
+    if a.paper_stats:
+        paper_stats(data, table)
     if a.check_alignment:
         rc = check_alignment(data, table, Path(a.tracks))
     if a.write_periods:
