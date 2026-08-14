@@ -1,0 +1,20 @@
+\begin{table}[t]
+  \centering
+  \caption{Ball action spotting on the SoccerTrack v2 test split, from ground-truth player trajectories alone (no pixels, no ball). $\text{mAP}$ is the macro mean over the 12 classes; $\text{mAP}_w$ weights each class by its support. The uniform-cadence row emits spots at each class's mean training-set rate and is the floor that guessing achieves.}
+  \label{tab:bas_results}
+  \small
+  \begin{tabular}{lrcccc}
+    \toprule
+    & & \multicolumn{2}{c}{$\tau = 1\,$s} & \multicolumn{2}{c}{$\tau = 5\,$s} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Match & $n$ & mAP & mAP$_w$ & mAP & mAP$_w$ \\
+    \midrule
+    128057 & 1,932 & 0.339 & 0.436 & 0.573 & 0.713 \\
+    132831 & 2,441 & 0.338 & 0.418 & 0.518 & 0.719 \\
+    \midrule
+    Pooled & 4,373 & \textbf{0.315} & \textbf{0.414} & \textbf{0.520} & \textbf{0.713} \\
+    \midrule
+    \textit{Uniform cadence (chance)} & 4,373 & 0.025 & 0.106 & 0.094 & 0.405 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
