@@ -36,6 +36,8 @@ FEATURE GROUPS (see FEATURE_NAMES for the exact layout)
 """
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 
 # Pitch, from <pitch width="105" height="68"/> in every match's metadata.
@@ -174,6 +176,15 @@ def build_features(track_npz, stride: int = 5) -> tuple[np.ndarray, np.ndarray]:
     ``stride`` subsamples in time. The default 5 gives 5 Hz (200 ms), comfortably finer
     than the 1 s evaluation tolerance while cutting the sequence length fivefold.
     """
+    # A player briefly unobserved leaves an all-NaN slice, and nanmean/nanmax warn on those.
+    # Every such row is zero-filled at the end of this function, so the warning reports a
+    # handled case and nothing else -- left on, it buries real warnings under 30 of these.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", r"(Mean|All-NaN) .*", RuntimeWarning)
+        return _build_features(track_npz, stride)
+
+
+def _build_features(track_npz, stride: int) -> tuple[np.ndarray, np.ndarray]:
     X, Y, team, n_f = _dense_grids(track_npz)
     VXs, VYs = _velocity(X, VEL_SHORT), _velocity(Y, VEL_SHORT)
     VXl, VYl = _velocity(X, VEL_LONG), _velocity(Y, VEL_LONG)
@@ -182,9 +193,6 @@ def build_features(track_npz, stride: int = 5) -> tuple[np.ndarray, np.ndarray]:
     right = np.where(team == 1)[0]
     rows = np.arange(0, n_f, stride)
     out = np.zeros((rows.size, N_FEATURES), np.float32)
-    # Frames where a team is briefly unobserved give empty nanmean/nanmax slices; those
-    # rows are zero-filled at the end, so the warnings carry no information.
-    np.seterr(invalid="ignore")
 
     # The contest point is tracked across sampled rows so its velocity can be differenced.
     ct_hist = np.full((rows.size, 2), np.nan, np.float32)
