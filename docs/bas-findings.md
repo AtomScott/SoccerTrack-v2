@@ -201,7 +201,48 @@ to be read against this, not against zero. `scripts/bas/baseline_priors.py` also
 baseline and exists only to show how much of a score is attributable to knowing the class
 frequencies.
 
-## 9. Incidental findings, for whoever needs them
+## 9. What the model is and is not sensitive to
+
+All figures below are **validation** (117093, 132877). The test split was scored once, after
+the configuration was fixed.
+
+### Capacity and regularisation barely matter
+
+| configuration | val mAP@1s | best epoch |
+|---|---|---|
+| hidden 64, dropout 0.4, **lr 1e-3** | **0.3893** | 15 |
+| hidden 128, dropout 0.2 | 0.3753 | 8 |
+| hidden 64, dropout 0.2 | 0.3739 | 16 |
+| hidden 96, dropout 0.3 | 0.3736 | 11 |
+| hidden 64, dropout 0.4 | 0.3695 | 8 |
+| hidden 128, dropout 0.4 | 0.3642 | 19 |
+
+A 2× range in width and a 2× range in dropout move the result by 0.025. Halving the
+learning rate helps more than either. This is not a model-capacity-limited problem.
+
+### Reflection augmentation is worth +0.025, measured against its own control
+
+`hidden 64, dropout 0.4` with augmentation scores **0.3695**; the identical configuration
+with `--no-augment` scores **0.3446**. Same width, same dropout, same seed, same schedule —
+the only difference is the mirroring. Without it the model overfits by epoch 6.
+
+### Validation loss and validation mAP disagree, and the metric wins
+
+With `pos_weight` up to 50 the BCE is dominated by confident false positives on the rare
+classes. In the first full run validation *loss* rose monotonically from epoch 3 while
+validation *mAP* kept improving to epoch 8. Selecting on loss would have discarded the
+better detector. Model selection is on mAP throughout.
+
+### The decoding floor is always driven to its minimum
+
+Every configuration chose `floor=0.02, nms_rows=5` from a 6×4 grid. That is a property of
+11-point interpolated AP, which takes the maximum precision at each recall level: appending
+lower-ranked predictions can raise recall and can never lower the score. The SoccerNet
+protocol places no cap on prediction count, so this is legitimate rather than a trick — but
+it means **the number of emitted spots must be reported next to the score**, which
+`format_report` does. The chosen setting emits roughly 3 spots per ground-truth event.
+
+## 10. Incidental findings, for whoever needs them
 
 - **The released videos are not all 4096×1080.** 117092 is 3840×1906, 132831 is 3840×1504,
   132877 is 4096×1084, and the remaining seven are 4096×1080. Relevant to any crop strategy

@@ -140,6 +140,30 @@ def _names() -> list[str]:
 FEATURE_NAMES = _names()
 N_FEATURES = len(FEATURE_NAMES)
 
+# Named groups, for the ablation that asks WHICH part of the game state carries an event.
+# "global" is where the 22 players are as a whole; "contest" is the ball proxy; "team" is
+# each side's shape and speed; "occupancy" is the coarse configuration.
+FEATURE_GROUPS: dict[str, tuple[int, ...]] = {
+    "global": tuple(i for i, n in enumerate(FEATURE_NAMES)
+                    if not n.startswith(("ct_", "L_", "R_"))),
+    "contest": tuple(i for i, n in enumerate(FEATURE_NAMES) if n.startswith("ct_")),
+    "team": tuple(i for i, n in enumerate(FEATURE_NAMES)
+                  if n.startswith(("L_", "R_")) and "grid" not in n),
+    "occupancy": tuple(i for i, n in enumerate(FEATURE_NAMES) if "grid" in n),
+}
+
+
+def group_mask(keep: tuple[str, ...]) -> "np.ndarray":
+    """Boolean mask over the 82 columns selecting only the named groups."""
+    unknown = set(keep) - set(FEATURE_GROUPS)
+    if unknown:
+        raise ValueError(f"unknown feature groups {sorted(unknown)}; "
+                         f"expected any of {sorted(FEATURE_GROUPS)}")
+    m = np.zeros(N_FEATURES, bool)
+    for g in keep:
+        m[list(FEATURE_GROUPS[g])] = True
+    return m
+
 
 def build_features(track_npz, stride: int = 5) -> tuple[np.ndarray, np.ndarray]:
     """Return (features, frames).

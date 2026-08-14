@@ -38,6 +38,7 @@ import torch.nn as nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.bas.augment import mirror  # noqa: E402
+from src.bas.features import FEATURE_GROUPS, group_mask  # noqa: E402
 from src.bas.model import TrajectorySpotter  # noqa: E402
 from src.evaluation.bas_map import ap_tolerant  # noqa: E402
 
@@ -54,7 +55,17 @@ TRAIN = ["117092", "118575", "118576", "118577", "118578", "128058"]
 # Data
 # ---------------------------------------------------------------------------
 
-def load_split(ds_dir: Path, matches: list[str]) -> list[dict]:
+def load_split(ds_dir: Path, matches: list[str],
+               keep_groups: tuple[str, ...] | None = None) -> list[dict]:
+    """Load per-half datasets, optionally keeping only some feature groups.
+
+    Groups are ZEROED rather than removed, so the input width and therefore the model
+    shape stay constant across ablations. That keeps parameter count out of the comparison:
+    a group that turns out not to matter cannot be confused with a smaller model.
+    """
+    mask = None
+    if keep_groups is not None:
+        mask = group_mask(tuple(keep_groups))
     out = []
     for m in matches:
         for h in (1, 2):
@@ -62,7 +73,10 @@ def load_split(ds_dir: Path, matches: list[str]) -> list[dict]:
             if not p.exists():
                 raise FileNotFoundError(f"{p} -- run scripts/bas/build_dataset.py first")
             d = np.load(p)
-            out.append({"match": m, "half": h, "feat": d["feat"], "target": d["target"],
+            feat = d["feat"]
+            if mask is not None:
+                feat = feat * mask.astype(feat.dtype)
+            out.append({"match": m, "half": h, "feat": feat, "target": d["target"],
                         "frames": d["frames"], "stride": int(d["stride"]),
                         "ev_frame": d["ev_frame"], "ev_class": d["ev_class"],
                         "ev_t_ms": d["ev_t_ms"]})
@@ -339,6 +353,10 @@ def main() -> int:
     ap.add_argument("--max-pos-weight", type=float, default=50.0)
     ap.add_argument("--no-augment", action="store_true",
                     help="disable reflection augmentation (for the ablation)")
+    ap.add_argument("--keep-groups", nargs="*", default=None,
+                    help=f"feature-group ablation; any of {sorted(FEATURE_GROUPS)}. "
+                         "Omitted groups are zeroed, not removed, so the model shape "
+                         "is identical across ablations.")
     ap.add_argument("--sel-floor", type=float, default=0.02,
                     help="provisional decode floor used for per-epoch model selection")
     ap.add_argument("--sel-nms", type=int, default=5)
@@ -356,8 +374,12 @@ def main() -> int:
     out_root.mkdir(parents=True, exist_ok=True)
 
     print(f"train  {TRAIN}\nval    {VAL}\ntest   {TEST}  (scored once, never tuned on)\n")
-    tr = load_split(ds, TRAIN)
-    va = load_split(ds, VAL)
+    kg = tuple(a.keep_groups) if a.keep_groups else None
+    if kg:
+        n_on = int(group_mask(kg).sum())
+        print(f"feature ablation: keeping {list(kg)} -> {n_on}/82 columns active\n")
+    tr = load_split(ds, TRAIN, kg)
+    va = load_split(ds, VAL, kg)
     mu, sd = fit_normaliser(tr)
 
     if a.eval_only:
@@ -381,7 +403,7 @@ def main() -> int:
     for name, matches in (("val", VAL), ("test", TEST)):
         root = out_root / f"pred_{name}"
         for m in matches:
-            halves = load_split(ds, [m])
+            halves = load_split(ds, [m], kg)
             spots = {}
             for h in halves:
                 t0 = periods[m]["periods"][str(h["half"])]["t0_ms"]
