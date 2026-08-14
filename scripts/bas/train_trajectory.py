@@ -37,7 +37,9 @@ import torch
 import torch.nn as nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.bas.augment import mirror  # noqa: E402
 from src.bas.model import TrajectorySpotter  # noqa: E402
+from src.evaluation.bas_map import ap_tolerant  # noqa: E402
 
 BAS_LABELS = ("Pass", "Drive", "Header", "High Pass", "Out", "Cross", "Throw In", "Shot",
               "Ball Player Block", "Player Successful Tackle", "Free Kick", "Goal")
@@ -74,13 +76,25 @@ def fit_normaliser(halves: list[dict]) -> tuple[np.ndarray, np.ndarray]:
     return mu.astype(np.float32), sd.astype(np.float32)
 
 
-def sample_windows(halves, n, win, rng):
+def sample_windows(halves, n, win, rng, augment: bool = True):
+    """Random crops, optionally reflected.
+
+    Football is symmetric under reflection and none of the twelve labels is handed, so
+    mirroring the pitch end-to-end or top-to-bottom gives three extra valid views of every
+    window with the targets untouched. With only twelve training halves this matters: the
+    unaugmented model's validation loss doubled by epoch 6 while its training loss halved.
+    See src/bas/augment.py, whose transform is checked against a full feature rebuild in
+    tests/test_bas_augment.py.
+    """
     F, T = [], []
     for _ in range(n):
         h = halves[rng.integers(len(halves))]
         L = h["feat"].shape[0]
         s = int(rng.integers(0, max(1, L - win)))
-        F.append(h["feat"][s:s + win])
+        f = h["feat"][s:s + win]
+        if augment:
+            f = mirror(f, bool(rng.integers(2)), bool(rng.integers(2)))
+        F.append(f)
         T.append(h["target"][s:s + win])
     return np.stack(F), np.stack(T)
 
@@ -111,14 +125,21 @@ def train(halves, mu, sd, args, val_halves):
           ", ".join(f"{l.split()[0]}={w:.0f}" for l, w in zip(BAS_LABELS, pos_weight)))
     lossf = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pos_weight, dtype=torch.float32))
 
-    best = (1e9, None)
+    # MODEL SELECTION IS ON VALIDATION mAP, NOT VALIDATION LOSS. With pos_weight up to 50
+    # the BCE is dominated by confident false positives on the rare classes and is not
+    # monotone in average precision -- the first run's val loss rose from epoch 2 onwards
+    # while the model was still improving as a detector. Selecting on the metric the paper
+    # reports removes that mismatch. The decode setting used here is fixed and provisional;
+    # the real one is grid-searched afterwards, also on validation.
+    best = (-1.0, None, 0)
     for ep in range(1, args.epochs + 1):
         model.train()
         tot = 0.0
         t0 = time.time()
         for _ in range(args.steps):
-            f, t = sample_windows(halves, args.batch, args.window, rng)
-            f = torch.from_numpy((f - mu) / sd)
+            f, t = sample_windows(halves, args.batch, args.window, rng,
+                                  augment=not args.no_augment)
+            f = torch.from_numpy(np.ascontiguousarray((f - mu) / sd))
             t = torch.from_numpy(t)
             opt.zero_grad()
             loss = lossf(model(f), t)
@@ -128,15 +149,49 @@ def train(halves, mu, sd, args, val_halves):
             sched.step()
             tot += float(loss)
         vl = validation_loss(model, val_halves, mu, sd, lossf)
+        vm = val_map(model, val_halves, mu, sd, args.periods_table,
+                     floor=args.sel_floor, nms=args.sel_nms)[1]
         flag = ""
-        if vl < best[0]:
-            best = (vl, {k: v.detach().clone() for k, v in model.state_dict().items()})
+        if vm > best[0]:
+            best = (vm, {k: v.detach().clone() for k, v in model.state_dict().items()}, ep)
             flag = "  <- best"
         print(f"  epoch {ep:3}/{args.epochs}  train {tot/args.steps:.4f}  "
-              f"val {vl:.4f}  {time.time()-t0:5.1f}s{flag}", flush=True)
+              f"val loss {vl:.4f}  val mAP@1s {vm:.4f}  {time.time()-t0:5.1f}s{flag}",
+              flush=True)
     model.load_state_dict(best[1])
-    print(f"  restored the best epoch (val {best[0]:.4f})")
+    print(f"  restored epoch {best[2]} (val mAP@1s {best[0]:.4f})")
     return model
+
+
+def val_map(model, halves, mu, sd, periods, floor: float, nms: int,
+            tols=(1, 5), preds=None) -> dict[int, float]:
+    """Macro mAP over the validation halves at one decode setting."""
+    if preds is None:
+        preds = {(h["match"], h["half"]): predict_half(model, h, mu, sd) for h in halves}
+    scores = {c: {t: ([], []) for t in tols} for c in range(12)}
+    n_gt = {c: 0 for c in range(12)}
+    n_pred = 0
+    for h in halves:
+        t0 = periods[h["match"]]["periods"][str(h["half"])]["t0_ms"]
+        sp = decode(preds[(h["match"], h["half"])], h["frames"], t0, h["stride"], floor, nms)
+        n_pred += len(sp)
+        for c in range(12):
+            gt = np.sort(h["ev_t_ms"][h["ev_class"] == c])
+            n_gt[c] += gt.size
+            pr = sorted([s for s in sp if s["cls"] == c], key=lambda s: -s["score"])
+            pt = np.array([s["t_ms"] for s in pr])
+            ps = [s["score"] for s in pr]
+            for t in tols:
+                fl = match_flags(pt, gt, t * 1000)
+                scores[c][t][0].extend(ps)
+                scores[c][t][1].extend(fl.tolist())
+    out = {}
+    for t in tols:
+        aps = [ap_tolerant(scores[c][t][0], scores[c][t][1], n_gt[c])
+               for c in range(12) if n_gt[c] > 0]
+        out[t] = float(np.mean(aps)) if aps else 0.0
+    out["n_pred"] = n_pred
+    return out
 
 
 @torch.no_grad()
@@ -228,52 +283,27 @@ def write_predictions(out_root: Path, match: str, spots_by_half: dict, periods: 
 # Tuning the decoder on validation
 # ---------------------------------------------------------------------------
 
-def tune_decoder(model, halves, mu, sd, periods, floors, nms_list) -> tuple[float, int, float]:
-    """Grid-search the decoding floor and NMS radius on the validation halves.
+def tune_decoder(model, halves, mu, sd, periods, floors, nms_list) -> tuple[float, float, int]:
+    """Grid-search the decoding floor and NMS radius on the VALIDATION halves only.
 
-    Scored with the same tolerant AP the benchmark uses, at 1 s, macro over the classes
-    that have any support in the validation set.
+    Note on the floor: 11-point interpolated AP takes the maximum precision at each recall
+    level, so appending lower-ranked predictions can only ever raise recall and can never
+    lower the reported AP. The floor will therefore always be driven to its minimum. That
+    is a property of the metric, not a trick -- the SoccerNet protocol places no cap on the
+    number of predictions -- but it means the emitted spot count must be reported alongside
+    the score, which format_report does.
     """
-    from src.evaluation.bas_map import ap_tolerant  # local import: torch-free module
-
     preds = {(h["match"], h["half"]): predict_half(model, h, mu, sd) for h in halves}
     best = (-1.0, floors[0], nms_list[0])
-    print(f'{"floor":>7} {"nms_rows":>9} {"mAP@1s":>8} {"mAP@5s":>8} {"n_pred":>8}')
+    print(f'{"floor":>7} {"nms_rows":>9} {"mAP@1s":>8} {"mAP@5s":>8} {"n_pred":>9}')
     for fl in floors:
         for nms in nms_list:
-            per_class_tp = {tol: {c: [] for c in range(12)} for tol in (1, 5)}
-            n_gt = {c: 0 for c in range(12)}
-            n_pred = 0
-            for h in halves:
-                t0 = periods[h["match"]]["periods"][str(h["half"])]["t0_ms"]
-                sp = decode(preds[(h["match"], h["half"])], h["frames"], t0,
-                            h["stride"], fl, nms)
-                n_pred += len(sp)
-                for c in range(12):
-                    gt = np.sort(h["ev_t_ms"][h["ev_class"] == c])
-                    n_gt[c] += gt.size
-                    pr = sorted([s for s in sp if s["cls"] == c], key=lambda s: -s["score"])
-                    for tol in (1, 5):
-                        per_class_tp[tol][c].append(
-                            (np.array([s["score"] for s in pr]),
-                             match_flags(np.array([s["t_ms"] for s in pr]), gt, tol * 1000),
-                             gt.size))
-            row = {}
-            for tol in (1, 5):
-                aps = []
-                for c in range(12):
-                    if n_gt[c] == 0:
-                        continue
-                    sc = np.concatenate([x[0] for x in per_class_tp[tol][c]]) \
-                        if per_class_tp[tol][c] else np.array([])
-                    fl_ = np.concatenate([x[1] for x in per_class_tp[tol][c]]) \
-                        if per_class_tp[tol][c] else np.array([])
-                    aps.append(ap_tolerant(sc, fl_, n_gt[c]))
-                row[tol] = float(np.mean(aps)) if aps else 0.0
-            print(f'{fl:7.3f} {nms:9} {row[1]:8.4f} {row[5]:8.4f} {n_pred:8}')
-            if row[1] > best[0]:
-                best = (row[1], fl, nms)
-    print(f"  chosen on validation: floor={best[1]}, nms_rows={best[2]} (mAP@1s {best[0]:.4f})")
+            r = val_map(model, halves, mu, sd, periods, fl, nms, preds=preds)
+            print(f'{fl:7.3f} {nms:9} {r[1]:8.4f} {r[5]:8.4f} {r["n_pred"]:9,}')
+            if r[1] > best[0]:
+                best = (r[1], fl, nms)
+    print(f"  chosen on validation: floor={best[1]}, nms_rows={best[2]} "
+          f"(mAP@1s {best[0]:.4f})")
     return best
 
 
@@ -307,6 +337,11 @@ def main() -> int:
     ap.add_argument("--dropout", type=float, default=0.1)
     ap.add_argument("--lr", type=float, default=3e-3)
     ap.add_argument("--max-pos-weight", type=float, default=50.0)
+    ap.add_argument("--no-augment", action="store_true",
+                    help="disable reflection augmentation (for the ablation)")
+    ap.add_argument("--sel-floor", type=float, default=0.02,
+                    help="provisional decode floor used for per-epoch model selection")
+    ap.add_argument("--sel-nms", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--ckpt", default=None)
@@ -316,6 +351,7 @@ def main() -> int:
 
     ds = Path(a.dataset)
     periods = json.loads(Path(a.periods).read_text())["matches"]
+    a.periods_table = periods   # train() needs it for per-epoch validation mAP
     out_root = Path(a.out)
     out_root.mkdir(parents=True, exist_ok=True)
 

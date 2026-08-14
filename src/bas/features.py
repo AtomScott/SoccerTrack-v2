@@ -23,9 +23,9 @@ WHAT THE COORDINATE QUANTISATION FORCES
 
 FEATURE GROUPS (see FEATURE_NAMES for the exact layout)
     global      centroid, dispersion and convex hull of all 22 players
-    contest     the closest opposing pair, which is the best available proxy for where the
-                ball is when there is no ball: its location, its motion, how many players
-                are converging on it, and how fast they are moving
+    contest     a soft-minimum over opposing pairs, which is the best available proxy for
+                where the ball is when there is no ball: its location, its motion, how many
+                players are converging on it, and how fast they are moving
     per team    centroid, dispersion, hull, speed, and the defensive/attacking line
     occupancy   a coarse 6x3 soft-binned player-density grid per team, which encodes the
                 configuration without depending on any player ordering
@@ -47,6 +47,12 @@ VEL_SHORT, VEL_LONG = 6, 19
 
 # Occupancy grid, per team.
 GRID_X, GRID_Y = 6, 3
+
+# Softness of the contest point, in metres. Opposing pairs are weighted exp(-d/tau), so a
+# pair 2 m further apart than the closest contributes 1/e as much. Small enough that the
+# contest point still tracks the tightest duel, large enough that it never hinges on which
+# of two equidistant pairs an argmin happened to pick.
+CONTEST_TAU = 2.0
 
 
 def _hull_area(pts: np.ndarray) -> float:
@@ -183,10 +189,19 @@ def build_features(track_npz, stride: int = 5) -> tuple[np.ndarray, np.ndarray]:
         if li.size and ri.size:
             d = np.hypot(xs[li][:, None] - xs[ri][None, :],
                          ys[li][:, None] - ys[ri][None, :])
-            a, b = np.unravel_index(np.argmin(d), d.shape)
-            ctx = (xs[li[a]] + xs[ri[b]]) / 2.0
-            cty = (ys[li[a]] + ys[ri[b]]) / 2.0
-            mind = float(d[a, b])
+            # SOFT-minimum midpoint, not the argmin pair. Positions are quantised to 1.05 m,
+            # so the closest opposing pair is exactly TIED on 6.7% of frames; an argmin then
+            # picks between equally valid pairs on a tie-break, which puts arbitrary jitter
+            # into the ball proxy and made the feature fail its own reflection test. The
+            # softmin is tie-free, varies smoothly as players move, and is exactly
+            # equivariant under reflection.
+            w = np.exp(-d / CONTEST_TAU)
+            wsum = w.sum()
+            mx = (xs[li][:, None] + xs[ri][None, :]) / 2.0
+            my = (ys[li][:, None] + ys[ri][None, :]) / 2.0
+            ctx = float((w * mx).sum() / wsum)
+            cty = float((w * my).sum() / wsum)
+            mind = float(d.min())
             p2, p4, p8 = (d < 2).sum(), (d < 4).sum(), (d < 8).sum()
         else:
             ctx, cty, mind, p2, p4, p8 = gx.mean(), gy.mean(), np.nan, 0, 0, 0
