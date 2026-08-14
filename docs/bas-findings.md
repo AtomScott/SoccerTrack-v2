@@ -279,6 +279,20 @@ events, roughly 4.6 predictions per event.
 
 † support below 30; these APs take only a few distinct values and are not measurements.
 
+### Two caveats that belong next to these numbers
+
+**This is an offline spotter, not a real-time one.** The TCN uses centred convolutions, so
+each timestep sees ±25 s of context, and the long-scale velocity feature spans ±0.76 s.
+Both look into the future. That is standard for action spotting — the SoccerNet protocol
+scores a whole match offline — but it means these figures do not describe what a live
+system could do.
+
+**It assumes perfect tracks.** Every number here is on ground-truth GSR positions. A
+deployable system has to estimate those first and inherits every GSR error, so this is an
+upper bound. The design document's Experiment B calls for both variants and the gap between
+them as the result; only the ground-truth half is done, per Atom's decision to defer the
+predicted-track variant.
+
 ### What the per-class pattern says
 
 **Two classes fail almost completely.** Ball Player Block (AP@1s 0.035) and Player
