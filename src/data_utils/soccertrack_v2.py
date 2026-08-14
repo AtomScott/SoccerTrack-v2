@@ -89,6 +89,10 @@ class Event:
     team: Optional[TeamSide] = None
     player_id: Optional[str | int] = None
     visibility: Optional[str] = None
+    # Detector confidence, for PREDICTIONS only; None in ground truth. Average precision is
+    # defined over a confidence-ranked list, so an evaluator that ignores this is not computing
+    # AP. src/evaluation/bas_map.py ranks on it.
+    score: Optional[float] = None
 
     @property
     def t_ms_in_half(self) -> int:
@@ -175,15 +179,90 @@ def _half_suffix(half: int) -> str:
 
 
 def _parse_gsr(path: Path, half: int) -> Iterator[Frame]:
+    """Parse one half's GSR annotations, in either on-disk layout.
+
+    THE RELEASED FILES ARE SoccerNet GameState, not the flat record list this function
+    originally assumed. All 20 of them are a JSON OBJECT with ``info``/``images``/
+    ``annotations``/``categories``. Iterating that as a list yields the top-level KEY STRINGS,
+    so ``r["image_id"]`` raised ``TypeError: string indices must be integers`` on every real
+    file -- this function could not read a single one. See docs/format-gsr.md.
+
+    Both layouts are accepted, dispatching on the parsed type rather than on a filename:
+
+      * GameState object -- the released ground truth. ``image_id`` is a STRING whose numeric
+        suffix is a 1-BASED frame number ("3000001" is frame 1); ``bbox_image`` and
+        ``bbox_pitch`` are dicts.
+      * flat list of records -- what predictions and derived files use. ``image_id`` is a
+        0-based integer frame index; the bboxes are 4-element sequences.
+
+    FRAME INDEX CONVENTION: ``Frame.image_id`` is always the value as stored, so a GameState
+    file yields 1-based indices and a flat-record file yields 0-based ones. This function does
+    not silently reconcile them, because the correct offset between annotations and video is a
+    per-half property that must be measured, not assumed -- see
+    scripts/gsr/measure_frame_offset.py. ``Frame.t_ms`` is derived from ``image_id`` and
+    inherits the same convention.
+    """
     if not path.exists():
         raise FileNotFoundError(f"GSR annotation not found: {path}")
-    records = json.loads(path.read_text())
+    data = json.loads(path.read_text())
+
     grouped: dict[int, list[Player]] = {}
-    for r in records:
-        image_id = int(r["image_id"])
-        grouped.setdefault(image_id, []).append(_player_from(r))
+    if isinstance(data, dict):
+        if "annotations" not in data:
+            raise KeyError(
+                f"{path.name} is a JSON object without an 'annotations' key; top-level keys "
+                f"are {sorted(data)}. Expected SoccerNet GameState or a flat record list."
+            )
+        for a in data["annotations"]:
+            if a.get("supercategory") not in (None, "object"):
+                continue                      # skip the pitch/camera annotations
+            role = (a.get("attributes") or {}).get("role")
+            if role == "ball":
+                continue                      # not an athlete; GS-HOTA ignores it too
+            image_id = _frame_number(a["image_id"])
+            grouped.setdefault(image_id, []).append(_player_from_gamestate(a))
+    else:
+        for r in data:
+            grouped.setdefault(int(r["image_id"]), []).append(_player_from(r))
+
     for image_id in sorted(grouped):
         yield Frame(half=half, image_id=image_id, entities=tuple(grouped[image_id]))
+
+
+def _frame_number(image_id) -> int:
+    """Numeric frame index from a GameState ``image_id``.
+
+    Released files use "3" + a 6-digit 1-based frame ("3000001"). Sequences staged for TrackLab
+    use the 10-character SoccerNet form (split id + 3-digit sequence id + 6-digit frame). In
+    both cases the last six digits are the frame number.
+    """
+    s = str(image_id)
+    tail = s.split("_")[-1]
+    return int(tail[-6:]) if len(tail) > 6 else int(tail)
+
+
+def _player_from_gamestate(a: dict) -> Player:
+    """Build a Player from a GameState object annotation."""
+    attrs = a.get("attributes") or {}
+    bp = a.get("bbox_pitch") or {}
+    bi = a.get("bbox_image") or {}
+    return Player(
+        track_id=int(a["track_id"]),
+        role=attrs.get("role", "player"),
+        jersey_number=_maybe_int(attrs.get("jersey")),
+        team_side=attrs.get("team"),
+        # The pitch position is the bottom-middle point, in centre-origin metres. In the
+        # released ground truth the left/middle/right points are degenerate -- identical
+        # values -- so only the middle one carries information.
+        x=float(bp["x_bottom_middle"]),
+        y=float(bp["y_bottom_middle"]),
+        player_id=attrs.get("player_id"),
+        bbox_image=(
+            (float(bi["x"]), float(bi["y"]), float(bi["w"]), float(bi["h"]))
+            if {"x", "y", "w", "h"} <= set(bi) else None
+        ),
+        bbox_pitch=None,   # the six-key dict does not fit the 4-tuple field; x/y carry it
+    )
 
 
 def _player_from(r: dict) -> Player:
@@ -254,6 +333,8 @@ def _parse_bas(path: Path) -> Iterator[Event]:
                 f"Unknown BAS label in {path.name}: {raw!r}. Expected one of {BAS_LABELS} "
                 "(case-insensitive)."
             )
+        # Predictions may carry a detector confidence under either key; ground truth has none.
+        raw_score = a.get("score", a.get("confidence"))
         yield Event(
             half=half,
             clock=clock,
@@ -262,6 +343,7 @@ def _parse_bas(path: Path) -> Iterator[Event]:
             team=a.get("team"),
             player_id=a.get("player_id"),
             visibility=a.get("visibility"),
+            score=None if raw_score is None else float(raw_score),
         )
 
 
