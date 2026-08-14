@@ -1,54 +1,55 @@
-"""Measure, per half, the time offset between the BAS event clock and the GSR frame clock.
+"""Measure, per half, the offset between the BAS event clock and the GSR frame numbering.
 
-WHY THIS EXISTS -- AND WHY THE EARLIER ANSWER WAS WRONG
-    An event's frame index is `1 + (position - t0_ms)/40`. Two DIFFERENT questions hide in
-    that formula and I conflated them:
+WHAT THIS FOUND
+    Fourteen of the twenty halves carry a ONE-SECOND offset between the event annotations
+    and the GSR frame numbering. Six do not. There is nothing in between: measured peaks are
+    0, 0, -1, -1, -2, -2 on six halves and +22 to +25 on the other fourteen.
 
-      (a) which GSR frame corresponds to a given raw-tracking frameNumber, and
-      (b) which GSR frame corresponds to a given BAS `position`.
+    That 6/14 split is the same one the GSR side found for the VIDEOS -- "missing frames
+    from the start of the annotated period, 0 for six halves and ~25 for fourteen". The same
+    per-half bookkeeping slip shows up in both places, so it is a property of the release,
+    not of either task.
 
-    scripts/bas/measure_t0.py answers (a) exactly -- zero residual, all twenty halves --
-    because the released GSR positions ARE the raw positions, so the correct alignment makes
-    them identical. It says nothing about (b). BAS events are a separate annotation pass and
-    need not share the raw file's `matchTime` origin.
+    It is not a semantic lag. A lag between "the annotated moment" and "the ball is struck"
+    would vary continuously across halves; a discrete choice between 0 and 25 frames does not.
 
-    For the eight matches whose metadata declares `<period matchTimeStart=>`, (a) and (b)
-    agreed and the distinction did not bite. For 132831 and 132877, which declare no periods,
-    taking (a) as the answer to (b) moved 132831's mAP@1s from 0.338 to 0.266 -- i.e. it made
-    things worse, which is the evidence that the two clocks differ there by about a second.
+WHY THE EARLIER ATTEMPTS MISSED IT
+    Three anchors were tried before this one, and each failed for an instructive reason:
 
-    Picking whichever offset scores better on the test split would be tuning on the test set.
-    This script measures (b) from the data instead.
+      * the throw-in touchline check (audit_annotations.py) is flat across +/-2 s, because a
+        thrower stands on the line for seconds either side. It catches a gross error, which
+        is what it was built for, and passed at z = 13-21 on halves that were a second out.
+      * ball SPEED steps at a strike. The estimator validates -- it recovers planted offsets
+        exactly -- but the annotated moment need not be the moment of contact, so the reading
+        confounds a real clock offset with an unknown semantic lag.
+      * the ball crossing the pitch boundary at an Out. Peak hit rate is only 0.05-0.43, and
+        exactly 0.00 for 132831 and 132877, whose ball is clamped to the pitch rectangle.
 
-THE INSTRUMENT: A STRUCK BALL
-    The touchline check in audit_annotations.py cannot resolve this. A throw-in taker stands
-    on the line for seconds either side of the throw, so the statistic is flat across
-    +/- 2 s -- it was built to catch a gross error and it did, but it was never sharp enough
-    for a one-second one, and it passed at z = 13-21 on exactly the two misaligned matches.
+    Deriving t0 from <match>_tracker_box_data.xml (see measure_t0.py) fixes a DIFFERENT
+    quantity -- which GSR frame a raw tracking frameNumber denotes -- and is exact. It does
+    not answer this question, and using it as though it did made 132831 worse.
 
-    The ball is sharp. At a Pass, Shot, Cross or High Pass the ball is struck, so its speed
-    STEPS within a frame or two. Averaged over the thousands of such events in a half, the
-    step locates the event clock to a few frames. The statistic is
+THE ANCHOR THAT WORKS: IS THE ANNOTATED ACTOR THE PLAYER NEAREST THE BALL?
+    99.5% of events name their actor, and at the moment of a ball event that actor has the
+    ball. The statistic is the fraction of events for which the annotated `player_id` is the
+    closest player to the ball, swept over candidate shifts.
 
-        S(d) = mean over events of [ mean ball speed over (t+d, t+d+W)
-                                   - mean ball speed over (t+d-W, t+d) ]
+    It is sharp -- 0.86 to 0.95 at the peak against a 0.13 to 0.25 floor -- and, unlike the
+    ball-speed step, it is anchored on the actor, so it does not care whether the annotation
+    marks the first touch or the release: the actor has the ball either way.
 
-    maximised over the candidate shift d, with W = 0.4 s. A positive step means the ball
-    accelerated: that is contact.
-
-    Only classes whose defining moment is a strike are used. Drive is excluded (the ball is
-    already moving with the carrier), as are Out, Throw In, Free Kick, Goal, Header, Ball
-    Player Block and Player Successful Tackle -- all either not strikes or too rare to
-    average.
+    Only classes where the actor is in possession are used. Out is excluded (the last toucher
+    need not be near the ball once it has gone), as are Ball Player Block and Player
+    Successful Tackle (two players contest the ball, so "nearest" is ambiguous) and the rare
+    classes.
 
 VALIDATION
-    --validate injects a known shift into the event times and requires the estimator to
-    recover it. An estimator that cannot recover a planted offset cannot be trusted to find
-    a real one; this is the check the touchline test never had.
+    --validate plants a known shift in the event times and requires the estimator to recover
+    it. Linearity is what is tested, not a zero reading.
 
 USAGE
-    python scripts/bas/measure_event_offset.py --all
     python scripts/bas/measure_event_offset.py --validate
+    python scripts/bas/measure_event_offset.py --all
     python scripts/bas/measure_event_offset.py --all --write configs/bas_periods.json
 """
 from __future__ import annotations
@@ -64,32 +65,47 @@ MATCHES = ["117092", "117093", "118575", "118576", "118577", "118578",
            "128057", "128058", "132831", "132877"]
 HALF_NAME = {1: "1st", 2: "2nd"}
 FRAME_MS = 40.0
-FPS = 25
 
-STRIKE_CLASSES = ("Pass", "Shot", "Cross", "High Pass")
 BAS_LABELS = ("Pass", "Drive", "Header", "High Pass", "Out", "Cross", "Throw In", "Shot",
               "Ball Player Block", "Player Successful Tackle", "Free Kick", "Goal")
 _CANON = {l.casefold(): l for l in BAS_LABELS}
+# Classes where the annotated actor is the player in possession.
+POSSESSION_CLASSES = {"Pass", "Drive", "High Pass", "Cross", "Shot"}
 
-WIN_FRAMES = 10        # 0.4 s either side of the candidate event time
-SEARCH_FRAMES = 75     # +/- 3 s
-BALL_SPEED_HALFWIN = 2  # ball moves fast; +/-2 frames is enough and stays sharp
-
-
-def ball_speed(bx: np.ndarray, by: np.ndarray, k: int = BALL_SPEED_HALFWIN) -> np.ndarray:
-    """Ball speed in m/s, centred difference over +/-k frames."""
-    sp = np.full(bx.size, np.nan, np.float32)
-    dt = 2 * k / FPS
-    sp[k:-k] = np.hypot(bx[2 * k:] - bx[:-2 * k], by[2 * k:] - by[:-2 * k]) / dt
-    return sp
+SEARCH = 60          # +/- 2.4 s
+MIN_EVENTS = 100
+MIN_PEAK = 0.45      # a half whose best reading is below this is not trusted
+MIN_PROMINENCE = 2.0  # peak must be this many times the floor
 
 
-def event_rows(data: Path, match: str, half: int, spec: dict) -> np.ndarray:
-    """GSR frame index of every strike-class event in this half, under the CURRENT t0."""
-    path = data / "production" / "bas" / match / f"{match}_12_class_events.json"
-    doc = json.loads(path.read_text())
-    acts = doc.get("actions", doc.get("annotations"))
-    out = []
+def _load_half(ball_dir: Path, tracks_dir: Path, match: str, half: int):
+    hn = HALF_NAME[half]
+    b = np.load(ball_dir / f"{match}_{hn}_ball.npz")
+    d = np.load(tracks_dir / f"{match}_{hn}_tracks.npz")
+    n = int(min(b["frame"].max(), d["frame"].max()))
+    BX = np.full(n + 2, np.nan, np.float32)
+    BY = np.full(n + 2, np.nan, np.float32)
+    ok = b["frame"] <= n
+    BX[b["frame"][ok]] = b["x"][ok]
+    BY[b["frame"][ok]] = b["y"][ok]
+    pl = np.unique(d["player_id"])
+    col = {int(p): i for i, p in enumerate(pl.tolist())}
+    X = np.full((n + 2, pl.size), np.nan, np.float32)
+    Y = np.full_like(X, np.nan)
+    sel = d["frame"] <= n
+    idx = np.array([col[int(p)] for p in d["player_id"].tolist()])
+    X[d["frame"][sel], idx[sel]] = d["x"][sel]
+    Y[d["frame"][sel], idx[sel]] = d["y"][sel]
+    return BX, BY, X, Y, col, n
+
+
+def measure_half(data: Path, ball_dir: Path, tracks_dir: Path, match: str, half: int,
+                 spec: dict, inject: int = 0) -> dict:
+    BX, BY, X, Y, col, n = _load_half(ball_dir, tracks_dir, match, half)
+    acts = json.loads(
+        (data / "production" / "bas" / match / f"{match}_12_class_events.json").read_text())
+    acts = acts.get("actions", acts.get("annotations"))
+    ev = []
     for a in acts:
         gt = str(a["gameTime"])
         if " - " not in gt:
@@ -97,57 +113,46 @@ def event_rows(data: Path, match: str, half: int, spec: dict) -> np.ndarray:
         head = gt.split(" - ", 1)[0].strip()
         if not head.isdigit() or int(head) != half:
             continue
-        if _CANON[str(a["label"]).casefold()] not in STRIKE_CLASSES:
+        if _CANON[str(a["label"]).casefold()] not in POSSESSION_CLASSES:
             continue
-        f = int(round((int(a["position"]) - spec["t0_ms"]) / FRAME_MS)) + 1
-        if 1 <= f <= spec["n_frames"]:
-            out.append(f)
-    return np.array(sorted(out), np.int64)
-
-
-def measure_half(ball_dir: Path, data: Path, match: str, half: int, spec: dict,
-                 inject: int = 0) -> dict:
-    b = np.load(ball_dir / f"{match}_{HALF_NAME[half]}_ball.npz")
-    frame, bx, by = b["frame"], b["x"], b["y"]
-    n = int(frame.max())
-    X = np.full(n + 2, np.nan, np.float32); Y = np.full(n + 2, np.nan, np.float32)
-    X[frame] = bx; Y[frame] = by
-    sp = ball_speed(X, Y)
-
-    rows = event_rows(data, match, half, spec) + inject
-    rows = rows[(rows > WIN_FRAMES + 4) & (rows < n - WIN_FRAMES - 4)]
-    if rows.size < 50:
-        return {"match": match, "half": half, "ok": False, "reason": "too few strike events"}
-
-    shifts = np.arange(-SEARCH_FRAMES, SEARCH_FRAMES + 1)
-    curve = np.full(shifts.size, np.nan)
-    for i, d in enumerate(shifts):
-        r = rows + d
-        r = r[(r > WIN_FRAMES) & (r < n - WIN_FRAMES)]
-        if r.size < 50:
+        pid = a.get("player_id")
+        if pid in (None, "") or int(pid) not in col:
             continue
-        pre = np.stack([sp[r - WIN_FRAMES + j] for j in range(WIN_FRAMES)])
-        post = np.stack([sp[r + j] for j in range(WIN_FRAMES)])
-        with np.errstate(invalid="ignore"):
-            curve[i] = np.nanmean(np.nanmean(post, 0) - np.nanmean(pre, 0))
-    if np.all(np.isnan(curve)):
+        f = int(round((int(a["position"]) - spec["t0_ms"]) / FRAME_MS)) + 1 + inject
+        if SEARCH < f < n - SEARCH:
+            ev.append((f, col[int(pid)]))
+    if len(ev) < MIN_EVENTS:
+        return {"match": match, "half": half, "ok": False, "reason": "too few events"}
+
+    shifts = np.arange(-SEARCH, SEARCH + 1)
+    frac = np.full(shifts.size, np.nan)
+    for i, s in enumerate(shifts):
+        hit = tot = 0
+        for f, j in ev:
+            g = f + s
+            dist = np.hypot(X[g] - BX[g], Y[g] - BY[g])
+            if np.isnan(dist[j]) or np.all(np.isnan(dist)):
+                continue
+            tot += 1
+            if int(np.nanargmin(dist)) == j:
+                hit += 1
+        if tot:
+            frac[i] = hit / tot
+    if np.all(np.isnan(frac)):
         return {"match": match, "half": half, "ok": False, "reason": "no valid shift"}
 
-    best = int(np.nanargmax(curve))
-    d_best = int(shifts[best])
-    peak = float(curve[best])
-    med = float(np.nanmedian(curve))
-    sd = float(np.nanstd(curve))
-    z = (peak - med) / (sd + 1e-9)
-    # A shift of d frames means the events sit d frames EARLIER than the ball says, so t0
-    # must move by -d frames to compensate.
-    t0_corr = -d_best * FRAME_MS
-    return {"match": match, "half": half, "ok": bool(abs(z) > 3.0 and peak > 0),
-            "reason": "" if abs(z) > 3.0 else "peak not prominent",
-            "n_events": int(rows.size), "shift_frames": d_best,
-            "shift_ms": d_best * FRAME_MS, "peak_step_ms": round(peak, 3),
-            "z": round(z, 2), "t0_correction_ms": t0_corr,
-            "t0_current": spec["t0_ms"], "t0_implied": spec["t0_ms"] + t0_corr}
+    pk = int(np.nanargmax(frac))
+    peak_shift = int(shifts[pk])
+    peak = float(frac[pk])
+    floor = float(np.nanmin(frac))
+    good = peak >= MIN_PEAK and peak >= MIN_PROMINENCE * max(floor, 1e-6)
+    return {"match": match, "half": half, "ok": bool(good),
+            "reason": "" if good else "peak not prominent enough",
+            "n_events": len(ev), "shift_frames": peak_shift,
+            "shift_ms": peak_shift * FRAME_MS, "peak_frac": round(peak, 4),
+            "floor_frac": round(floor, 4),
+            "t0_current": spec["t0_ms"],
+            "t0_implied": spec["t0_ms"] - peak_shift * FRAME_MS}
 
 
 def main() -> int:
@@ -155,79 +160,85 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", default="/data/share/SoccerTrack-v2/data")
     ap.add_argument("--ball", default="/data/share/SoccerTrack-v2/data/derived/bas/ball")
+    ap.add_argument("--tracks", default="/data/share/SoccerTrack-v2/data/derived/bas/tracks")
     ap.add_argument("--periods", default="configs/bas_periods.json")
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--validate", action="store_true")
     ap.add_argument("--write", nargs="?", const="configs/bas_periods.json", default=None)
     a = ap.parse_args()
-    data, ball = Path(a.data), Path(a.ball)
+    data, ball, tracks = Path(a.data), Path(a.ball), Path(a.tracks)
     table = json.loads(Path(a.periods).read_text())
 
     if a.validate:
-        print("VALIDATION -- plant a known shift in the event times and recover it.")
-        print("An estimator that cannot find a planted offset cannot be trusted with a real")
-        print("one. Run on three halves whose ball data is dense.\n")
-        # LINEARITY is the property to test, not a zero reading. The intrinsic offset is
-        # NOT zero -- the annotated event time leads the ball's speed step by about a second
-        # on every match -- so requiring recovered == -planted would fail a working
-        # estimator, which is exactly what it did on the first attempt.
+        print("VALIDATION -- plant a known shift and require the estimator to track it.")
+        print("Linearity is the property under test; the intrinsic reading is not zero.\n")
         ok_all = True
-        for m, h in (("128057", 1), ("117093", 1), ("118576", 2)):
+        for m, h in (("128057", 1), ("117093", 2), ("118576", 1)):
             spec = table["matches"][m]["periods"][str(h)]
-            base = measure_half(ball, data, m, h, spec, inject=0).get("shift_frames")
-            for planted in (-25, +25, +50):
-                r = measure_half(ball, data, m, h, spec, inject=planted)
-                got = r.get("shift_frames")
-                good = got is not None and base is not None and abs(got - (base - planted)) <= 2
+            base = measure_half(data, ball, tracks, m, h, spec)["shift_frames"]
+            for planted in (-20, +20, +40):
+                r = measure_half(data, ball, tracks, m, h, spec, inject=planted)
+                got, exp = r["shift_frames"], base - planted
+                good = abs(got - exp) <= 2
                 ok_all &= good
-                print(f'  {m} {HALF_NAME[h]}  intrinsic {base:+4d}, planted {planted:+4d} '
-                      f'-> recovered {got:+4d}, expected {base - planted:+4d} '
-                      f'(z={r.get("z")})  {"OK" if good else "MISMATCH"}')
-        print("\nestimator recovers planted offsets" if ok_all
-              else "\nESTIMATOR NOT TRUSTWORTHY -- do not use")
+                print(f'  {m} {HALF_NAME[h]}  intrinsic {base:+3d}, planted {planted:+3d} -> '
+                      f'{got:+3d}, expected {exp:+3d}  {"OK" if good else "MISMATCH"}')
+        print("\nestimator tracks planted offsets" if ok_all
+              else "\nESTIMATOR NOT TRUSTWORTHY")
         return 0 if ok_all else 1
 
     if not a.all:
         ap.error("give --all or --validate")
 
-    print("BAS event clock vs GSR frame clock, measured from the ball's speed step at a strike.")
-    print("shift = where the true event sits relative to the current mapping.\n")
-    print(f'{"match":8} {"half":5} {"n_ev":>5} {"shift":>6} {"ms":>7} {"step m/s":>9} '
-          f'{"z":>6}  {"t0 now":>9} {"t0 implied":>11}  verdict')
+    print("Event clock vs GSR frame numbering. shift = frames the events must move to align")
+    print("with the ball; t0_implied = t0_current - shift*40.\n")
+    print(f'{"match":8} {"half":5} {"n":>5} {"shift":>6} {"ms":>7} {"peak":>6} {"floor":>6}  '
+          f'{"t0 now":>10} {"t0 implied":>11}  verdict')
     rows = []
     for m in MATCHES:
         for half in (1, 2):
             spec = table["matches"][m]["periods"][str(half)]
-            r = measure_half(ball, data, m, half, spec)
+            r = measure_half(data, ball, tracks, m, half, spec)
             rows.append(r)
             if "shift_frames" not in r:
                 print(f'{m:8} {HALF_NAME[half]:5} FAILED: {r["reason"]}'); continue
             print(f'{m:8} {HALF_NAME[half]:5} {r["n_events"]:5} {r["shift_frames"]:6} '
-                  f'{r["shift_ms"]:7.0f} {r["peak_step_ms"]:9.3f} {r["z"]:6.2f}  '
-                  f'{r["t0_current"]:9.0f} {r["t0_implied"]:11.0f}  '
+                  f'{r["shift_ms"]:7.0f} {r["peak_frac"]:6.2f} {r["floor_frac"]:6.2f}  '
+                  f'{r["t0_current"]:10.0f} {r["t0_implied"]:11.0f}  '
                   f'{"OK" if r["ok"] else "WEAK"}', flush=True)
-    print()
-    big = [r for r in rows if r.get("ok") and abs(r["shift_ms"]) >= 200]
-    if big:
-        print("HALVES WHOSE EVENT CLOCK DISAGREES WITH THE CURRENT MAPPING BY >= 200 ms:")
-        for r in big:
-            print(f'  {r["match"]} {HALF_NAME[r["half"]]}: {r["shift_ms"]:+.0f} ms '
-                  f'-> t0 {r["t0_current"]:.0f} should be {r["t0_implied"]:.0f}')
-    else:
-        print("every half agrees with the current mapping to within 200 ms")
+    good = [r for r in rows if r.get("ok")]
+    sh = np.array([r["shift_frames"] for r in good])
+    print(f'\n{len(good)}/{len(rows)} halves measured. Shift distribution:')
+    near0 = [r for r in good if abs(r["shift_frames"]) <= 5]
+    near25 = [r for r in good if 18 <= r["shift_frames"] <= 32]
+    other = [r for r in good if r not in near0 and r not in near25]
+    print(f'  ~0 frames  : {len(near0):2} halves  ' +
+          ", ".join(f'{r["match"]}/{HALF_NAME[r["half"]]}' for r in near0))
+    print(f'  ~25 frames : {len(near25):2} halves  ' +
+          ", ".join(f'{r["match"]}/{HALF_NAME[r["half"]]}' for r in near25))
+    if other:
+        print(f'  other      : {len(other):2} halves  ' +
+              ", ".join(f'{r["match"]}/{HALF_NAME[r["half"]]}={r["shift_frames"]}'
+                        for r in other))
+    print(f'  (a continuous semantic lag would not split into two clusters like this)')
 
     if a.write:
         p = Path(a.write)
+        changed = []
         for r in rows:
             if not r.get("ok"):
                 continue
             spec = table["matches"][r["match"]]["periods"][str(r["half"])]
+            if abs(spec["t0_ms"] - r["t0_implied"]) > 1e-6:
+                changed.append((r["match"], r["half"], spec["t0_ms"], r["t0_implied"]))
             spec["t0_ms"] = float(r["t0_implied"])
-            spec["t0_source"] = "measured_vs_ball_strike"
-            spec["t0_event_shift_ms"] = r["shift_ms"]
-            spec["t0_event_z"] = r["z"]
+            spec["t0_source"] = "measured_vs_actor_nearest_ball"
+            spec["t0_event_shift_frames"] = r["shift_frames"]
+            spec["t0_peak_frac"] = r["peak_frac"]
         p.write_text(json.dumps(table, indent=2) + "\n")
-        print(f"\nwrote {p}")
+        print(f"\nwrote {p}\nt0 changed for {len(changed)} halves:")
+        for m, h, o, nn in changed:
+            print(f'  {m} {HALF_NAME[h]}: {o:.0f} -> {nn:.0f} ({(nn-o)/1000:+.2f} s)')
     return 0
 
 

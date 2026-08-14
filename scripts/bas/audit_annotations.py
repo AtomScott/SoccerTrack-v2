@@ -12,7 +12,7 @@ WHAT THIS SETTLES
 
     Scoring against events with no input silently depresses every model's recall by an
     amount that varies per match. They are therefore excluded from the benchmark, and the
-    benchmark size is 21,431 events.
+    benchmark size is 21,432 events.
 
 2.  THE ``gameTime`` HALF PREFIX IS NOT TRUSTWORTHY, AND ``position`` ALONE CANNOT REPLACE IT.
     ``gameTime`` is ``"<period> - <mm:ss>"`` where the clock is ABSOLUTE match time, not
@@ -31,34 +31,32 @@ WHAT THIS SETTLES
     every ambiguous case correctly -- including the 19 prefix-"2" events past 90 minutes
     that ARE genuine second-half stoppage and must be kept.
 
-3.  THE EVENT-TO-TRACK TIME MAPPING.
-    GSR GameState frame 1 corresponds to raw tracking frame 251 in every half, so
+3.  THE EVENT-TO-TRACK TIME MAPPING IS NOT DERIVED HERE. It is measured, by two scripts,
+    and this module only consumes the result:
 
-        t0_ms  =  matchTimeStart - (frameStart - 251) * 40         [from the metadata XML]
-        frame  =  1 + (position - t0_ms) / 40
+        frame = 1 + (position - t0_ms) / 40,  t0_ms from configs/bas_periods.json
 
-    This was verified to 0.0000 m against the independent pitch-plane CSVs on all four
-    halves that have one (see scripts/bas/extract_tracks.py --validate). 132831 and 132877
-    have no ``<period>`` elements in their metadata at all, so their t0 falls back to the
-    nominal 0 / 2,700,000 ms; across the eight matches that do declare it, t0 never departs
-    from nominal by more than 33 ms (under one frame), and the touchline check below
-    confirms the fallback independently.
+    scripts/bas/measure_t0.py fixes which GSR frame a raw tracking frameNumber denotes;
+    scripts/bas/measure_event_offset.py fixes which GSR frame a BAS `position` denotes,
+    which is a DIFFERENT quantity and the one that matters here. Deriving t0 from the
+    metadata's <period matchTimeStart=> was wrong on 18 of the 20 halves -- 14 of them by a
+    full second. See docs/bas-findings.md section 3. This script refuses to report unless
+    every half's t0_source records a measurement.
 
 4.  ``visibility`` IS NEVER POPULATED. docs/format-bas.md documents "visible" / "not shown";
     the field is absent from all 23,663 events. Any plan that filters on it is moot.
 
-THE TOUCHLINE CHECK (``--check-alignment``)
-    A falsifiable, annotation-independent test of both the time mapping and the actor
-    linkage: the taker of a ``Throw In`` must be standing on a touchline, i.e. |y| ~ 34 m.
-    It is reported per half together with its value under large injected offsets, so the
-    reader can see that it discriminates rather than merely passing.
+THE TOUCHLINE CHECK (``--check-alignment``) AND ITS LIMIT
+    The taker of a ``Throw In`` must be standing on a touchline, i.e. |y| ~ 34 m. Every half
+    clears a randomised null at z = 9.7 to 29.4, which confirms the event-to-actor linkage
+    and rules out gross misalignment.
 
-    A SHARPER ESTIMATOR WAS TRIED AND REJECTED. Cross-correlating the collective player
-    speed against play-stopping (``Out``) and play-restarting (``Throw In``) events peaked
-    at +18, +41 and +26 frames on three halves whose true offset is known to be 0 (z = 1.7
-    to 1.9, i.e. no sharp peak). It measures how long players take to coast to a stop after
-    the whistle -- a real property of football, not an annotation offset -- so it is not
-    used. Recorded here so it is not re-attempted.
+    IT DOES NOT CONFIRM THE TIMING. A thrower stands on the line for seconds either side of
+    the throw, so the statistic is flat across +/-2 s and passed comfortably on the fourteen
+    halves later found to be a full second out. It catches a gross error, which is what it
+    was built for. The sharp instrument is scripts/bas/measure_event_offset.py, which asks
+    whether the annotated actor is the player nearest the BALL -- peak 0.86 to 0.95 against a
+    0.13 to 0.25 floor, and it recovers planted offsets exactly.
 
 USAGE
     python scripts/bas/audit_annotations.py                       # full report
@@ -497,11 +495,17 @@ def main() -> int:
               f"  python scripts/bas/measure_t0.py --all --write {table_path}", file=sys.stderr)
         return 2
     table = json.loads(table_path.read_text())
+    # t0 must have been MEASURED, by either instrument. The event-clock anchor
+    # (measure_event_offset.py) supersedes the tracking-clock one where both exist, because
+    # it measures the quantity the events actually live on -- see docs/bas-findings.md #3.
+    MEASURED = {"measured_vs_tracker_box_data", "measured_vs_actor_nearest_ball"}
     stale = [f'{m} p{h}' for m, v in table["matches"].items() for h in (1, 2)
-             if v["periods"][str(h)].get("t0_source") != "measured_vs_tracker_box_data"]
+             if v["periods"][str(h)].get("t0_source") not in MEASURED]
     if stale:
         print(f"REFUSING TO REPORT: t0 was never measured for {', '.join(stale)}.\n"
-              f"  python scripts/bas/measure_t0.py --all --write {table_path}", file=sys.stderr)
+              f"  python scripts/bas/measure_t0.py --all --write {table_path}\n"
+              f"  python scripts/bas/measure_event_offset.py --all --write {table_path}",
+              file=sys.stderr)
         return 2
     report(data, table)
     rc = 0

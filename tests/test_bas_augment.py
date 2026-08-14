@@ -26,7 +26,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 TRACKS = Path("/data/share/SoccerTrack-v2/data/derived/bas/tracks")
+BALL = Path("/data/share/SoccerTrack-v2/data/derived/bas/ball")
 SAMPLE = TRACKS / "128057_1st_tracks.npz"
+SAMPLE_BALL = BALL / "128057_1st_ball.npz"
 
 pytestmark = pytest.mark.skipif(
     not SAMPLE.exists(),
@@ -38,6 +40,21 @@ def _load_window(n_frames: int = 6000) -> dict:
     d = np.load(SAMPLE)
     m = d["frame"] <= n_frames
     return {k: d[k][m] for k in ("frame", "track_id", "player_id", "team", "role", "x", "y")}
+
+
+def _load_ball(n_frames: int = 6000) -> dict:
+    d = np.load(SAMPLE_BALL)
+    m = d["frame"] <= n_frames
+    return {k: d[k][m] for k in ("frame", "x", "y", "status")}
+
+
+def _mirror_ball(b: dict, flip_x: bool, flip_y: bool) -> dict:
+    out = {k: v.copy() for k, v in b.items()}
+    if flip_x:
+        out["x"] = -out["x"]
+    if flip_y:
+        out["y"] = -out["y"]
+    return out
 
 
 def _mirror_tracks(t: dict, flip_x: bool, flip_y: bool) -> dict:
@@ -55,14 +72,25 @@ def _mirror_tracks(t: dict, flip_x: bool, flip_y: bool) -> dict:
     return out
 
 
+@pytest.mark.parametrize("with_ball", [False, True])
 @pytest.mark.parametrize("flip_x,flip_y", [(True, False), (False, True), (True, True)])
-def test_feature_space_mirror_matches_rebuild(flip_x, flip_y):
+def test_feature_space_mirror_matches_rebuild(flip_x, flip_y, with_ball):
+    """The ball columns are checked the same way as the player ones: mirror the RAW ball,
+    rebuild, and require the cheap transform to agree. Without this the nineteen ball
+    indices -- including the two that SWAP under an end-to-end flip and the one that maps
+    to 1 - v -- would be unverified."""
     from src.bas.augment import mirror
-    from src.bas.features import FEATURE_NAMES, build_features
+    from src.bas.features import FEATURE_NAMES, FEATURE_NAMES_BALL, build_features
 
+    if with_ball and not SAMPLE_BALL.exists():
+        pytest.skip("ball cache not built; run scripts/bas/extract_ball.py --all")
     tracks = _load_window()
-    base, _ = build_features(tracks, stride=25)
-    rebuilt, _ = build_features(_mirror_tracks(tracks, flip_x, flip_y), stride=25)
+    ball = _load_ball() if with_ball else None
+    FEATURE_NAMES = FEATURE_NAMES_BALL if with_ball else FEATURE_NAMES
+    base, _ = build_features(tracks, stride=25, ball_npz=ball)
+    rebuilt, _ = build_features(
+        _mirror_tracks(tracks, flip_x, flip_y), stride=25,
+        ball_npz=_mirror_ball(ball, flip_x, flip_y) if with_ball else None)
     cheap = mirror(base, flip_x=flip_x, flip_y=flip_y)
 
     assert cheap.shape == rebuilt.shape

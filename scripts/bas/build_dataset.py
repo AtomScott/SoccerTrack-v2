@@ -35,7 +35,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from src.bas.features import build_features, N_FEATURES  # noqa: E402
+from src.bas.features import build_features, N_FEATURES, N_FEATURES_BALL  # noqa: E402
 
 MATCHES = ["117092", "117093", "118575", "118576", "118577", "118578",
            "128057", "128058", "132831", "132877"]
@@ -73,13 +73,19 @@ def load_events(data: Path, match: str, periods: dict) -> list[tuple[int, int, i
 
 
 def build_half(args) -> dict:
-    data, tracks, out_dir, match, half, periods, stride = args
+    data, tracks, out_dir, match, half, periods, stride, ball_dir = args
     data, tracks, out_dir = Path(data), Path(tracks), Path(out_dir)
     npz = tracks / f"{match}_{HALF_NAME[half]}_tracks.npz"
     if not npz.exists():
         return {"match": match, "half": half, "ok": False, "reason": "no track cache"}
 
-    feat, frames = build_features(np.load(npz), stride=stride)
+    ball = None
+    if ball_dir:
+        bp = Path(ball_dir) / f"{match}_{HALF_NAME[half]}_ball.npz"
+        if not bp.exists():
+            return {"match": match, "half": half, "ok": False, "reason": "no ball cache"}
+        ball = np.load(bp)
+    feat, frames = build_features(np.load(npz), stride=stride, ball_npz=ball)
     events, dropped = load_events(data, match, periods)
     ev = [(f, c, t) for p, f, c, t in events if p == half]
 
@@ -116,14 +122,18 @@ def main() -> int:
     ap.add_argument("--out", default="/data/share/SoccerTrack-v2/data/derived/bas/dataset")
     ap.add_argument("--periods", default="configs/bas_periods.json")
     ap.add_argument("--stride", type=int, default=5, help="frame subsampling; 5 = 5 Hz")
+    ap.add_argument("--ball", default=None,
+                    help="ball cache dir; adds 19 ball columns (the WITH-BALL track)")
     ap.add_argument("--workers", type=int, default=6)
     a = ap.parse_args()
 
     table = json.loads(Path(a.periods).read_text())["matches"]
-    jobs = [(a.data, a.tracks, a.out, m, h, table[m]["periods"], a.stride)
+    jobs = [(a.data, a.tracks, a.out, m, h, table[m]["periods"], a.stride, a.ball)
             for m in MATCHES for h in (1, 2)]
+    nf = N_FEATURES_BALL if a.ball else N_FEATURES
     print(f"building {len(jobs)} halves at stride {a.stride} "
-          f"({25/a.stride:.0f} Hz), {N_FEATURES} features -> {a.out}\n")
+          f"({25/a.stride:.0f} Hz), {nf} features "
+          f"({'WITH ball' if a.ball else 'no ball'}) -> {a.out}\n")
     results = []
     with ProcessPoolExecutor(max_workers=a.workers) as ex:
         for fu in as_completed({ex.submit(build_half, j): j for j in jobs}):

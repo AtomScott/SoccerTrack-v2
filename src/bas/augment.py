@@ -26,7 +26,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.bas.features import FEATURE_NAMES, GRID_X, GRID_Y, N_FEATURES
+from src.bas.features import (BALL_NAMES, FEATURE_NAMES, FEATURE_NAMES_BALL,
+                              GRID_X, GRID_Y, N_FEATURES, N_FEATURES_BALL)
 
 _IDX = {n: i for i, n in enumerate(FEATURE_NAMES)}
 
@@ -46,10 +47,16 @@ def _grid_perm(flip_x: bool, flip_y: bool) -> np.ndarray:
     return out
 
 
-def _build(flip_x: bool, flip_y: bool) -> tuple[np.ndarray, np.ndarray]:
-    """(source_index, sign) such that mirrored[:, k] = sign[k] * original[:, source[k]]."""
-    src = np.arange(N_FEATURES, dtype=np.int64)
-    sgn = np.ones(N_FEATURES, np.float32)
+def _build(flip_x: bool, flip_y: bool, width: int = N_FEATURES):
+    """(source, sign, offset) with mirrored[:,k] = sign[k]*original[:,source[k]] + offset[k].
+
+    The offset exists for one column only: `b_near_is_right` is an indicator of which team
+    the ball's nearest player belongs to, and mirroring end-to-end exchanges the teams, so
+    it maps to 1 - v rather than +/-v.
+    """
+    src = np.arange(width, dtype=np.int64)
+    sgn = np.ones(width, np.float32)
+    off = np.zeros(width, np.float32)
 
     def negate(name):
         sgn[_IDX[name]] = -1.0
@@ -93,18 +100,44 @@ def _build(flip_x: bool, flip_y: bool) -> tuple[np.ndarray, np.ndarray]:
         for k in range(GRID_X * GRID_Y):
             src[base_dst + k] = base_src + int(gp[k])
             sgn[base_dst + k] = 1.0
-    return src, sgn
+
+    # ---- ball block, when present ----------------------------------------
+    if width > N_FEATURES:
+        bi = {n: N_FEATURES + i for i, n in enumerate(BALL_NAMES)}
+        if flip_x:
+            for n in ("b_x", "b_vx"):
+                sgn[bi[n]] = -1.0
+            # end-to-end reflection exchanges the teams
+            src[bi["b_near_is_right"]] = bi["b_near_is_right"]
+            sgn[bi["b_near_is_right"]] = -1.0
+            off[bi["b_near_is_right"]] = 1.0
+            for a, b in (("b_nearL_dist", "b_nearR_dist"), ("b_nearR_dist", "b_nearL_dist")):
+                src[bi[a]] = bi[b]
+            for a, b in (("b_dist_goal_left", "b_dist_goal_right"),
+                         ("b_dist_goal_right", "b_dist_goal_left")):
+                src[bi[a]] = bi[b]
+        if flip_y:
+            for n in ("b_y", "b_vy"):
+                sgn[bi[n]] = -1.0
+        # speed, acceleration, counts, and every distance are reflection-invariant
+    return src, sgn, off
 
 
-_TRANSFORMS = {(fx, fy): _build(fx, fy) for fx in (False, True) for fy in (False, True)}
+_TRANSFORMS = {(fx, fy, w): _build(fx, fy, w)
+               for fx in (False, True) for fy in (False, True)
+               for w in (N_FEATURES, N_FEATURES_BALL)}
 
 
 def mirror(feat: np.ndarray, flip_x: bool = False, flip_y: bool = False) -> np.ndarray:
-    """Reflect a (T, N_FEATURES) feature matrix. Returns a new array."""
+    """Reflect a (T, N_FEATURES) or (T, N_FEATURES_BALL) feature matrix."""
     if not (flip_x or flip_y):
         return feat
-    src, sgn = _TRANSFORMS[(flip_x, flip_y)]
-    return feat[:, src] * sgn
+    w = feat.shape[1]
+    if (flip_x, flip_y, w) not in _TRANSFORMS:
+        raise ValueError(f"no mirror transform for width {w}; expected "
+                         f"{N_FEATURES} or {N_FEATURES_BALL}")
+    src, sgn, off = _TRANSFORMS[(flip_x, flip_y, w)]
+    return feat[:, src] * sgn + off
 
 
 def random_mirror(feat: np.ndarray, rng) -> np.ndarray:

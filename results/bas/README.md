@@ -10,11 +10,34 @@ python scripts/bas/make_tables.py \
     --matches 128057 132831 --out-dir results/bas
 ```
 
-| file | goes where |
-|---|---|
-| `tab_bas_results.tex` | replaces the `tab:bas_results` table environment in `paper/sections/02_results.tex` |
-| `tab_bas_per_class.tex` | replaces the `tab:bas_per_class` table environment in the same file |
-| `scores.json` | the full scored output, including per-match and per-class breakdowns for both the model and the chance baseline |
+Two tracks, per Atom's decision to ship the ball and report both:
+
+| directory | features | what it is |
+|---|---|---|
+| `noball/` | 82 | player positions only — reproducible from the released GSR alone |
+| `ball/` | 101 | adds the provider ball track (position, velocity, speed, crowding, distances) |
+
+Each holds `tab_bas_results.tex`, `tab_bas_per_class.tex` and `scores.json`. The `.tex` files
+replace the corresponding table environments in `paper/sections/02_results.tex`.
+
+## Headline, test split, three seeds
+
+| | macro mAP@1s | wtd mAP@1s | macro mAP@5s | wtd mAP@5s |
+|---|---|---|---|---|
+| with ball | **0.487** | **0.721** | 0.550 | **0.788** |
+| no ball | 0.412 | 0.476 | **0.565** | 0.728 |
+| uniform chance | 0.025 | 0.106 | 0.094 | 0.405 |
+
+**The with-ball number must not be quoted without the per-match split.** The ball is censored
+on 132831 (clamped to the pitch rectangle, no `ballStatus`) and intact on 128057:
+
+| test match | ball | no ball → with ball, macro mAP@1s |
+|---|---|---|
+| 128057 | intact | 0.472 → **0.769** |
+| 132831 | clamped | 0.365 → 0.357 |
+
+So the ball is worth +0.30 where it is real and nothing where it is censored. Pooling the two
+averages incompatible regimes.
 
 **The manuscript is deliberately not edited here.** `paper/HANDOFF_TO_CODING_AGENT.md` says
 "Don't change the paper" and "Leave alone: the paper's prose. Report findings; the paper
@@ -31,7 +54,7 @@ agent writes them." Confirmed with Atom on 2026-08-14.
    0.405 is what a fixed-cadence guess achieves on this test split, because Pass occurs every
    2.4 s and Drive every 2.7 s. The `tab:bas_results` table above includes that row.
 
-3. **The benchmark is 21,431 events, not 23,663.** 2,232 events fall in a third 45-minute
+3. **The benchmark is 21,432 events, not 23,663.** 2,232 events fall in a third 45-minute
    period, in three matches, for which no video and no GSR file exists. Per Atom's decision
    they are excluded from the benchmark and from the headline count. See
    `docs/bas-findings.md` §1.

@@ -5,7 +5,7 @@ THE PROBLEM THIS SOLVES
     periods. 2,232 events -- 9.4% of the 23,663 annotated, and 22.8% of test match 132831 --
     fall in a third period for which no video and no GSR file exist. Scoring against events
     that have no input data depresses every model's recall by a per-match amount, so they
-    are outside the benchmark. The benchmark is 21,431 events.
+    are outside the benchmark. The benchmark is 21,432 events.
 
 WHY NEITHER FIELD IN THE FILE IS ENOUGH ON ITS OWN
     ``gameTime`` is ``"<period> - <ABSOLUTE mm:ss>"``. Its prefix is unreliable on exactly

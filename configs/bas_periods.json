@@ -12,21 +12,25 @@
       "periods": {
         "1": {
           "t0_ms": 0.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 67375,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 0,
+          "t0_peak_frac": 0.9152
         },
         "2": {
-          "t0_ms": 2700000.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2699000.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 67576,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 25,
+          "t0_peak_frac": 0.892
         },
         "3": {
           "t0_ms": null,
@@ -41,22 +45,26 @@
       "n_periods_in_metadata": 2,
       "periods": {
         "1": {
-          "t0_ms": 0.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": -960.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 67650,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 24,
+          "t0_peak_frac": 0.9083
         },
         "2": {
-          "t0_ms": 2699967.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2700007.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 70475,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": -1,
+          "t0_peak_frac": 0.9315
         },
         "3": {
           "t0_ms": null,
@@ -72,21 +80,25 @@
       "periods": {
         "1": {
           "t0_ms": -33.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 72101,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 0,
+          "t0_peak_frac": 0.9168
         },
         "2": {
-          "t0_ms": 2699967.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2700007.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 73676,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": -1,
+          "t0_peak_frac": 0.9429
         },
         "3": {
           "t0_ms": null,
@@ -101,22 +113,26 @@
       "n_periods_in_metadata": 2,
       "periods": {
         "1": {
-          "t0_ms": 0.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": -920.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 73101,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 23,
+          "t0_peak_frac": 0.911
         },
         "2": {
-          "t0_ms": 2700000.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2699000.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 73051,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 25,
+          "t0_peak_frac": 0.9101
         },
         "3": {
           "t0_ms": null,
@@ -131,22 +147,26 @@
       "n_periods_in_metadata": 2,
       "periods": {
         "1": {
-          "t0_ms": 0.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 80.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 72676,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": -2,
+          "t0_peak_frac": 0.8977
         },
         "2": {
-          "t0_ms": 2700000.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2699080.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 72751,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 23,
+          "t0_peak_frac": 0.9037
         },
         "3": {
           "t0_ms": null,
@@ -161,22 +181,26 @@
       "n_periods_in_metadata": 2,
       "periods": {
         "1": {
-          "t0_ms": -33.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": -1033.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 70626,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 25,
+          "t0_peak_frac": 0.9214
         },
         "2": {
-          "t0_ms": 2699967.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2700047.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 71225,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": -2,
+          "t0_peak_frac": 0.8644
         },
         "3": {
           "t0_ms": null,
@@ -191,22 +215,26 @@
       "n_periods_in_metadata": 2,
       "periods": {
         "1": {
-          "t0_ms": -33.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": -1033.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 67650,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 25,
+          "t0_peak_frac": 0.9004
         },
         "2": {
-          "t0_ms": 2699967.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2699087.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 70375,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 22,
+          "t0_peak_frac": 0.9315
         },
         "3": {
           "t0_ms": null,
@@ -221,22 +249,26 @@
       "n_periods_in_metadata": 2,
       "periods": {
         "1": {
-          "t0_ms": -33.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": -993.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 69251,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 24,
+          "t0_peak_frac": 0.8794
         },
         "2": {
-          "t0_ms": 2699967.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2699047.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 68025,
           "has_tracks": true,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 250,
-          "y_flip_vs_raw": false
+          "y_flip_vs_raw": false,
+          "t0_event_shift_frames": 23,
+          "t0_peak_frac": 0.8606
         },
         "3": {
           "t0_ms": null,
@@ -251,24 +283,28 @@
       "n_periods_in_metadata": 0,
       "periods": {
         "1": {
-          "t0_ms": 1040.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 40.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 67775,
           "has_tracks": true,
           "n_frames_declared_seq_length": 67800,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 25,
-          "y_flip_vs_raw": true
+          "y_flip_vs_raw": true,
+          "t0_event_shift_frames": 25,
+          "t0_peak_frac": 0.6306
         },
         "2": {
-          "t0_ms": 2701000.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2700080.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 68376,
           "has_tracks": true,
           "n_frames_declared_seq_length": 68401,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 67825,
-          "y_flip_vs_raw": true
+          "y_flip_vs_raw": true,
+          "t0_event_shift_frames": 23,
+          "t0_peak_frac": 0.7302
         },
         "3": {
           "t0_ms": null,
@@ -283,24 +319,28 @@
       "n_periods_in_metadata": 0,
       "periods": {
         "1": {
-          "t0_ms": 1520.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 600.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 67688,
           "has_tracks": true,
           "n_frames_declared_seq_length": 67713,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 25,
-          "y_flip_vs_raw": true
+          "y_flip_vs_raw": true,
+          "t0_event_shift_frames": 23,
+          "t0_peak_frac": 0.9516
         },
         "2": {
-          "t0_ms": 2701000.0,
-          "t0_source": "measured_vs_tracker_box_data",
+          "t0_ms": 2700040.0,
+          "t0_source": "measured_vs_actor_nearest_ball",
           "n_frames": 69351,
           "has_tracks": true,
           "n_frames_declared_seq_length": 69376,
           "t0_residual_m": 0.0,
           "gsr_to_raw_offset": 67738,
-          "y_flip_vs_raw": true
+          "y_flip_vs_raw": true,
+          "t0_event_shift_frames": 24,
+          "t0_peak_frac": 0.9315
         },
         "3": {
           "t0_ms": null,

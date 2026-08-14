@@ -124,6 +124,13 @@ def _velocity(A: np.ndarray, k: int) -> np.ndarray:
     return out
 
 
+BALL_NAMES = ["b_x", "b_y", "b_vx", "b_vy", "b_speed", "b_accel",
+              "b_near_dist", "b_near_is_right", "b_nearL_dist", "b_nearR_dist",
+              "b_n_3m", "b_n_5m", "b_n_10m", "b_dist_cen",
+              "b_dist_goal_left", "b_dist_goal_right", "b_dist_touchline",
+              "b_dist_goalline", "b_outside"]
+
+
 def _names() -> list[str]:
     n = ["cen_x", "cen_y", "cen_vx", "cen_vy", "std_x", "std_y", "hull", "span_x", "span_y"]
     n += ["ct_x", "ct_y", "ct_vx", "ct_vy", "ct_mindist",
@@ -139,8 +146,14 @@ def _names() -> list[str]:
     return n
 
 
+def names_with_ball() -> list[str]:
+    return _names() + BALL_NAMES
+
+
 FEATURE_NAMES = _names()
 N_FEATURES = len(FEATURE_NAMES)
+FEATURE_NAMES_BALL = names_with_ball()
+N_FEATURES_BALL = len(FEATURE_NAMES_BALL)
 
 # Named groups, for the ablation that asks WHICH part of the game state carries an event.
 # "global" is where the 22 players are as a whole; "contest" is the ball proxy; "team" is
@@ -160,6 +173,12 @@ FEATURE_GROUPS: dict[str, tuple[int, ...]] = {
     "occupancy": tuple(i for i, n in enumerate(FEATURE_NAMES) if "grid" in n),
 }
 
+# The ball block, when present, is appended after the 82 player columns.
+FEATURE_GROUPS_BALL: dict[str, tuple[int, ...]] = dict(
+    FEATURE_GROUPS,
+    ball=tuple(range(N_FEATURES, N_FEATURES_BALL)),
+)
+
 
 def group_mask(keep: tuple[str, ...]) -> "np.ndarray":
     """Boolean mask over the 82 columns selecting only the named groups."""
@@ -173,7 +192,71 @@ def group_mask(keep: tuple[str, ...]) -> "np.ndarray":
     return m
 
 
-def build_features(track_npz, stride: int = 5) -> tuple[np.ndarray, np.ndarray]:
+def _ball_block(ball_npz, X, Y, team, rows, stride: int) -> np.ndarray:
+    """Ball-derived columns, in the same reference frame as the released GSR players.
+
+    The ball is NOT in the released GSR annotations; it comes from the provider's raw
+    tracking (scripts/bas/extract_ball.py) and is reported separately as the "with ball"
+    benchmark. ballStatus is deliberately not used: BALLOUT is close to a direct label for
+    the Out class on eight matches and is a constant on the other two.
+
+    On 132831 and 132877 the ball is CLAMPED to the pitch rectangle, so `b_outside` is
+    identically zero there and every off-pitch feature is uninformative. That is a property
+    of those two matches, not of the feature, and it is why the with-ball result has to be
+    read per match.
+    """
+    n_rows = rows.size
+    B = np.full((n_rows, len(BALL_NAMES)), np.nan, np.float32)
+    n_f = X.shape[0]
+    bx = np.full(n_f, np.nan, np.float32)
+    by = np.full(n_f, np.nan, np.float32)
+    fr = ball_npz["frame"]
+    ok = (fr >= 1) & (fr <= n_f)
+    bx[fr[ok] - 1] = ball_npz["x"][ok]
+    by[fr[ok] - 1] = ball_npz["y"][ok]
+
+    # The ball is quantised like the players but moves far faster, so a shorter window is
+    # both usable and necessary to keep a strike sharp.
+    bvx, bvy = _velocity(bx, 3), _velocity(by, 3)
+    bsp = np.hypot(bvx, bvy)
+    bacc = _velocity(bsp, 6)
+
+    left = np.where(team == 0)[0]
+    right = np.where(team == 1)[0]
+    for t, f in enumerate(rows):
+        if np.isnan(bx[f]):
+            continue
+        px, py = float(bx[f]), float(by[f])
+        c = 0
+        B[t, c:c + 2] = (px, py); c += 2
+        B[t, c:c + 2] = (bvx[f], bvy[f]); c += 2
+        B[t, c] = bsp[f]; c += 1
+        B[t, c] = bacc[f]; c += 1
+        xs, ys = X[f], Y[f]
+        d = np.hypot(xs - px, ys - py)
+        finite = ~np.isnan(d)
+        if finite.any():
+            j = int(np.nanargmin(d))
+            B[t, c] = d[j]; c += 1
+            B[t, c] = 1.0 if (team[j] == 1) else 0.0; c += 1
+        else:
+            c += 2
+        for side in (left, right):
+            sd = d[side]
+            B[t, c] = np.nanmin(sd) if np.isfinite(sd).any() else np.nan
+            c += 1
+        B[t, c:c + 3] = ((d < 3).sum(), (d < 5).sum(), (d < 10).sum()); c += 3
+        gx, gy = np.nanmean(xs), np.nanmean(ys)
+        B[t, c] = float(np.hypot(px - gx, py - gy)); c += 1
+        B[t, c] = float(np.hypot(px + PITCH_L / 2, py)); c += 1
+        B[t, c] = float(np.hypot(px - PITCH_L / 2, py)); c += 1
+        B[t, c] = float(PITCH_W / 2 - abs(py)); c += 1
+        B[t, c] = float(PITCH_L / 2 - abs(px)); c += 1
+        B[t, c] = 1.0 if (abs(px) > PITCH_L / 2 or abs(py) > PITCH_W / 2) else 0.0; c += 1
+    return B
+
+
+def build_features(track_npz, stride: int = 5, ball_npz=None) -> tuple[np.ndarray, np.ndarray]:
     """Return (features, frames).
 
     features : (T, N_FEATURES) float32, one row per sampled frame
@@ -187,10 +270,10 @@ def build_features(track_npz, stride: int = 5) -> tuple[np.ndarray, np.ndarray]:
     # handled case and nothing else -- left on, it buries real warnings under 30 of these.
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", r"(Mean|All-NaN) .*", RuntimeWarning)
-        return _build_features(track_npz, stride)
+        return _build_features(track_npz, stride, ball_npz)
 
 
-def _build_features(track_npz, stride: int) -> tuple[np.ndarray, np.ndarray]:
+def _build_features(track_npz, stride: int, ball_npz=None) -> tuple[np.ndarray, np.ndarray]:
     X, Y, team, n_f = _dense_grids(track_npz)
     VXs, VYs = _velocity(X, VEL_SHORT), _velocity(Y, VEL_SHORT)
     VXl, VYl = _velocity(X, VEL_LONG), _velocity(Y, VEL_LONG)
@@ -284,6 +367,10 @@ def _build_features(track_npz, stride: int) -> tuple[np.ndarray, np.ndarray]:
     dt = 2 * stride / FPS
     out[1:-1, iv] = np.clip((ct_hist[2:, 0] - ct_hist[:-2, 0]) / dt, -30, 30)
     out[1:-1, iv + 1] = np.clip((ct_hist[2:, 1] - ct_hist[:-2, 1]) / dt, -30, 30)
+
+    if ball_npz is not None:
+        B = _ball_block(ball_npz, X, Y, team, rows, stride)
+        out = np.concatenate([out, B], axis=1)
 
     np.nan_to_num(out, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
     return out, (rows + 1).astype(np.int32)

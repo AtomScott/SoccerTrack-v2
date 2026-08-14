@@ -46,7 +46,7 @@ would have been docked ~16 macro mAP points for annotations it cannot see, by a 
 amount on each match.
 
 Per Atom's decision the third period is outside the benchmark and outside the headline
-count. **The benchmark is 21,431 events.**
+count. **The benchmark is 21,432 events.**
 
 ## 2. Neither field in the event file determines the period on its own
 
@@ -68,35 +68,57 @@ events. Measured overlap, per match, in the first half's overrun past 45:00: 118
 accepts it only when the resulting frame index lands inside that period's annotated GSR frame
 range — i.e. only when the event actually has input data. That is the property the benchmark
 depends on, and it keeps the 19 prefix-`2` events past 90 minutes that really are
-second-half stoppage while rejecting the 96 that are not.
+second-half stoppage while rejecting the 103 that are not.
 
-## 3. The event-to-track time mapping, measured rather than computed
+## 3. The event clock, and the two clocks I conflated
 
-    frame = 1 + (position - t0_ms) / 40
-    t0_ms = matchTimeStart - (frameStart - 251) * 40
+Two different questions hide in `frame = 1 + (position - t0_ms)/40`:
 
-**GSR GameState frame 1 corresponds to raw tracking frame 251 in every half.** This was
-established by sweeping the alignment against the per-match pitch-plane CSVs under
-`data/interim`, which exist for 117092 and 117093 and were produced by a different pipeline:
+**(a) which GSR frame a raw tracking `frameNumber` denotes.** Answered exactly by
+`scripts/bas/measure_t0.py`, which aligns released GSR player positions against
+`<match>_tracker_box_data.xml`. At the correct alignment the two sources *are the same data*,
+so the residual must be **zero**, not merely small: all 20 halves give exactly 0.0000 m with
+a clean V (0.21–0.29 m one frame either side). Two things only this could find — 132831 and
+132877 number frames from 1 rather than 251, and `n_frames` had been taken from
+`info.seq_length`, which those two overstate by 25.
 
-| candidate mapping | mean abs. error over 110 positions |
+**(b) which GSR frame a BAS `position` denotes.** A *different* quantity, because the events
+are a separate annotation pass. I answered (b) with (a) and it was wrong.
+
+### What (b) actually is: 14 of 20 halves are one second out
+
+`scripts/bas/measure_event_offset.py` asks a question the ball makes possible and that has no
+semantic ambiguity: **is the annotated actor the player nearest the ball?** 99.5% of events
+name their actor, and at a ball event that actor has the ball — whether the annotation marks
+the first touch or the release.
+
+It is sharp (peak 0.86–0.95 against a 0.13–0.25 floor) and it validates: planted shifts of
+−20/+20/+40 frames are recovered exactly. The readings are **strictly bimodal**:
+
+| shift | halves |
 |---|---|
-| frame 1 = the period's first raw frame | 0.1135 m |
-| **one frame later** | **0.0000 m** |
-| two frames later | 0.1325 m |
+| ~0 frames | **6** — 117092/1st, 117093/2nd, 118575/1st, 118575/2nd, 118577/1st, 118578/2nd |
+| ~+25 frames (1.00 s) | **14** — all the rest |
 
-An exact zero over 110 positions, at a 1.05 m coordinate quantisation, is not a coincidence.
-The same check pins the metre scaling and the field-extraction regex at the same time, which
-is why it is the validation mode of `scripts/bas/extract_tracks.py` rather than a one-off.
+Nothing lands in between. A semantic lag would vary continuously; a clean split at exactly
+one second is a bookkeeping slip — and it is **the same 6/14 split the GSR side measured for
+video frame offsets**, so the same per-half slip surfaces in both tasks.
 
-It also explains the null `bbox_pitch` values: the three halves whose `frameStart` is 252
-rather than 251 (117092 1st, 118578 2nd, 128058 2nd) have a leading GameState frame with no
-source row behind it, and those are exactly the halves with a non-zero null-pitch count.
+`t0` was therefore wrong on **18 of 20 halves**: 14 by a full second, 4 by ≤80 ms.
 
-132831 and 132877 declare **no `<period>` elements at all**, so their `t0` falls back to the
-nominal 0 / 2,700,000 ms. Across the eight matches that do declare it, `t0` never departs
-from nominal by more than 33 ms — under one frame — and the check in §4 confirms the fallback
-independently.
+### Three anchors that failed first, and why
+
+- **Throw-in touchline** (§4). Flat across ±2 s, because a thrower stands on the line for
+  seconds either side. It catches a gross error — which is what it was built for — and it
+  passed at z = 13–21 on halves that were a second out.
+- **Ball speed step at a strike.** The estimator validates, but the annotated moment need not
+  be the moment of contact, so it confounds a clock offset with an unknown semantic lag. Its
+  readings were bimodal 0/25 across halves whose `t0` was independently verified.
+- **Ball crossing the pitch boundary at an `Out`.** Peak hit rate only 0.05–0.43, and exactly
+  0.00 for 132831 and 132877 — because their ball is clamped to the pitch (§11).
+
+The lesson is the one the GSR half already paid for, in a new disguise: verifying source A
+against source B does not license assuming source C shares B's clock.
 
 ## 4. Alignment and actor linkage confirmed against a randomised null
 
@@ -105,9 +127,14 @@ be standing on a touchline**, so their |y| should be near 34 m on a 105×68 pitc
 statistic is the fraction of takers with |y| > 32 m, compared against a null of 60
 displacements of 20–120 s in both directions.
 
-**All twenty halves clear their own null, at z = 9.7 to 29.4.** This validates the time
-mapping *and* the event-to-actor linkage in one measurement, including for the two matches
-using the nominal fallback (132831: z = 20.2 / 21.0; 132877: z = 13.3 / 9.7).
+**All twenty halves clear their own null, at z = 9.7 to 29.4**, which confirms the
+event-to-actor linkage and rules out gross misalignment.
+
+**It does not confirm the timing, and §3 is why.** A thrower stands on the line for seconds
+either side of the throw, so this statistic is flat across ±2 s and passed comfortably on the
+fourteen halves that were a full second out. It was built to catch a gross error and it did
+exactly that; treating it as evidence of fine alignment was my mistake, not the test's. The
+sharp instrument is the actor-nearest-ball anchor in §3.
 
 Seven matches score 0.84–1.00 in absolute terms. The three three-period matches score lower
 (117092 0.62/0.67, 132831 0.52/0.68, 132877 0.36/0.75) because **their tracking is
@@ -181,7 +208,7 @@ to that player's track.
 | Free Kick | 150 | 0.70% | 100.0% | 31 |
 | Goal | 44 | 0.21% | 100.0% | **10** |
 | Header | 31 | 0.14% | 93.5% | **5** |
-| **total** | **21,431** | | **99.5%** | **4,373** |
+| **total** | **21,432** | | **99.5%** | **4,373** |
 
 **Header has 5 ground-truth events in the whole test split and Goal has 10.** An AP over 5
 instances takes only a handful of distinct values. A 12-class macro mean gives that noise the
@@ -281,79 +308,72 @@ it means **the number of emitted spots must be reported next to the score**, whi
 
 ## 10. The result on the test split
 
-**Scored once**, on 128057 and 132831, with the configuration (hidden 64, dropout 0.4,
-lr 1e-3, decode floor 0.02, NMS 5 rows, epoch 15) fixed beforehand on the validation
-matches. Ground-truth tracks — this is an upper bound that assumes perfect GSR, not a
-deployable pipeline.
+Scored on 128057 and 132831, **three seeds**, with the configuration fixed on validation
+beforehand (hidden 64, dropout 0.4, lr 1e-3, decode floor 0.02, NMS 5 rows). Ground-truth
+tracks; offline spotter; upper bound assuming perfect GSR.
 
 | | macro mAP@1s | weighted mAP@1s | macro mAP@5s | weighted mAP@5s |
 |---|---|---|---|---|
-| **trajectory model** | **0.3155** | **0.4136** | **0.5203** | **0.7126** |
-| uniform cadence (chance) | 0.0255 | 0.1065 | 0.0945 | 0.4054 |
-| margin over chance | +0.2900 | +0.3071 | +0.4259 | +0.3072 |
+| **with ball** (101 feat) | **0.487** [0.464–0.519] | **0.721** [0.695–0.734] | 0.550 [0.531–0.577] | **0.788** [0.780–0.794] |
+| **no ball** (82 feat) | 0.412 [0.405–0.418] | 0.476 [0.470–0.479] | **0.565** [0.563–0.567] | 0.728 [0.719–0.737] |
+| uniform cadence (chance) | 0.025 | 0.106 | 0.094 | 0.405 |
 
-Per match: 128057 macro mAP@1s 0.3388, 132831 0.3378. The pooled figure (0.3155) is lower
-than either because pooling scores each class on all of its instances at once rather than
-averaging two separate handfuls. 20,291 spots were emitted against 4,373 ground-truth
-events, roughly 4.6 predictions per event.
+Brackets are the range over three seeds. **A support-weighted mAP@5s below 0.405 is worse
+than guessing**, so the chance row is not decoration.
 
-### Per class, against chance
+### What the ball is worth depends entirely on whether it is intact
 
-| class | n | AP@1s | chance | Δ | AP@5s | chance | Δ |
-|---|---|---|---|---|---|---|---|
-| Pass | 1,928 | 0.433 | 0.149 | +0.284 | 0.751 | 0.491 | +0.260 |
-| Drive | 1,704 | 0.427 | 0.102 | +0.325 | 0.756 | 0.470 | +0.286 |
-| High Pass | 226 | 0.412 | 0.004 | +0.408 | 0.578 | 0.067 | +0.511 |
-| Out | 161 | 0.369 | 0.006 | +0.363 | 0.577 | 0.037 | +0.540 |
-| Throw In | 83 | 0.354 | 0.023 | +0.331 | 0.674 | 0.023 | +0.651 |
-| Ball Player Block | 62 | **0.035** | 0.000 | **+0.035** | **0.089** | 0.008 | **+0.081** |
-| Shot | 57 | 0.337 | 0.007 | +0.330 | 0.496 | 0.007 | +0.489 |
-| Cross | 56 | 0.479 | 0.000 | +0.479 | 0.604 | 0.005 | +0.598 |
-| Player Successful Tackle | 50 | **0.072** | 0.011 | **+0.061** | **0.120** | 0.023 | **+0.097** |
-| Free Kick | 31 | 0.276 | 0.003 | +0.273 | 0.577 | 0.003 | +0.573 |
-| Goal † | 10 | 0.399 | 0.000 | +0.399 | 0.788 | 0.000 | +0.788 |
-| Header † | 5 | 0.193 | 0.000 | +0.193 | 0.236 | 0.000 | +0.236 |
+| test match | ball | no ball → with ball, macro mAP@1s |
+|---|---|---|
+| 128057 | intact | 0.472 → **0.769**  (+0.30) |
+| 132831 | **clamped to the pitch** | 0.365 → 0.357  (−0.01) |
 
-† support below 30; these APs take only a few distinct values and are not measurements.
+On the match whose ball is real the ball is worth +0.30 macro mAP@1s and +0.35 weighted. On
+the match whose ball is censored (§11) it is worth nothing, and at the 5 s tolerance it is
+actively **harmful** (0.527 → 0.450) — the model learned to rely on features that behave
+differently there. The pooled figure averages these two regimes and should not be read as
+"what the ball buys".
 
-### Two caveats that belong next to these numbers
+### Per class, AP@1s
 
-**This is an offline spotter, not a real-time one.** The TCN uses centred convolutions, so
-each timestep sees ±25 s of context, and the long-scale velocity feature spans ±0.76 s.
-Both look into the future. That is standard for action spotting — the SoccerNet protocol
-scores a whole match offline — but it means these figures do not describe what a live
-system could do.
+| class | n | chance | no ball | with ball | Δ |
+|---|---|---|---|---|---|
+| Pass | 1,928 | 0.154 | 0.496 | 0.826 | +0.330 |
+| Drive | 1,703 | 0.093 | 0.480 | 0.750 | +0.270 |
+| High Pass | 226 | 0.008 | 0.403 | 0.522 | +0.120 |
+| Out | 161 | 0.006 | 0.411 | 0.465 | +0.054 |
+| Throw In | 83 | 0.023 | 0.461 | 0.527 | +0.065 |
+| Ball Player Block | 62 | 0.000 | **0.046** | **0.107** | +0.061 |
+| Shot | 57 | 0.005 | 0.446 | 0.717 | +0.271 |
+| Cross | 56 | 0.000 | 0.589 | 0.535 | −0.054 |
+| Player Successful Tackle | 50 | 0.011 | **0.168** | **0.099** | −0.070 |
+| Free Kick | 31 | 0.003 | 0.256 | 0.315 | +0.058 |
+| Goal † | 10 | 0.000 | 0.731 | 0.822 | +0.091 |
+| Header † | 5 | 0.000 | 0.450 | 0.545 | +0.095 |
 
-**It assumes perfect tracks.** Every number here is on ground-truth GSR positions. A
-deployable system has to estimate those first and inherits every GSR error, so this is an
-upper bound. The design document's Experiment B calls for both variants and the gap between
-them as the result; only the ground-truth half is done, per Atom's decision to defer the
-predicted-track variant.
+† support below 30; these take only a few distinct values and are not measurements.
 
 ### What the per-class pattern says
 
-**Two classes fail almost completely.** Ball Player Block (AP@1s 0.035) and Player
-Successful Tackle (0.072) are barely above chance at either tolerance. Both are duel
-*outcomes* — who won a contact — and that is a body-level distinction with no signature in
-2 D foot positions quantised to 1.05 m. Two players converging looks the same whether the
-tackle succeeds, the block happens, or neither.
+**Duel outcomes stay unsolved even with the ball.** Ball Player Block (0.107) and Player
+Successful Tackle (0.099) are the two worst classes in both tracks, and the tackle gets
+*worse* when the ball is added. Both are questions about **who won a contact**, and knowing
+where the ball is does not answer that — two players converge on it either way. This is the
+clearest statement in the result of what 2-D tracking cannot represent.
 
-**Out and Shot are detected but not timed.** Out goes 0.369 → 0.577 and Shot 0.337 → 0.496
-between the 1 s and 5 s tolerances, much steeper than Pass (0.433 → 0.751 from a far higher
-base). Both are events defined by *where the ball goes*, not by what a player does: players
-only react afterwards, so the trajectory tells you it happened without pinning when.
+**The ball buys the most where timing is the difficulty.** Pass (+0.33), Drive (+0.27) and
+Shot (+0.27) gain most: the player configuration already says an event is happening, and the
+ball says exactly when. Consistent with that, the ball adds nothing at the 5 s tolerance
+overall (0.565 → 0.550) — at 5 s the configuration alone already suffices.
 
-**Two of the design document's predictions were wrong.** `experiment-design-bas.md` §3
-expected trajectory BAS to "do well on Out, Throw In, Free Kick and Goal ... and poorly on
-Header, Ball Player Block and **Drive**". Ball Player Block and Header were right, but
-Drive is one of the better classes (+0.325 over chance) and Out is the *weakest* of the four
-predicted to be strong at the tight tolerance. Recorded because the prediction was written
-before anything was run, and it was half right.
+### Two caveats that belong next to these numbers
 
-**Per-class figures move a lot between splits**, on two test matches. Throw In is 0.510 on
-validation and 0.354 on test; Out is 0.283 on validation and 0.369 on test. The
-class-level ordering is stable, the individual values are not, and nothing below n≈50
-should be quoted as a point estimate.
+**This is an offline spotter.** Centred convolutions give each timestep ±25 s of context, and
+the long-scale velocity spans ±0.76 s. Both look into the future. Standard for action
+spotting, which is scored offline over a whole match, but it does not describe a live system.
+
+**It assumes perfect tracks.** Every number is on ground-truth GSR positions, so it is an
+upper bound on any system that has to estimate them. The predicted-track variant is deferred.
 
 ## 11. Incidental findings, for whoever needs them
 
@@ -363,10 +383,29 @@ should be quoted as a point estimate.
 - **117092's GSR file declares `height: 1504, width: 3840`** for its images while its video
   is 3840×1906. Those are 132831's dimensions. Not load-bearing for trajectory work, which
   reads only `bbox_pitch`, but it means image-space work on 117092 cannot trust the header.
-- **The interim pitch-plane CSVs contain a ball track**, under `id: "ball"`, for 117092 and
-  117093 only. The released GSR files contain no ball. It is not usable for the benchmark —
-  neither test match has one — but it means ball tracking data exists at source for at least
-  some matches, which bears on the video experiment's crop options.
+- **The ball exists for ALL TEN matches** in `<match>_tracker_box_data.xml`, on every frame,
+  with zero missing values — alongside per-player provider-computed `speed` and a per-frame
+  `ballStatus`. The released GSR annotations contain no ball; the raw tracking does.
+  `scripts/bas/extract_ball.py` puts it in the same reference frame as the released players
+  (y as-is for all ten, measured by which choice puts the ball at somebody's feet: 2.0–2.6 m
+  from the nearest player on eight matches, 2.3–4.1 m on the other two).
+
+- **But the ball is CENSORED on 132831 and 132877**, and one of them is a test match:
+
+  | | eight matches | 132831, 132877 |
+  |---|---|---|
+  | ball x range | ±57.8 m | **±52.5 m exactly** |
+  | ball y range | up to ±38.1 m | **±34.0 m exactly** |
+  | frames with ball off-pitch | 1.3–6.9% | **0.00%** |
+  | `ballStatus` | BALLOUT/HOME/AWAY/NEUTRAL | **constant `INPLAY`** |
+
+  Clamped to the pitch rectangle to the millimetre, so the ball can never show a ball going
+  out. This is measurable in the result: the ball is worth +0.30 macro mAP@1s on 128057 and
+  nothing on 132831 (§10).
+
+- **`ballStatus` must not be used as a feature.** `BALLOUT` is close to a direct label for the
+  `Out` class on eight matches, and is a constant on the two where it would be needed. It is
+  extracted so the leak can be quantified, and excluded from every feature set.
 - **Tracked play totals 1,400,874 frames across the twenty halves** — 934 minutes, or
   30,819,228 player-frames at 22 entities per frame. This is measured over periods 1 and 2
   only, and may help settle the paper's "900 minutes vs 1.62 million frames" contradiction.
@@ -380,7 +419,10 @@ should be quoted as a point estimate.
 ```bash
 python scripts/bas/extract_tracks.py --all --workers 5      # 54 GB streamed, ~2 min
 python scripts/bas/extract_tracks.py --validate            # vs the independent CSVs
-python scripts/bas/audit_annotations.py --write-periods --check-alignment --paper-stats
+python scripts/bas/measure_t0.py --all --write            # period table (t0 measured)
+python scripts/bas/extract_ball.py --all                   # ball, all ten matches
+python scripts/bas/measure_event_offset.py --all --write   # event clock, per half
+python scripts/bas/audit_annotations.py --check-alignment --paper-stats
 python scripts/bas/build_dataset.py --workers 6
 python -m pytest tests/test_bas_map_periods.py tests/test_bas_augment.py -q -s
 ```

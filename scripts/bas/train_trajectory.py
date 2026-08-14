@@ -38,7 +38,8 @@ import torch.nn as nn
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.bas.augment import mirror  # noqa: E402
-from src.bas.features import FEATURE_GROUPS, group_mask  # noqa: E402
+from src.bas.features import (FEATURE_GROUPS_BALL, N_FEATURES,  # noqa: E402
+                              N_FEATURES_BALL, group_mask)
 from src.bas.model import TrajectorySpotter  # noqa: E402
 from src.evaluation.bas_map import ap_tolerant  # noqa: E402
 
@@ -64,8 +65,6 @@ def load_split(ds_dir: Path, matches: list[str],
     a group that turns out not to matter cannot be confused with a smaller model.
     """
     mask = None
-    if keep_groups is not None:
-        mask = group_mask(tuple(keep_groups))
     out = []
     for m in matches:
         for h in (1, 2):
@@ -74,13 +73,28 @@ def load_split(ds_dir: Path, matches: list[str],
                 raise FileNotFoundError(f"{p} -- run scripts/bas/build_dataset.py first")
             d = np.load(p)
             feat = d["feat"]
-            if mask is not None:
+            if keep_groups is not None:
+                if mask is None:
+                    mask = _group_mask_for_width(tuple(keep_groups), feat.shape[1])
                 feat = feat * mask.astype(feat.dtype)
             out.append({"match": m, "half": h, "feat": feat, "target": d["target"],
                         "frames": d["frames"], "stride": int(d["stride"]),
                         "ev_frame": d["ev_frame"], "ev_class": d["ev_class"],
                         "ev_t_ms": d["ev_t_ms"]})
     return out
+
+
+def _group_mask_for_width(keep: tuple[str, ...], width: int) -> np.ndarray:
+    """Group mask sized to the feature matrix actually on disk (82 or 101 columns)."""
+    groups = FEATURE_GROUPS_BALL if width == N_FEATURES_BALL else None
+    if groups is None:
+        return group_mask(keep)
+    m = np.zeros(width, bool)
+    for g in keep:
+        if g not in groups:
+            raise ValueError(f"unknown feature group {g!r}; have {sorted(groups)}")
+        m[list(groups[g])] = True
+    return m
 
 
 def fit_normaliser(halves: list[dict]) -> tuple[np.ndarray, np.ndarray]:
@@ -357,7 +371,7 @@ def main() -> int:
     ap.add_argument("--no-augment", action="store_true",
                     help="disable reflection augmentation (for the ablation)")
     ap.add_argument("--keep-groups", nargs="*", default=None,
-                    help=f"feature-group ablation; any of {sorted(FEATURE_GROUPS)}. "
+                    help=f"feature-group ablation; any of {sorted(FEATURE_GROUPS_BALL)}. "
                          "Omitted groups are zeroed, not removed, so the model shape "
                          "is identical across ablations.")
     ap.add_argument("--sel-floor", type=float, default=0.02,
@@ -379,8 +393,7 @@ def main() -> int:
     print(f"train  {TRAIN}\nval    {VAL}\ntest   {TEST}  (scored once, never tuned on)\n")
     kg = tuple(a.keep_groups) if a.keep_groups else None
     if kg:
-        n_on = int(group_mask(kg).sum())
-        print(f"feature ablation: keeping {list(kg)} -> {n_on}/82 columns active\n")
+        print(f"feature ablation: keeping {list(kg)}\n")
     tr = load_split(ds, TRAIN, kg)
     va = load_split(ds, VAL, kg)
     mu, sd = fit_normaliser(tr)

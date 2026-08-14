@@ -1,0 +1,29 @@
+\begin{table}[t]
+  \centering
+  \caption{Per-class average precision on the SoccerTrack v2 test split, from trajectories alone. $n$ is the number of ground-truth events; rows marked $\dagger$ have $n < 30$, where AP takes only a few distinct values and should not be read as a measurement. Classes are ordered by support.}
+  \label{tab:bas_per_class}
+  \small
+  \begin{tabular}{lrcccc}
+    \toprule
+    & & \multicolumn{2}{c}{trajectory model} & \multicolumn{2}{c}{chance} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Class & $n$ & AP@1s & AP@5s & AP@1s & AP@5s \\
+    \midrule
+    Pass & 1928 & 0.826 & 0.858 & 0.154 & 0.488 \\
+    Drive & 1703 & 0.750 & 0.832 & 0.093 & 0.472 \\
+    High Pass & 226 & 0.522 & 0.559 & 0.008 & 0.068 \\
+    Out & 161 & 0.465 & 0.653 & 0.006 & 0.038 \\
+    Throw In & 83 & 0.527 & 0.594 & 0.023 & 0.023 \\
+    Ball Player Block & 62 & 0.107 & 0.139 & 0.000 & 0.004 \\
+    Shot & 57 & 0.717 & 0.784 & 0.005 & 0.007 \\
+    Cross & 56 & 0.535 & 0.632 & 0.000 & 0.005 \\
+    Player Successful Tackle & 50 & 0.099 & 0.121 & 0.011 & 0.023 \\
+    Free Kick & 31 & 0.315 & 0.374 & 0.003 & 0.003 \\
+    Goal$^\dagger$ & 10 & 0.822 & 0.827 & 0.000 & 0.000 \\
+    Header$^\dagger$ & 5 & 0.545 & 0.551 & 0.000 & 0.000 \\
+    \midrule
+    Macro mean (12 classes) & 4,372 & 0.519 & 0.577 & 0.025 & 0.094 \\
+    Support-weighted mean & 4,372 & 0.734 & 0.794 & 0.106 & 0.405 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
