@@ -242,7 +242,69 @@ protocol places no cap on prediction count, so this is legitimate rather than a 
 it means **the number of emitted spots must be reported next to the score**, which
 `format_report` does. The chosen setting emits roughly 3 spots per ground-truth event.
 
-## 10. Incidental findings, for whoever needs them
+## 10. The result on the test split
+
+**Scored once**, on 128057 and 132831, with the configuration (hidden 64, dropout 0.4,
+lr 1e-3, decode floor 0.02, NMS 5 rows, epoch 15) fixed beforehand on the validation
+matches. Ground-truth tracks — this is an upper bound that assumes perfect GSR, not a
+deployable pipeline.
+
+| | macro mAP@1s | weighted mAP@1s | macro mAP@5s | weighted mAP@5s |
+|---|---|---|---|---|
+| **trajectory model** | **0.3155** | **0.4136** | **0.5203** | **0.7126** |
+| uniform cadence (chance) | 0.0255 | 0.1065 | 0.0945 | 0.4054 |
+| margin over chance | +0.2900 | +0.3071 | +0.4259 | +0.3072 |
+
+Per match: 128057 macro mAP@1s 0.3388, 132831 0.3378. The pooled figure (0.3155) is lower
+than either because pooling scores each class on all of its instances at once rather than
+averaging two separate handfuls. 20,291 spots were emitted against 4,373 ground-truth
+events, roughly 4.6 predictions per event.
+
+### Per class, against chance
+
+| class | n | AP@1s | chance | Δ | AP@5s | chance | Δ |
+|---|---|---|---|---|---|---|---|
+| Pass | 1,928 | 0.433 | 0.149 | +0.284 | 0.751 | 0.491 | +0.260 |
+| Drive | 1,704 | 0.427 | 0.102 | +0.325 | 0.756 | 0.470 | +0.286 |
+| High Pass | 226 | 0.412 | 0.004 | +0.408 | 0.578 | 0.067 | +0.511 |
+| Out | 161 | 0.369 | 0.006 | +0.363 | 0.577 | 0.037 | +0.540 |
+| Throw In | 83 | 0.354 | 0.023 | +0.331 | 0.674 | 0.023 | +0.651 |
+| Ball Player Block | 62 | **0.035** | 0.000 | **+0.035** | **0.089** | 0.008 | **+0.081** |
+| Shot | 57 | 0.337 | 0.007 | +0.330 | 0.496 | 0.007 | +0.489 |
+| Cross | 56 | 0.479 | 0.000 | +0.479 | 0.604 | 0.005 | +0.598 |
+| Player Successful Tackle | 50 | **0.072** | 0.011 | **+0.061** | **0.120** | 0.023 | **+0.097** |
+| Free Kick | 31 | 0.276 | 0.003 | +0.273 | 0.577 | 0.003 | +0.573 |
+| Goal † | 10 | 0.399 | 0.000 | +0.399 | 0.788 | 0.000 | +0.788 |
+| Header † | 5 | 0.193 | 0.000 | +0.193 | 0.236 | 0.000 | +0.236 |
+
+† support below 30; these APs take only a few distinct values and are not measurements.
+
+### What the per-class pattern says
+
+**Two classes fail almost completely.** Ball Player Block (AP@1s 0.035) and Player
+Successful Tackle (0.072) are barely above chance at either tolerance. Both are duel
+*outcomes* — who won a contact — and that is a body-level distinction with no signature in
+2 D foot positions quantised to 1.05 m. Two players converging looks the same whether the
+tackle succeeds, the block happens, or neither.
+
+**Out and Shot are detected but not timed.** Out goes 0.369 → 0.577 and Shot 0.337 → 0.496
+between the 1 s and 5 s tolerances, much steeper than Pass (0.433 → 0.751 from a far higher
+base). Both are events defined by *where the ball goes*, not by what a player does: players
+only react afterwards, so the trajectory tells you it happened without pinning when.
+
+**Two of the design document's predictions were wrong.** `experiment-design-bas.md` §3
+expected trajectory BAS to "do well on Out, Throw In, Free Kick and Goal ... and poorly on
+Header, Ball Player Block and **Drive**". Ball Player Block and Header were right, but
+Drive is one of the better classes (+0.325 over chance) and Out is the *weakest* of the four
+predicted to be strong at the tight tolerance. Recorded because the prediction was written
+before anything was run, and it was half right.
+
+**Per-class figures move a lot between splits**, on two test matches. Throw In is 0.510 on
+validation and 0.354 on test; Out is 0.283 on validation and 0.369 on test. The
+class-level ordering is stable, the individual values are not, and nothing below n≈50
+should be quoted as a point estimate.
+
+## 11. Incidental findings, for whoever needs them
 
 - **The released videos are not all 4096×1080.** 117092 is 3840×1906, 132831 is 3840×1504,
   132877 is 4096×1084, and the remaining seven are 4096×1080. Relevant to any crop strategy
