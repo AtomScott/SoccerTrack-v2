@@ -145,12 +145,18 @@ N_FEATURES = len(FEATURE_NAMES)
 # Named groups, for the ablation that asks WHICH part of the game state carries an event.
 # "global" is where the 22 players are as a whole; "contest" is the ball proxy; "team" is
 # each side's shape and speed; "occupancy" is the coarse configuration.
+#
+# "contest" is defined by PROVENANCE, not by name prefix: it is every column derived from
+# the contest point, which includes `L_ct_dist` and `R_ct_dist` even though those are named
+# per-team. Grouping them with "team" made a "no contest" ablation that still saw each
+# team's distance to the contest point, so the ablation could not have supported the claim
+# it was there to test.
 FEATURE_GROUPS: dict[str, tuple[int, ...]] = {
     "global": tuple(i for i, n in enumerate(FEATURE_NAMES)
-                    if not n.startswith(("ct_", "L_", "R_"))),
-    "contest": tuple(i for i, n in enumerate(FEATURE_NAMES) if n.startswith("ct_")),
+                    if "ct_" not in n and not n.startswith(("L_", "R_"))),
+    "contest": tuple(i for i, n in enumerate(FEATURE_NAMES) if "ct_" in n),
     "team": tuple(i for i, n in enumerate(FEATURE_NAMES)
-                  if n.startswith(("L_", "R_")) and "grid" not in n),
+                  if n.startswith(("L_", "R_")) and "grid" not in n and "ct_" not in n),
     "occupancy": tuple(i for i, n in enumerate(FEATURE_NAMES) if "grid" in n),
 }
 
