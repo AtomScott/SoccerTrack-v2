@@ -147,8 +147,9 @@ $4096\times1080$, $4096\times1084$, $3840\times1906$ and $3840\times1504$.
 \label{subsec:bas_results}
 
 Table~\ref{tab:bas_results} reports tolerant mean average precision on the two held-out
-matches, and Table~\ref{tab:bas_per_class} the per-class breakdown with support. All figures
-are means over three training seeds, with the seed-to-seed range given in brackets, and are
+matches, and Table~\ref{tab:bas_per_class} the per-class breakdown with support. All figures,
+including the per-class rows, are means over three training seeds, with the seed-to-seed
+range given in brackets for the aggregates, and are
 computed on ground-truth player trajectories; the model therefore assumes perfect game-state
 reconstruction and is an upper bound on any system that must estimate the tracks first. The
 spotter is also non-causal, seeing $\pm 25\,\text{s}$ around each prediction, which is standard
@@ -173,26 +174,34 @@ this decomposition rather than in isolation; $128057$ is the honest estimate of 
 information contributes.
 
 The per-class structure is more informative than the aggregate, and it is not uniform. Events
-whose defining feature is a duel outcome remain essentially unpredictable in both conditions:
-\texttt{Ball Player Block} reaches $0.046$ from trajectories and $0.107$ with the ball, and
-\texttt{Player Successful Tackle} reaches $0.168$ and $0.099$ respectively, the latter becoming
-worse when the ball is supplied. Both classes ask which of two converging players won a
-contact, and neither the players' ground positions nor the ball's location distinguishes the
-outcome; this is a property of two-dimensional tracking rather than of the model.
+whose defining feature is a duel outcome remain the two weakest classes in both conditions:
+\texttt{Ball Player Block} reaches $0.067$ from trajectories and $0.136$ with the ball, and
+\texttt{Player Successful Tackle} $0.117$ and $0.104$ respectively, the latter no better when
+the ball is supplied. Both classes ask which of two converging players won a contact, and
+neither the players' ground positions nor the ball's location distinguishes the outcome; this
+is a property of two-dimensional tracking rather than of the model.
 
 Where the ball helps most, it supplies timing rather than detection. \texttt{Pass},
-\texttt{Drive} and \texttt{Shot} gain $0.33$, $0.27$ and $0.27$ respectively at
+\texttt{Drive} and \texttt{Shot} gain $0.31$, $0.26$ and $0.21$ respectively at
 $\tau = 1\,\text{s}$, while at $\tau = 5\,\text{s}$ the ball adds nothing in aggregate
 ($0.565$ against $0.550$). Player configuration is thus already sufficient to indicate that an
 event has occurred within a five-second window, and the ball's contribution is to locate it
-precisely. Consistent with this, \texttt{Out} improves only from $0.411$ to $0.465$ at the
+precisely. Consistent with this, \texttt{Out} improves only from $0.426$ to $0.455$ at the
 tight tolerance: the moment the ball crosses a line is not marked by any player action, and the
 players react only afterwards.
 
-Two classes are reported but should not be interpreted. \texttt{Header} has five ground-truth
-instances in the test split and \texttt{Goal} has ten; average precision over so few instances
-takes only a handful of distinct values, and the apparently strong figures for both
-($0.450$ and $0.731$ from trajectories alone) are not measurements. This is a limitation of
-the split rather than of the method, and it is the reason both means are reported: the
+The ball is not uniformly beneficial. \texttt{Free Kick} falls from $0.308$ to $0.206$ at
+$\tau = 1\,\text{s}$ and from $0.574$ to $0.293$ at $\tau = 5\,\text{s}$, and
+\texttt{High Pass} and \texttt{Throw In} lose ground at the loose tolerance. These are set
+pieces, at which the ball is stationary and therefore uninformative, and they are also the
+classes most affected by the clamped ball track in 132831, where a restart cannot be preceded
+by a recorded ball leaving play. With $n = 31$ for \texttt{Free Kick} the individual figure
+should not be over-read, but the direction is consistent across seeds.
+
+Two classes are reported and should not be interpreted at all. \texttt{Header} has five
+ground-truth instances in the test split and \texttt{Goal} has ten; average precision over so
+few instances takes only a handful of distinct values, and the apparently strong figures for
+both ($0.450$ and $0.740$ from trajectories alone) are not measurements. This is a limitation
+of the split rather than of the method, and it is the reason both means are reported: the
 unweighted mean over twelve classes assigns these two the same weight as \texttt{Pass}, which
 has $1{,}928$ instances.
