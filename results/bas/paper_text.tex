@@ -110,6 +110,36 @@ estimated on the training matches and knows nothing else about the match.
 
 
 % ===========================================================================
+% DATASET AND SPLIT  ->  sections/02_results.tex, before the results
+% ===========================================================================
+
+\paragraph{Dataset and split.}
+The ten matches comprise $1{,}400{,}774$ tracked frames, or $934\,\text{min}$ of play at
+$25\,\text{fps}$, and $30.8$ million player-frames at twenty-two tracked players per frame.
+Table~\ref{tab:bas_dataset} gives the per-match breakdown. We adopt the SoccerTrack Challenge
+2025 split, holding out 128057 and 132831 for test; of the remaining eight matches we reserve
+117093 and 132877 for validation and train on the other six. The validation pair is chosen to
+mirror the composition of the test pair, each containing one two-period and one three-period
+match, so that every hyperparameter, the decoding threshold and the stopping epoch are chosen
+under the same conditions the test split presents. The resulting benchmark contains $21{,}432$
+events, of which $12{,}530$ are used for training, $4{,}530$ for validation and $4{,}372$ for
+test.
+
+Of the $23{,}663$ annotated events, $2{,}231$ fall in a third period that was played but
+neither filmed nor tracked, and are excluded as described above. Actor linkage is high and
+close to uniform across matches: $99.5\%$ of benchmark events name the player who performed
+them, with a per-match range of $98.6$ to $99.9\%$, which is what permits an event to be
+joined to that player's trajectory.
+
+Two per-match limitations bear on the results and are marked in
+Table~\ref{tab:bas_dataset}. The recorded ball track is clamped to the pitch rectangle in
+132831 and 132877, so it never leaves the field of play in either; 132831 is in the test
+split, and the consequence is quantified in Section~\ref{subsec:bas_results}. The panoramic
+video is also not a single format across the release, varying between
+$4096\times1080$, $4096\times1084$, $3840\times1906$ and $3840\times1504$.
+
+
+% ===========================================================================
 % RESULTS  ->  sections/02_results.tex
 % ===========================================================================
 
