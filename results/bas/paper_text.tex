@@ -1,0 +1,168 @@
+% ---------------------------------------------------------------------------
+% Draft prose for the BAS baseline, written 2026-08-14 from the measured results.
+%
+% Two fragments: a Methods subsection (for sections/04_methods.tex) and a Results
+% subsection (for sections/02_results.tex). Every number here is reproducible from
+% scripts/bas/; the supporting measurements are recorded in docs/bas-findings.md.
+%
+% Handed over rather than inserted, per paper/HANDOFF_TO_CODING_AGENT.md. Note that the
+% existing text at 02_results.tex:295 introduces the BAS baseline as "a video backbone
+% extracting clip features across the full-match feed", which does not describe this
+% system and would contradict these tables.
+% ---------------------------------------------------------------------------
+
+
+% ===========================================================================
+% METHODS  ->  sections/04_methods.tex
+% ===========================================================================
+
+\subsection{Trajectory-based ball action spotting}
+\label{subsec:methods_bas_traj}
+
+The ball action spotting baseline predicts, for each of the twelve event classes, a ranked
+list of timestamps at which an event of that class occurs. We report temporal mean average
+precision at a tight tolerance of $\tau = 1\,\text{s}$ and a loose tolerance of
+$\tau = 5\,\text{s}$, following the SoccerNet ball action spotting
+protocol~\cite{giancola2018soccernet,deliege2021soccernet}: a prediction counts as a true
+positive when an as-yet-unmatched ground-truth event of the same class lies within $\tau$ of
+it in the same period. Because the class distribution spans a factor of $301$ between the
+most and least frequent class, we report both the unweighted mean over the twelve classes and
+a mean weighted by class support, and we give the support alongside every per-class figure.
+Average precision is computed over predictions pooled across the test matches rather than
+averaged per match, so that a rare class is scored on all of its instances at once.
+
+\paragraph{Benchmark definition.}
+Three of the ten matches (117092, 132831 and 132877) were played as three periods of
+$45\,\text{min}$ rather than two, and no video or game-state annotation was produced for the
+third period of any of them. The $2{,}231$ events that fall in those periods --- $9.4\%$ of
+the $23{,}663$ annotated events, and $22.8\%$ of the annotations of test match 132831 alone
+--- therefore have no corresponding input of any kind. Scoring against them depresses recall
+by an amount that differs from match to match: a prediction that reproduces every event with
+an observable counterpart scores $0.841$ rather than $1.000$ at $\tau = 1\,\text{s}$, with the
+entire shortfall falling on 132831. We consequently define the benchmark over the two filmed
+periods, comprising $21{,}432$ events, of which $17{,}060$ fall in the eight training and
+validation matches and $4{,}372$ in the two test matches.
+
+Assigning an event to a period requires care. The \texttt{gameTime} field carries a period
+prefix, but that prefix is contradicted by the event's own timestamp for $102$ events, and the
+timestamp alone cannot substitute for it because consecutive periods overlap on the nominal
+match clock --- the first half of 118576 runs to $48{:}29$ while its second half begins at
+$45{:}00$. We therefore treat the prefix as a hypothesis and accept it only when the resulting
+frame index falls inside the annotated frame range of that period, which is precisely the
+condition that the event has input data.
+
+\paragraph{Temporal alignment.}
+The mapping from an event timestamp to a game-state frame is
+$f = 1 + (p - t_0)/40$, where $p$ is the annotated position in milliseconds and $t_0$ is the
+match-clock time of the first annotated frame of that period. We determine $t_0$ by
+measurement rather than from the recording metadata. For each candidate offset we compute the
+fraction of events for which the annotated actor is the player closest to the ball, and take
+the offset that maximises it; this statistic reaches $0.86$ to $0.95$ at its optimum against a
+floor of $0.13$ to $0.25$, and recovers deliberately planted offsets exactly. The measured
+offsets are bimodal: six halves require no correction and fourteen require exactly one second,
+with no intermediate value, which matches the distribution of frame offsets independently
+measured between the annotations and the released video. Deriving $t_0$ from the metadata
+instead misaligns fourteen of the twenty halves by one second and costs $0.12$ mean average
+precision at $\tau = 1\,\text{s}$.
+
+\paragraph{Input representation.}
+The model consumes player positions on the pitch and no pixels. Positions are quantised to
+$1.05\,\text{m}$ in $x$ and $0.68\,\text{m}$ in $y$, so a single-frame finite difference
+carries $26\,\text{m}\,\text{s}^{-1}$ of quantisation noise; velocities are therefore computed
+at two scales, $0.48\,\text{s}$ and $1.52\,\text{s}$, and both are supplied to the model. From
+each frame we derive $82$ features in four groups: the centroid, dispersion and convex hull of
+all $22$ players; a soft minimum over opposing player pairs, which serves as a proxy for the
+location of the ball; per-team centroid, dispersion, hull, speed and defensive and attacking
+lines; and a $6 \times 3$ bilinearly-binned player-density grid per team, which encodes
+configuration without depending on any player ordering. Features are sampled at $5\,\text{Hz}$,
+comfortably finer than the tighter evaluation tolerance.
+
+We report two input conditions. The \emph{trajectory} condition uses the $82$ features above
+and is reproducible from the released game-state annotations alone. The \emph{trajectory and
+ball} condition adds $19$ features derived from the provider's ball track --- position,
+velocity, speed, acceleration, distance to the nearest player of each team, the number of
+players within $3$, $5$ and $10\,\text{m}$, and distances to each goal and to the boundary
+lines. The per-frame \texttt{ballStatus} field is deliberately excluded: its \texttt{BALLOUT}
+value is close to a direct label for the \texttt{Out} class on eight matches, and it is
+constant on the remaining two.
+
+\paragraph{Model, training and decoding.}
+A temporal convolutional network maps the feature sequence to twelve per-frame logits. It
+comprises a pointwise input projection to $64$ channels, six residual blocks with dilations
+$1$ to $32$ giving a receptive field of $\pm 25\,\text{s}$, and a pointwise output projection.
+The twelve outputs are independent sigmoids rather than a softmax over classes, because
+simultaneous events are part of the annotation convention. Targets are Gaussian of standard
+deviation $300\,\text{ms}$ centred on each event, and the loss is binary cross-entropy with
+per-class positive weighting capped at $50$. Training uses random $102\,\text{s}$ crops with
+reflection augmentation in both pitch axes, which is label-preserving because no class is
+handed. Models are selected on validation mean average precision rather than validation loss,
+which the positive weighting renders non-monotone in the reported metric. At inference,
+per-class local maxima above a floor are thinned by within-class non-maximum suppression, and
+each surviving peak is emitted with its height as its confidence. The floor, the suppression
+radius, the model capacity and the number of epochs are all chosen on the two validation
+matches; the two test matches are scored once.
+
+\paragraph{Chance baseline.}
+Because two classes account for $82\%$ of events, and a \texttt{Pass} occurs on average every
+$2.4\,\text{s}$ of tracked play, evenly spaced guesses achieve a non-trivial score. We
+therefore report a uniform-cadence baseline that emits spots at each class's mean rate
+estimated on the training matches and knows nothing else about the match.
+
+
+% ===========================================================================
+% RESULTS  ->  sections/02_results.tex
+% ===========================================================================
+
+\subsection{Ball action spotting from game state alone}
+\label{subsec:bas_results}
+
+Table~\ref{tab:bas_results} reports tolerant mean average precision on the two held-out
+matches, and Table~\ref{tab:bas_per_class} the per-class breakdown with support. All figures
+are means over three training seeds, with the seed-to-seed range given in brackets, and are
+computed on ground-truth player trajectories; the model therefore assumes perfect game-state
+reconstruction and is an upper bound on any system that must estimate the tracks first. The
+spotter is also non-causal, seeing $\pm 25\,\text{s}$ around each prediction, which is standard
+for offline action spotting but does not describe a real-time system.
+
+From player positions alone the model attains $0.412$ mean average precision at
+$\tau = 1\,\text{s}$ and $0.565$ at $\tau = 5\,\text{s}$, against $0.025$ and $0.094$ for the
+uniform-cadence baseline. Adding the ball track raises the tight-tolerance figure to $0.487$
+and the support-weighted figure from $0.476$ to $0.721$. The chance baseline is not a
+formality: its support-weighted score at $\tau = 5\,\text{s}$ is $0.405$, so any weighted
+figure below that value is worse than guessing, and the margin rather than the absolute number
+is the quantity of interest.
+
+The value of the ball track depends entirely on whether it is intact, and the two test matches
+differ in exactly this respect. In 128057 the ball leaves the field of play on $3\%$ of frames,
+as it must; in 132831 the recorded ball position is clamped to the pitch rectangle to the
+millimetre and never leaves it. Adding the ball raises mean average precision at
+$\tau = 1\,\text{s}$ from $0.503$ to $0.775$ on 128057 and from $0.369$ to $0.336$ on 132831,
+and at $\tau = 5\,\text{s}$ it is actively harmful on the latter, falling from $0.539$ to
+$0.433$. The pooled figure averages two incompatible regimes and should be read together with
+this decomposition rather than in isolation; $128057$ is the honest estimate of what ball
+information contributes.
+
+The per-class structure is more informative than the aggregate, and it is not uniform. Events
+whose defining feature is a duel outcome remain essentially unpredictable in both conditions:
+\texttt{Ball Player Block} reaches $0.046$ from trajectories and $0.107$ with the ball, and
+\texttt{Player Successful Tackle} reaches $0.168$ and $0.099$ respectively, the latter becoming
+worse when the ball is supplied. Both classes ask which of two converging players won a
+contact, and neither the players' ground positions nor the ball's location distinguishes the
+outcome; this is a property of two-dimensional tracking rather than of the model.
+
+Where the ball helps most, it supplies timing rather than detection. \texttt{Pass},
+\texttt{Drive} and \texttt{Shot} gain $0.33$, $0.27$ and $0.27$ respectively at
+$\tau = 1\,\text{s}$, while at $\tau = 5\,\text{s}$ the ball adds nothing in aggregate
+($0.565$ against $0.550$). Player configuration is thus already sufficient to indicate that an
+event has occurred within a five-second window, and the ball's contribution is to locate it
+precisely. Consistent with this, \texttt{Out} improves only from $0.411$ to $0.465$ at the
+tight tolerance: the moment the ball crosses a line is not marked by any player action, and the
+players react only afterwards.
+
+Two classes are reported but should not be interpreted. \texttt{Header} has five ground-truth
+instances in the test split and \texttt{Goal} has ten; average precision over so few instances
+takes only a handful of distinct values, and the apparently strong figures for both
+($0.450$ and $0.731$ from trajectories alone) are not measurements. This is a limitation of
+the split rather than of the method, and it is the reason both means are reported: the
+unweighted mean over twelve classes assigns these two the same weight as \texttt{Pass}, which
+has $1{,}928$ instances.
