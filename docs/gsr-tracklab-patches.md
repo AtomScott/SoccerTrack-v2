@@ -77,6 +77,38 @@ Backup: `offline.py.backup-pre-forget-fix`.
 > reached. It is a real defect worth fixing for everything downstream and for 45-minute runs; it is
 > not the cause of that crash. See §4.
 
+### `gsr/sn_gamestate/consistency/optimization.py` — the 2h22m module was O(N²)
+`build_track_evidence` read `for track_id in detections.track_id`. That iterates the column's
+**values** — once per *detection* — not the unique track ids. Each pass then rebuilt
+`detections[detections.track_id == track_id]`, a full-length scan, and walked it with `.iloc`. So
+every tracklet was recomputed once for each detection it contains, and the repeats overwrote each
+other under the same `int(track_id)` key.
+
+This is the module that produced **no output for 2 hours 22 minutes on five minutes of footage**.
+It projects to **25–45 hours on a 45-minute half** — the single largest obstacle to a full-length
+run, larger than all the GPU stages combined.
+
+One grouped pass is exact, because the discarded repeats were identical by construction. Measured
+on the real 30-second tracker state (15,642 detections, 26 tracklets):
+
+| | time | worst field difference |
+|---|---|---|
+| original | 107.798 s | — |
+| rewritten | **0.006 s** | **0.000e+00** (bit-identical) |
+
+**18,920× faster, exactly equal.** `np.std` defaults to `ddof=0` where pandas defaults to `ddof=1`,
+so the rewrite says `ddof=0` explicitly; that one detail is the difference between exact and subtly
+wrong.
+
+`process` had the same shape: a full-length boolean mask per frame, then
+`detections[detections.image_id == frame_id] = new_frame_detections`, which rewrote **every column**
+of the whole frame once per frame. Replaced with `groupby("image_id", sort=True)` — same visit order
+— and a write-back narrowed to `role_detection`, this module's only output column and the only field
+`hill_climbing` mutates (line 68).
+
+Backups: `optimization.py.backup-pre-quadratic-fix`. Reproduce with
+`scratchpad/mem/consistency_check.py`.
+
 ### `gsr/sn_gamestate/gta/refine_tracklets.py` — GTA's tracklet distance was quadratic on the GPU
 `get_distance` returns one scalar: the **mean** pairwise cosine distance between two tracklets'
 features. It computed it by materialising three full `n1 × n2` tensors on the GPU — numerator,
