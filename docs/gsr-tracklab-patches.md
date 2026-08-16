@@ -77,6 +77,42 @@ Backup: `offline.py.backup-pre-forget-fix`.
 > reached. It is a real defect worth fixing for everything downstream and for 45-minute runs; it is
 > not the cause of that crash. See §4.
 
+### `gsr/sn_gamestate/gta/refine_tracklets.py` — GTA's tracklet distance was quadratic on the GPU
+`get_distance` returns one scalar: the **mean** pairwise cosine distance between two tracklets'
+features. It computed it by materialising three full `n1 × n2` tensors on the GPU — numerator,
+denominator and quotient — purely to sum them away. Tracklet length grows with the video, so this
+is quadratic in sequence length:
+
+| length | frames | largest pair matrix | ×3 tensors |
+|---|---|---|---|
+| 5 min | 7,500 | 0.23 GB | 0.68 GB |
+| 10 min | 15,000 | 0.90 GB | 2.70 GB |
+| 15 min | 22,500 | 2.02 GB | 6.08 GB |
+| 45 min | 67,625 | **18.29 GB** | **54.88 GB** |
+
+**The GPU has 16 GB.** A single 45-minute matrix does not fit, and 15 minutes needs 6.08 GB on top
+of the ~7.3 GB the models already hold. This blocks the 15- and 45-minute runs outright, and it is
+GPU memory, so it surfaces as a CUDA OOM rather than a kernel kill.
+
+The mean separates exactly. With unit-normalised features `cos_Dist[i][j] = 1 − a_i · b_j`, so
+
+```
+mean_ij = 1 − (1/n1 Σ_i a_i) · (1/n2 Σ_j b_j)
+```
+
+— one minus the dot product of the two mean normalised feature vectors. **O(n1 + n2)** instead of
+`O(n1 · n2)`, and **exact, not an approximation**: verified against the original implementation to
+float32 rounding (worst difference 5.96 × 10⁻⁸, float32 eps is 1.19 × 10⁻⁷) over tracklet sizes to
+6000 × 6000, with the overlapping-times short circuit still returning 1.0. At 45 minutes:
+**54.88 GB → 0.28 GB, a 198× reduction.**
+
+Backup: `refine_tracklets.py.backup-pre-quadratic-fix`. Reproduce with
+`scratchpad/mem/gta_patch_check.py`.
+
+> Not yet validated end to end: the algebra is exact and unit-checked, but no full pipeline run has
+> yet confirmed identical GS-HOTA before and after. Do that before trusting a headline number from
+> a run that includes it.
+
 ---
 
 ## 3. New modules (added, not patched)
