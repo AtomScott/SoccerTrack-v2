@@ -1,6 +1,6 @@
 \begin{table}[t]
   \centering
-  \caption{Per-match results on the Challenge fold (fold~0 of Table~\ref{tab:bas_cv}), which is the SoccerTrack Challenge 2025 test pair. The ball track is intact in 128057 and clamped to the pitch rectangle in 132831, so the value of the ball differs sharply between them and the pooled row averages two regimes.}
+  \caption{Per-match results on the Challenge fold (fold~0 of Table~\ref{tab:bas_cv}), the SoccerTrack Challenge 2025 test pair. The ball track is intact in 128057 and clamped to the pitch rectangle in 132831, so the value of the ball differs sharply between them and the pooled row averages two regimes.}
   \label{tab:bas_results}
   \small
   \begin{tabular}{llcccc}
@@ -9,15 +9,15 @@
     \cmidrule(lr){3-4}\cmidrule(lr){5-6}
     Input & Match & mAP & mAP$_w$ & mAP & mAP$_w$ \\
     \midrule
-    trajectory & 128057 & 0.451 & 0.511 & 0.576 & 0.747 \\
-     & 132831 & 0.360 & 0.455 & 0.492 & 0.711 \\
-     & Pooled & \textbf{0.391} & \textbf{0.472} & \textbf{0.523} & \textbf{0.721} \\
+    trajectory & 128057 & 0.267 & 0.275 & 0.550 & 0.669 \\
+     & 132831 & 0.191 & 0.176 & 0.437 & 0.632 \\
+     & Pooled & \textbf{0.207} & \textbf{0.202} & \textbf{0.472} & \textbf{0.637} \\
     \midrule
-    trajectory + ball & 128057 & 0.782 & 0.854 & 0.799 & 0.870 \\
-     & 132831 & 0.576 & 0.801 & 0.620 & 0.840 \\
-     & Pooled & \textbf{0.670} & \textbf{0.823} & \textbf{0.699} & \textbf{0.850} \\
+    trajectory + ball & 128057 & 0.734 & 0.829 & 0.785 & 0.852 \\
+     & 132831 & 0.530 & 0.742 & 0.604 & 0.815 \\
+     & Pooled & \textbf{0.617} & \textbf{0.788} & \textbf{0.679} & \textbf{0.826} \\
     \midrule
-    \textit{Uniform cadence} & Pooled & 0.025 & 0.106 & 0.094 & 0.405 \\
+    \textit{Uniform cadence} & Pooled & 0.010 & 0.032 & 0.063 & 0.276 \\
     \bottomrule
   \end{tabular}
 \end{table}

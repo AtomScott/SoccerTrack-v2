@@ -29,24 +29,29 @@ provider ball track).
 
 | | macro mAP@1s | wtd mAP@1s | macro mAP@5s | wtd mAP@5s |
 |---|---|---|---|---|
-| trajectory + ball | **0.662** ± 0.065 | **0.825** ± 0.035 | **0.701** ± 0.041 | **0.857** ± 0.014 |
-| trajectory | 0.417 ± 0.028 | 0.526 ± 0.034 | 0.574 ± 0.048 | 0.754 ± 0.022 |
-| uniform chance | 0.025 | 0.105 | 0.100 | 0.403 |
+| trajectory + ball | **0.599** ± 0.064 | **0.796** ± 0.036 | **0.666** ± 0.045 | **0.825** ± 0.028 |
+| trajectory | 0.222 ± 0.021 | 0.253 ± 0.030 | 0.524 ± 0.047 | 0.673 ± 0.026 |
+| uniform chance | 0.008 | 0.033 | 0.065 | 0.283 |
 
-± is the standard deviation across the five folds. **Report this, not a single split.** The
-across-fold SD is 4.3x (trajectory) and 2.3x (+ball) the across-seed SD, so which matches are
-held out matters several times more than initialisation, and the Challenge pair happens to be
-the weakest of the five folds for the trajectory condition (0.391 against a 0.417 mean).
+± is the standard deviation across the five folds, which is several times the across-seed
+spread — **which matches are held out matters more than initialisation**, so report the
+cross-validated mean rather than a single 8/2 draw.
+
+**The metric is SoccerNet's, verified.** Their tolerance is a half-width (`@1s` means
+±0.5 s), assignment runs from ground truth to the highest-scoring prediction in the window,
+and the PR curve is sampled at 200 fixed thresholds. `tests/test_bas_map_soccernet_parity.py`
+checks all three against a port of their source and requires agreement to 1e-9. An earlier
+version of this package used ±1 s and prediction-first matching, which inflated every figure
+by a factor of two to four.
+
+**The two conditions separate at the tight tolerance, not the loose one.** Tightening τ from
+5 s to 1 s costs the trajectory model 0.302 and the with-ball model 0.067. Player
+configuration nearly suffices to say an event happened within five seconds; the ball says
+when.
 
 `tab_bas_results.tex` gives the per-match breakdown on the Challenge fold, which must
-accompany any with-ball figure: the ball is intact in 128057 (0.451 -> 0.782 macro mAP@1s)
-and clamped in 132831 (0.360 -> 0.576).
-
-**Protocol sensitivity worth knowing.** Holding the test pair fixed and changing only the
-validation pair from {117093, 132877} to {117092, 117093} moves the with-ball figure from
-0.519 to 0.670 -- five times the seed SD -- because 132877 is one of the clamped-ball matches.
-The validation rule is therefore fixed as part of the protocol: each fold validates on the
-next fold's test pair.
+accompany any with-ball figure: the ball is intact in 128057 (0.267 → 0.734 macro mAP@1s) and
+clamped in 132831 (0.191 → 0.530).
 
 ## Three things the prose has to say, and currently does not
 

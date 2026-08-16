@@ -315,21 +315,22 @@ tracks; offline spotter; upper bound assuming perfect GSR.
 
 | | macro mAP@1s | weighted mAP@1s | macro mAP@5s | weighted mAP@5s |
 |---|---|---|---|---|
-| **with ball** (101 feat) | **0.662** ± 0.065 | **0.825** ± 0.035 | **0.701** ± 0.041 | **0.857** ± 0.014 |
-| **no ball** (82 feat) | 0.417 ± 0.028 | 0.526 ± 0.034 | 0.574 ± 0.048 | 0.754 ± 0.022 |
-| uniform cadence (chance) | 0.025 | 0.105 | 0.100 | 0.403 |
+| **with ball** (101 feat) | **0.599** ± 0.064 | **0.796** ± 0.036 | **0.666** ± 0.045 | **0.825** ± 0.028 |
+| **no ball** (82 feat) | 0.222 ± 0.021 | 0.253 ± 0.030 | 0.524 ± 0.047 | 0.673 ± 0.026 |
+| uniform cadence (chance) | 0.008 | 0.033 | 0.065 | 0.283 |
 
-± is the standard deviation across the five cross-match folds, which is **4.3× (trajectory)
-and 2.3× (+ball) the standard deviation across training seeds**. Which matches are held out
-matters several times more than initialisation. The Challenge pair is the weakest of the five
-folds for the trajectory condition, at 0.391 against a mean of 0.417.
+± is the standard deviation across the five cross-match folds.
 
-**The validation pair matters even more than the test pair.** Holding test fixed at the
-Challenge matches and changing only validation from {117093, 132877} to {117092, 117093} moves
-the with-ball figure from 0.519 to **0.670** — five times the seed SD — because 132877 is one
-of the two clamped-ball matches, so a with-ball model tuned on it selects a decode threshold
-suited to censored data. An earlier version of this document reported 0.487 as the with-ball
-headline for exactly that reason; it was a protocol artefact, not a property of the model.
+**These are SoccerNet's numbers, not a lookalike.** An earlier version of this document used
+a ±1 s window and prediction-first matching and reported 0.417 / 0.662; SoccerNet's protocol
+uses a ±0.5 s half-width, ground-truth-first assignment and a 200-threshold PR curve, which is
+two to four times stricter. See §12.
+
+**The correction sharpens the central finding.** Tightening τ from 5 s to 1 s costs the
+trajectory model **0.302** and the with-ball model only **0.067**. Player configuration is
+nearly sufficient to say an event happened within five seconds; the ball's contribution is
+almost entirely to say *when*. At τ = 1 s the ball is worth a factor of **2.7**, against 1.6
+under the over-permissive window.
 
 ### What the ball is worth depends entirely on whether it is intact
 
@@ -385,7 +386,33 @@ spotting, which is scored offline over a whole match, but it does not describe a
 **It assumes perfect tracks.** Every number is on ground-truth GSR positions, so it is an
 upper bound on any system that has to estimate them. The predicted-track variant is deferred.
 
-## 11. Incidental findings, for whoever needs them
+## 11. The metric was not SoccerNet's, and the correction is large
+
+The paper cites the SoccerNet ball action spotting protocol. The evaluator inherited an
+11-point interpolated AP that resembled theirs and was not it. Reading
+`SoccerNet/Evaluation/ActionSpotting.py` turns up three divergences:
+
+| | ours, before | SoccerNet |
+|---|---|---|
+| tolerance | ±τ | **±τ/2** — their condition is `abs(pred-gt) <= delta/2` |
+| assignment | each prediction → nearest unmatched GT | each **GT** → highest-scoring unmatched prediction |
+| PR curve | one point per prediction | **200 fixed thresholds**, `linspace(0,1,200)` |
+
+On random data ours read 0.047 where theirs read 0.013 at τ = 1 s, and 0.212 against 0.068 at
+τ = 5 s — a factor of two to four. `tests/test_bas_map_soccernet_parity.py` vendors a port of
+their three functions and requires agreement to 1e-9; ten random cases across both tolerances
+now match exactly. A second test pins the half-width directly: a prediction 0.40 s from the
+event scores 1.0 and one 0.75 s away scores 0.0 at τ = 1 s.
+
+**Everything was recomputed, and the models retrained**, because the decoder and the stopping
+epoch had been selected against the wrong objective too.
+
+The correction did not merely scale the numbers down. It **sharpened the central finding**,
+because the trajectory-only model loses far more from a tighter window than the with-ball
+model does — 0.302 against 0.067 when τ goes from 5 s to 1 s. Under the over-permissive
+window the ball looked worth a factor of 1.6; under the correct one it is worth 2.7.
+
+## 12. Incidental findings, for whoever needs them
 
 - **The released videos are not all 4096×1080.** 117092 is 3840×1906, 132831 is 3840×1504,
   132877 is 4096×1084, and the remaining seven are 4096×1080. Relevant to any crop strategy

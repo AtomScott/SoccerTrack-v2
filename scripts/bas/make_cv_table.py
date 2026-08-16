@@ -30,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
+RUNS = "outputs/sn"
 FOLDS = {0: ["128057", "132831"], 1: ["117092", "117093"], 2: ["118575", "118576"],
          3: ["118577", "118578"], 4: ["128058", "132877"]}
 TRACKS = [("noball", "trajectory"), ("ball", "trajectory + ball")]
@@ -91,7 +92,7 @@ def per_class_from_folds(out: Path) -> str:
     for key, _ in TRACKS:
         acc = {l: [] for l in BAS_LABELS}
         for f in FOLDS:
-            sc = json.loads((Path(f"outputs/folds/fold{f}_{key}") / "tables" /
+            sc = json.loads((Path(f"{RUNS}/fold{f}_{key}") / "tables" /
                              "scores.json").read_text())["model"]["overall"]
             for l in BAS_LABELS:
                 v = sc[f"perClass@1s"][l]
@@ -105,7 +106,7 @@ def per_class_from_folds(out: Path) -> str:
                     for l in BAS_LABELS}
     ch = {}
     for f in FOLDS:
-        sc = json.loads((Path(f"outputs/folds/fold{f}_noball") / "tables" /
+        sc = json.loads((Path(f"{RUNS}/fold{f}_noball") / "tables" /
                          "scores.json").read_text())["chance"]["overall"]
         for l in BAS_LABELS:
             v = sc["perClass@1s"][l]
