@@ -1,0 +1,33 @@
+\begin{table}[t]
+  \centering
+  \caption{Five-fold cross-match evaluation. Each match appears in the test set exactly once; fold 0 is the SoccerTrack Challenge 2025 pair. Validation for each fold is the following fold's test pair, so no fold tunes on its own test matches. The standard deviation across folds is $4.3\times$ (trajectory) and $2.3\times$ (trajectory {+} ball) the standard deviation across training seeds, so which matches are held out matters several times more than initialisation.}
+  \label{tab:bas_cv}
+  \small
+  \begin{tabular}{llcccc}
+    \toprule
+    & & \multicolumn{2}{c}{$\tau = 1\,$s} & \multicolumn{2}{c}{$\tau = 5\,$s} \\
+    \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+    Input & Test fold & mAP & mAP$_w$ & mAP & mAP$_w$ \\
+    \midrule
+    trajectory & 128057, 132831\,(Challenge) & 0.391 & 0.472 & 0.523 & 0.721 \\
+     & 117092, 117093 & 0.407 & 0.552 & 0.551 & 0.752 \\
+     & 118575, 118576 & 0.447 & 0.525 & 0.652 & 0.784 \\
+     & 118577, 118578 & 0.393 & 0.522 & 0.571 & 0.759 \\
+     & 128058, 132877 & 0.448 & 0.557 & 0.571 & 0.753 \\
+    \cmidrule(lr){2-6}
+    & \textbf{Mean} & \textbf{0.417} & \textbf{0.526} & \textbf{0.574} & \textbf{0.754} \\
+    & SD across folds & 0.028 & 0.034 & 0.048 & 0.022 \\
+    \midrule
+    trajectory + ball & 128057, 132831\,(Challenge) & 0.670 & 0.823 & 0.699 & 0.850 \\
+     & 117092, 117093 & 0.685 & 0.853 & 0.720 & 0.871 \\
+     & 118575, 118576 & 0.715 & 0.850 & 0.739 & 0.869 \\
+     & 118577, 118578 & 0.690 & 0.832 & 0.717 & 0.857 \\
+     & 128058, 132877 & 0.549 & 0.767 & 0.632 & 0.837 \\
+    \cmidrule(lr){2-6}
+    & \textbf{Mean} & \textbf{0.662} & \textbf{0.825} & \textbf{0.701} & \textbf{0.857} \\
+    & SD across folds & 0.065 & 0.035 & 0.041 & 0.014 \\
+    \midrule
+    \textit{Uniform cadence} & Mean & 0.025 & 0.105 & 0.100 & 0.403 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

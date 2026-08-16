@@ -1,29 +1,24 @@
 \begin{table}[t]
   \centering
-  \caption{Per-class average precision on the SoccerTrack v2 test split, means over 3 seeds. $n$ is the number of ground-truth events. Rows marked $\dagger$ have $n < 30$, where average precision takes only a few distinct values and should not be read as a measurement. Classes are ordered by support.}
+  \caption{Per-class average precision at $\tau = 1\,$s, pooled over the five cross-match folds and therefore over all ten matches. $n$ is the number of ground-truth events across the benchmark. Rows marked $\dagger$ have $n < 100$. Classes are ordered by support.}
   \label{tab:bas_per_class}
   \small
-  \begin{tabular}{lrcccccc}
+  \begin{tabular}{lrccc}
     \toprule
-    & & \multicolumn{3}{c}{AP@$1\,$s} & \multicolumn{3}{c}{AP@$5\,$s} \\
-    \cmidrule(lr){3-5}\cmidrule(lr){6-8}
-    Class & $n$ & chance & traj. & {+}ball & chance & traj. & {+}ball \\
+    Class & $n$ & chance & trajectory & {+}ball \\
     \midrule
-    Pass & 1928 & 0.154 & 0.508 & 0.816 & 0.488 & 0.747 & 0.855 \\
-    Drive & 1703 & 0.093 & 0.482 & 0.737 & 0.472 & 0.790 & 0.830 \\
-    High Pass & 226 & 0.008 & 0.400 & 0.459 & 0.068 & 0.564 & 0.490 \\
-    Out & 161 & 0.006 & 0.426 & 0.455 & 0.038 & 0.629 & 0.678 \\
-    Throw In & 83 & 0.023 & 0.461 & 0.580 & 0.023 & 0.694 & 0.621 \\
-    Ball Player Block & 62 & 0.000 & 0.067 & 0.136 & 0.004 & 0.118 & 0.185 \\
-    Shot & 57 & 0.005 & 0.453 & 0.661 & 0.007 & 0.574 & 0.708 \\
-    Cross & 56 & 0.000 & 0.527 & 0.520 & 0.005 & 0.615 & 0.619 \\
-    Player Successful Tackle & 50 & 0.011 & 0.117 & 0.104 & 0.023 & 0.158 & 0.140 \\
-    Free Kick & 31 & 0.003 & 0.308 & 0.206 & 0.003 & 0.574 & 0.293 \\
-    Goal$^\dagger$ & 10 & 0.000 & 0.740 & 0.726 & 0.000 & 0.869 & 0.731 \\
-    Header$^\dagger$ & 5 & 0.000 & 0.450 & 0.448 & 0.000 & 0.452 & 0.456 \\
-    \midrule
-    Mean (12 classes) & 4,372 & 0.025 & 0.412 & 0.487 & 0.094 & 0.565 & 0.550 \\
-    Support-weighted mean & 4,372 & 0.106 & 0.476 & 0.721 & 0.405 & 0.728 & 0.788 \\
+    Pass & 9319 & 0.144 & 0.554 & 0.868 \\
+    Drive & 8255 & 0.106 & 0.541 & 0.845 \\
+    High Pass & 1157 & 0.025 & 0.525 & 0.793 \\
+    Out & 771 & 0.006 & 0.384 & 0.604 \\
+    Cross & 394 & 0.001 & 0.614 & 0.848 \\
+    Throw In & 385 & 0.006 & 0.515 & 0.955 \\
+    Ball Player Block & 353 & 0.001 & 0.117 & 0.240 \\
+    Player Successful Tackle & 307 & 0.002 & 0.088 & 0.196 \\
+    Shot & 266 & 0.003 & 0.516 & 0.801 \\
+    Free Kick & 150 & 0.006 & 0.338 & 0.750 \\
+    Goal$^\dagger$ & 44 & 0.000 & 0.618 & 0.770 \\
+    Header$^\dagger$ & 31 & 0.000 & 0.213 & 0.368 \\
     \bottomrule
   \end{tabular}
 \end{table}

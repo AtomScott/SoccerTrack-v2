@@ -47,14 +47,78 @@ BAS_LABELS = ("Pass", "Drive", "Header", "High Pass", "Out", "Cross", "Throw In"
               "Ball Player Block", "Player Successful Tackle", "Free Kick", "Goal")
 HALF_NAME = {1: "1st", 2: "2nd"}
 
+ALL_MATCHES = ["117092", "117093", "118575", "118576", "118577", "118578",
+               "128057", "128058", "132831", "132877"]
 TEST = ["128057", "132831"]
 VAL = ["117093", "132877"]
 TRAIN = ["117092", "118575", "118576", "118577", "118578", "128058"]
+
+# Fold 0 is the Challenge test pair, so fold 0 reproduces the headline split exactly.
+FOLDS = [["128057", "132831"], ["117092", "117093"], ["118575", "118576"],
+         ["118577", "118578"], ["128058", "132877"]]
+
+
+def resolve_split(mode: str):
+    """(train, val, test) as lists of (match, half) pairs.
+
+    ``cross-match`` is the benchmark: no match appears in both training and test, so the
+    score answers "how does this do on a match it has never seen".
+
+    ``within-match`` trains on one half of every match and tests on the other half of the
+    SAME matches. It is a DIAGNOSTIC, not a benchmark: the two halves share the twenty-two
+    players, both squads' shape and style, the pitch, the camera, the tracking provider's
+    per-match quirks and the weather. The gap between the two modes measures how much of a
+    score is match-specific memorisation rather than generalisation, which is worth knowing
+    for a ten-match dataset -- but a within-match number must never be reported as the
+    benchmark.
+    """
+    if mode == "cross-match":
+        return ([(m, h) for m in TRAIN for h in (1, 2)],
+                [(m, h) for m in VAL for h in (1, 2)],
+                [(m, h) for m in TEST for h in (1, 2)])
+    if mode in ("within-match", "within-match-reversed"):
+        tr_half, te_half = (1, 2) if mode == "within-match" else (2, 1)
+        # Validation has to come from the training half, or it would be test data.
+        val_matches = VAL
+        tr = [(m, tr_half) for m in ALL_MATCHES if m not in val_matches]
+        va = [(m, tr_half) for m in val_matches]
+        te = [(m, te_half) for m in ALL_MATCHES]
+        return tr, va, te
+    if mode.startswith("fold"):
+        # Five-fold CROSS-MATCH cross-validation. Every match is in test exactly once, so
+        # the benchmark rests on ten matches of evaluation rather than two, and the spread
+        # across folds says how much a single 8/2 draw can mislead. Fold 0 is deliberately
+        # the SoccerTrack Challenge 2025 pair, so its number is directly comparable with the
+        # headline. Validation for each fold is the NEXT fold's test pair, which is an
+        # arbitrary but fixed rule -- the point is that it never touches that fold's test.
+        k = int(mode[4:])
+        if not 0 <= k < len(FOLDS):
+            raise ValueError(f"fold must be 0..{len(FOLDS)-1}")
+        te_m = FOLDS[k]
+        va_m = FOLDS[(k + 1) % len(FOLDS)]
+        tr_m = [m for m in ALL_MATCHES if m not in te_m and m not in va_m]
+        return ([(m, h) for m in tr_m for h in (1, 2)],
+                [(m, h) for m in va_m for h in (1, 2)],
+                [(m, h) for m in te_m for h in (1, 2)])
+    raise ValueError(f"unknown split mode {mode!r}")
 
 
 # ---------------------------------------------------------------------------
 # Data
 # ---------------------------------------------------------------------------
+
+def load_pairs(ds_dir: Path, pairs, keep_groups=None) -> list[dict]:
+    """Load an explicit list of (match, half) pairs."""
+    by_match: dict[str, list[int]] = {}
+    for m, h in pairs:
+        by_match.setdefault(m, []).append(h)
+    out = []
+    for m, halves in by_match.items():
+        for d in load_split(ds_dir, [m], keep_groups):
+            if d["half"] in halves:
+                out.append(d)
+    return out
+
 
 def load_split(ds_dir: Path, matches: list[str],
                keep_groups: tuple[str, ...] | None = None) -> list[dict]:
@@ -377,6 +441,10 @@ def main() -> int:
     ap.add_argument("--sel-floor", type=float, default=0.02,
                     help="provisional decode floor used for per-epoch model selection")
     ap.add_argument("--sel-nms", type=int, default=5)
+    ap.add_argument("--split", default="cross-match",
+                    choices=["cross-match", "within-match", "within-match-reversed",
+                             "fold0", "fold1", "fold2", "fold3", "fold4"],
+                    help="cross-match is the benchmark; within-match is a leakage diagnostic")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=12)
     ap.add_argument("--ckpt", default=None)
@@ -390,12 +458,23 @@ def main() -> int:
     out_root = Path(a.out)
     out_root.mkdir(parents=True, exist_ok=True)
 
-    print(f"train  {TRAIN}\nval    {VAL}\ntest   {TEST}  (scored once, never tuned on)\n")
     kg = tuple(a.keep_groups) if a.keep_groups else None
     if kg:
-        print(f"feature ablation: keeping {list(kg)}\n")
-    tr = load_split(ds, TRAIN, kg)
-    va = load_split(ds, VAL, kg)
+        print(f"feature ablation: keeping {list(kg)}")
+    tr_p, va_p, te_p = resolve_split(a.split)
+
+    def _fmt(ps):
+        return ", ".join(f"{m}/{HALF_NAME[h]}" for m, h in ps)
+
+    print(f"split mode: {a.split}")
+    print(f"  train {len(tr_p):2} halves: {_fmt(tr_p)}")
+    print(f"  val   {len(va_p):2} halves: {_fmt(va_p)}")
+    print(f"  test  {len(te_p):2} halves: {_fmt(te_p)}")
+    if a.split != "cross-match":
+        print("  NOTE: within-match is a leakage diagnostic, not a benchmark result.")
+    print()
+    tr = load_pairs(ds, tr_p, kg)
+    va = load_pairs(ds, va_p, kg)
     mu, sd = fit_normaliser(tr)
 
     if a.eval_only:
@@ -416,10 +495,11 @@ def main() -> int:
         print(f"  wrote {out_root/'spotter.pt'}")
 
     print("\nwriting predictions")
-    for name, matches in (("val", VAL), ("test", TEST)):
+    for name, pairs in (("val", va_p), ("test", te_p)):
         root = out_root / f"pred_{name}"
-        for m in matches:
-            halves = load_split(ds, [m], kg)
+        for m in sorted({mm for mm, _ in pairs}):
+            want = {h for mm, h in pairs if mm == m}
+            halves = [d for d in load_split(ds, [m], kg) if d["half"] in want]
             spots = {}
             for h in halves:
                 t0 = periods[m]["periods"][str(h["half"])]["t0_ms"]

@@ -99,8 +99,26 @@ handed. Models are selected on validation mean average precision rather than val
 which the positive weighting renders non-monotone in the reported metric. At inference,
 per-class local maxima above a floor are thinned by within-class non-maximum suppression, and
 each surviving peak is emitted with its height as its confidence. The floor, the suppression
-radius, the model capacity and the number of epochs are all chosen on the two validation
-matches; the two test matches are scored once.
+radius, the model capacity and the number of epochs are chosen on the validation matches of
+the fold being evaluated, never on its test matches.
+
+\paragraph{Split.}
+We evaluate with five-fold cross-match cross-validation. Each fold holds out two matches for
+test and two for validation, every match appears in the test set exactly once, and fold~0 is
+the SoccerTrack Challenge 2025 pair so that it remains directly comparable with the
+leaderboard. Validation for each fold is the following fold's test pair; the rule is arbitrary
+but fixed, and no fold tunes on its own test matches. One consequence is that fold~4 validates
+on the Challenge pair, so the cross-validated mean is not fully independent of the Challenge
+fold --- a standard property of $k$-fold that we state rather than conceal.
+
+We deliberately do not split within matches. The two halves of a match share the same
+twenty-two players, both squads' shape, the pitch, the camera and the weather, and --- more
+consequentially for this release --- every per-match data property, including the y-axis
+convention, the ball clamping and the temporal offset described above. A within-match split
+would place all of those on both sides of the partition and so conceal exactly the variation
+that a held-out match exposes. We note that a fully team-disjoint split is not achievable with
+these ten fixtures: 筑波大学-B appears in four matches and 筑波大学-C1 in three, so some folds
+share a team between training and test.
 
 \paragraph{Chance baseline.}
 Because two classes account for $82\%$ of events, and a \texttt{Pass} occurs on average every
@@ -146,62 +164,65 @@ $4096\times1080$, $4096\times1084$, $3840\times1906$ and $3840\times1504$.
 \subsection{Ball action spotting from game state alone}
 \label{subsec:bas_results}
 
-Table~\ref{tab:bas_results} reports tolerant mean average precision on the two held-out
-matches, and Table~\ref{tab:bas_per_class} the per-class breakdown with support. All figures,
-including the per-class rows, are means over three training seeds, with the seed-to-seed
-range given in brackets for the aggregates, and are
-computed on ground-truth player trajectories; the model therefore assumes perfect game-state
-reconstruction and is an upper bound on any system that must estimate the tracks first. The
-spotter is also non-causal, seeing $\pm 25\,\text{s}$ around each prediction, which is standard
-for offline action spotting but does not describe a real-time system.
+Table~\ref{tab:bas_cv} reports the five-fold cross-match evaluation and
+Table~\ref{tab:bas_per_class} the per-class breakdown pooled over all ten matches. All
+figures are computed on ground-truth player trajectories, so the model assumes perfect
+game-state reconstruction and is an upper bound on any system that must estimate the tracks
+first. The spotter is also non-causal, seeing $\pm 25\,\text{s}$ around each prediction, which
+is standard for offline action spotting but does not describe a real-time system.
 
-From player positions alone the model attains $0.412$ mean average precision at
-$\tau = 1\,\text{s}$ and $0.565$ at $\tau = 5\,\text{s}$, against $0.025$ and $0.094$ for the
-uniform-cadence baseline. Adding the ball track raises the tight-tolerance figure to $0.487$
-and the support-weighted figure from $0.476$ to $0.721$. The chance baseline is not a
-formality: its support-weighted score at $\tau = 5\,\text{s}$ is $0.405$, so any weighted
-figure below that value is worse than guessing, and the margin rather than the absolute number
-is the quantity of interest.
+From player positions alone the model attains a cross-validated $0.417 \pm 0.028$ mean average
+precision at $\tau = 1\,\text{s}$ and $0.574 \pm 0.048$ at $\tau = 5\,\text{s}$, against
+$0.025$ and $0.100$ for the uniform-cadence baseline. Adding the ball track raises these to
+$0.662 \pm 0.065$ and $0.701 \pm 0.041$. The chance baseline is not a formality: its
+support-weighted score at $\tau = 5\,\text{s}$ is $0.403$, so any weighted figure below that
+is worse than guessing, and the margin rather than the absolute value is the quantity of
+interest.
 
-The value of the ball track depends entirely on whether it is intact, and the two test matches
-differ in exactly this respect. In 128057 the ball leaves the field of play on $3\%$ of frames,
-as it must; in 132831 the recorded ball position is clamped to the pitch rectangle to the
-millimetre and never leaves it. Adding the ball raises mean average precision at
-$\tau = 1\,\text{s}$ from $0.503$ to $0.775$ on 128057 and from $0.369$ to $0.336$ on 132831,
-and at $\tau = 5\,\text{s}$ it is actively harmful on the latter, falling from $0.539$ to
-$0.433$. The pooled figure averages two incompatible regimes and should be read together with
-this decomposition rather than in isolation; $128057$ is the honest estimate of what ball
-information contributes.
+\paragraph{Why we cross-validate rather than report a single split.}
+With ten matches, which pair is held out matters more than any modelling choice we make. The
+standard deviation across the five folds is $0.028$ (trajectory) and $0.065$ (trajectory and
+ball) at $\tau = 1\,\text{s}$, against $0.006$ and $0.028$ across three training seeds on a
+fixed split --- a factor of $4.3$ and $2.3$ respectively. The Challenge fold is the weakest of
+the five for the trajectory condition ($0.391$ against a mean of $0.417$). A single $8/2$ draw
+reported without this context invites a fold effect to be read as a method effect.
 
-The per-class structure is more informative than the aggregate, and it is not uniform. Events
-whose defining feature is a duel outcome remain the two weakest classes in both conditions:
-\texttt{Ball Player Block} reaches $0.067$ from trajectories and $0.136$ with the ball, and
-\texttt{Player Successful Tackle} $0.117$ and $0.104$ respectively, the latter no better when
-the ball is supplied. Both classes ask which of two converging players won a contact, and
-neither the players' ground positions nor the ball's location distinguishes the outcome; this
-is a property of two-dimensional tracking rather than of the model.
+The choice of \emph{validation} matches is equally consequential and less obvious. Holding the
+test pair fixed at the Challenge matches and changing only the validation pair from
+$\{117093, 132877\}$ to $\{117092, 117093\}$ moves the with-ball figure from $0.519$ to
+$0.670$, five times the seed standard deviation. The cause is identifiable: 132877 is one of
+the two matches whose recorded ball is clamped to the pitch rectangle, so a with-ball model
+tuned on it selects a decoding threshold suited to censored ball data. We therefore fix the
+validation rule as part of the protocol --- each fold validates on the following fold's test
+pair --- and report the cross-validated mean rather than any single configuration.
 
-Where the ball helps most, it supplies timing rather than detection. \texttt{Pass},
-\texttt{Drive} and \texttt{Shot} gain $0.31$, $0.26$ and $0.21$ respectively at
-$\tau = 1\,\text{s}$, while at $\tau = 5\,\text{s}$ the ball adds nothing in aggregate
-($0.565$ against $0.550$). Player configuration is thus already sufficient to indicate that an
-event has occurred within a five-second window, and the ball's contribution is to locate it
-precisely. Consistent with this, \texttt{Out} improves only from $0.426$ to $0.455$ at the
-tight tolerance: the moment the ball crosses a line is not marked by any player action, and the
-players react only afterwards.
+\paragraph{Per-class structure.}
+The aggregate hides the finding. Events defined by a duel outcome remain the two weakest
+classes in both conditions: \texttt{Ball Player Block} reaches $0.117$ from trajectories and
+$0.240$ with the ball, and \texttt{Player Successful Tackle} $0.088$ and $0.196$, against
+$0.554$ and $0.868$ for \texttt{Pass}. Both ask which of two converging players won a contact,
+and neither the players' ground positions nor the ball's location distinguishes the outcome.
+This is a property of two-dimensional tracking rather than of the model, and it is the clearest
+statement in these results of what the modality cannot represent.
 
-The ball is not uniformly beneficial. \texttt{Free Kick} falls from $0.308$ to $0.206$ at
-$\tau = 1\,\text{s}$ and from $0.574$ to $0.293$ at $\tau = 5\,\text{s}$, and
-\texttt{High Pass} and \texttt{Throw In} lose ground at the loose tolerance. These are set
-pieces, at which the ball is stationary and therefore uninformative, and they are also the
-classes most affected by the clamped ball track in 132831, where a restart cannot be preceded
-by a recorded ball leaving play. With $n = 31$ for \texttt{Free Kick} the individual figure
-should not be over-read, but the direction is consistent across seeds.
+The ball helps everywhere, but most where the event is defined by the ball itself rather than
+by the players. \texttt{Throw In} gains $0.44$ and \texttt{Free Kick} $0.41$ --- restarts, at
+which the ball's position and stillness are decisive and the players' configuration is
+ambiguous --- while \texttt{Pass} and \texttt{Drive}, which the player configuration already
+signals, gain $0.31$ and $0.30$ from a much higher base. \texttt{Out} remains comparatively
+weak at $0.604$ even with the ball, which is consistent with two of the ten matches recording
+a ball that never leaves the field of play.
 
-Two classes are reported and should not be interpreted at all. \texttt{Header} has five
-ground-truth instances in the test split and \texttt{Goal} has ten; average precision over so
-few instances takes only a handful of distinct values, and the apparently strong figures for
-both ($0.450$ and $0.740$ from trajectories alone) are not measurements. This is a limitation
-of the split rather than of the method, and it is the reason both means are reported: the
-unweighted mean over twelve classes assigns these two the same weight as \texttt{Pass}, which
-has $1{,}928$ instances.
+\texttt{Header} ($n = 31$) and \texttt{Goal} ($n = 44$) are reported for completeness. Even
+pooled over all ten matches their support is small enough that the figures should be read as
+indicative rather than measured, and this is why both an unweighted and a support-weighted
+mean are given: the unweighted mean assigns \texttt{Header} the same weight as \texttt{Pass},
+which has $9{,}319$ instances.
+
+\paragraph{A caveat that the per-match table makes visible.}
+The value of the ball track depends on whether it is intact. In 128057 the ball leaves the
+field of play on $3\%$ of frames, as it must; in 132831 and 132877 the recorded position is
+clamped to the pitch rectangle and never does. On the Challenge fold, adding the ball raises
+mean average precision at $\tau = 1\,\text{s}$ from $0.503$ to $0.775$ on 128057 and lowers it
+from $0.369$ to $0.336$ on 132831. Any with-ball figure that pools a clean and a censored
+match should be read with that decomposition rather than in isolation.
