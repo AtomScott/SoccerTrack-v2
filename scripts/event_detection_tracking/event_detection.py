@@ -39,7 +39,12 @@ def main():
         tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_filtered_pitch_plane_coordinates.csv'
         output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_event_tracking.mp4'
         output_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{num_class}_class_events_detection.json'
-        output_ball_dis_path = "data/interim/pitch_plane_coordinates/117093/117093_all_players_distance_to_ball.csv"
+        # FIX (2026-08-14): this path was HARDCODED to match 117093 while every other
+        # output path is per-match. The ball-to-player distance table is the input to all
+        # possession detection, and it is cached, so the second and every later match in a
+        # run silently reloaded the FIRST match's distances. Symptom: matches processed
+        # after the first emitted 0-17 predictions instead of ~2,200. Made per-match.
+        output_ball_dis_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_all_players_distance_to_ball.csv'
         output_ball_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_ball_player.json'
         output_possession_group_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_possession_group.json'
         output_player_to_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_player_to_player.json'
