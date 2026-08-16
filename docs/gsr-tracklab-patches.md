@@ -180,6 +180,43 @@ repeated.
 
 ---
 
+### `tracklab/engine/offline.py` — the OOM was glibc, not the pipeline
+A 10-minute run was OOM-killed 61% through PRTReID with **35.5 GB on the parent's heap** while the
+detections frame held **0.23 GB**. The resident memory was ~99% not live.
+
+The elimination took five refuted hypotheses and is worth recording, because every isolated part
+of the pipeline is innocent:
+
+| configuration | detections | growth |
+|---|---|---|
+| 2 min, full 3 modules | 66k | 0.067 GB/100 batches |
+| 5 min, reid replayed alone | 165k | 0.075 |
+| 10 min, reid replayed alone | 301k | 0.067 |
+| 10 min, `[bbox_detector, reid]` | 301k | 0.059 |
+| **10 min, full pipeline** | **301k** | **1.97** |
+
+Detection count is flat across a 4.5× range, so **N is not the driver**. What differs is only how
+much *other work* has happened in the same process first. glibc keeps freed chunks in its
+per-thread arenas rather than returning them, and a process that has cycled many modules through
+many threads accumulates arenas whose free space no other thread can reuse.
+
+`malloc_trim(0)` every 100 batches fixes it, and proves the diagnosis at the same time: it can
+only return memory that is **already free**, so if the pipeline had really held 35 GB live it
+would have returned nothing and the run would have died exactly as before. Instead:
+
+- **PRTReID peaked at 16.34 GB**, against 41.66 GB and climbing to a projected 87 GB before
+- **58.2 GB reclaimed** across 69 trim events
+- parent RSS steady at ~5 GB, and the full 14-module run **completed**
+
+Enable with `TRACKLAB_MALLOC_TRIM=100`. The same function also carries `TRACKLAB_LOG_FRAME_COST=1`
+for per-column bytes-per-detection, which is how the frame was ruled out.
+
+> **Do not use tracemalloc to measure this.** It stores a 12-frame traceback per allocation and
+> was itself responsible for ~10 GB in one measurement here — an earlier "found it" was the probe,
+> not the pipeline. Sample RSS/PSS externally instead.
+
+---
+
 ## 4. Known memory behaviour
 
 - **Orphaned dataloader workers.** When the parent is OOM-killed, its `pt_data_worker` children are
