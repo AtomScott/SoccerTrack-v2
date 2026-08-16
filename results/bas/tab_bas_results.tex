@@ -1,6 +1,6 @@
 \begin{table}[t]
   \centering
-  \caption{Ball action spotting on the SoccerTrack v2 test split, from ground-truth player trajectories. $\text{mAP}$ is the unweighted mean over the twelve classes and $\text{mAP}_w$ weights each class by its support. Figures are means over 3 training seeds. The uniform-cadence row emits spots at each class's mean training-set rate and knows nothing else about the match. The ball track is intact in 128057 and clamped to the pitch rectangle in 132831, so the pooled ball figure averages two different regimes.}
+  \caption{Per-match results on the Challenge fold (fold~0 of Table~\ref{tab:bas_cv}), which is the SoccerTrack Challenge 2025 test pair. The ball track is intact in 128057 and clamped to the pitch rectangle in 132831, so the value of the ball differs sharply between them and the pooled row averages two regimes.}
   \label{tab:bas_results}
   \small
   \begin{tabular}{llcccc}
@@ -9,13 +9,13 @@
     \cmidrule(lr){3-4}\cmidrule(lr){5-6}
     Input & Match & mAP & mAP$_w$ & mAP & mAP$_w$ \\
     \midrule
-    trajectory & 128057 & 0.503 & 0.516 & 0.642 & 0.749 \\
-     & 132831 & 0.369 & 0.456 & 0.539 & 0.722 \\
-     & Pooled & \textbf{0.412} & \textbf{0.476} & \textbf{0.565} & \textbf{0.728} \\
+    trajectory & 128057 & 0.451 & 0.511 & 0.576 & 0.747 \\
+     & 132831 & 0.360 & 0.455 & 0.492 & 0.711 \\
+     & Pooled & \textbf{0.391} & \textbf{0.472} & \textbf{0.523} & \textbf{0.721} \\
     \midrule
-    trajectory + ball & 128057 & 0.775 & 0.854 & 0.798 & 0.873 \\
-     & 132831 & 0.336 & 0.621 & 0.433 & 0.752 \\
-     & Pooled & \textbf{0.487} & \textbf{0.721} & \textbf{0.550} & \textbf{0.788} \\
+    trajectory + ball & 128057 & 0.782 & 0.854 & 0.799 & 0.870 \\
+     & 132831 & 0.576 & 0.801 & 0.620 & 0.840 \\
+     & Pooled & \textbf{0.670} & \textbf{0.823} & \textbf{0.699} & \textbf{0.850} \\
     \midrule
     \textit{Uniform cadence} & Pooled & 0.025 & 0.106 & 0.094 & 0.405 \\
     \bottomrule

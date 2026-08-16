@@ -4,44 +4,49 @@ Generated artefacts, committed so the numbers are reviewable in the diff rather 
 in someone's `outputs/`. Regenerate with:
 
 ```bash
-python scripts/bas/make_tables.py \
-    --pred outputs/bas_final/pred_test \
-    --baseline outputs/bas/pred_uniform \
-    --matches 128057 132831 --out-dir results/bas
+bash /tmp/folds.sh                          # five folds x two conditions
+python scripts/bas/make_cv_table.py         # tab_bas_cv.tex + tab_bas_per_class.tex
+python scripts/bas/make_dataset_table.py    # tab_bas_dataset.tex
 ```
 
 Two tracks, per Atom's decision to ship the ball and report both:
 
-| directory | features | what it is |
-|---|---|---|
-| `noball/` | 82 | player positions only — reproducible from the released GSR alone |
-| `ball/` | 101 | adds the provider ball track (position, velocity, speed, crowding, distances) |
+| file | what it is |
+|---|---|
+| `tab_bas_dataset.tex` | the ten matches, the split, annotated vs benchmark event counts |
+| `tab_bas_cv.tex` | **the headline** — five-fold cross-match results, both input conditions |
+| `tab_bas_per_class.tex` | per-class AP pooled over all five folds, i.e. all ten matches |
+| `tab_bas_results.tex` | per-match breakdown on the Challenge fold |
+| `paper_text.tex` | draft Methods and Results prose |
+| `folds.json` | every fold's full scored output |
 
-Each holds `tab_bas_results.tex`, `tab_bas_per_class.tex` and `scores.json`. The `.tex` files
-replace the corresponding table environments in `paper/sections/02_results.tex`.
+`noball/` and `ball/` hold the superseded single-split runs, kept only for the protocol
+sensitivity comparison above. Two input conditions throughout: **trajectory** (82 features,
+reproducible from the released GSR alone) and **trajectory + ball** (101 features, adding the
+provider ball track).
 
-## Headline, test split, three seeds
+## Headline: five-fold cross-match cross-validation
 
 | | macro mAP@1s | wtd mAP@1s | macro mAP@5s | wtd mAP@5s |
 |---|---|---|---|---|
-| with ball | **0.487** | **0.721** | 0.550 | **0.788** |
-| no ball | 0.412 | 0.476 | **0.565** | 0.728 |
-| uniform chance | 0.025 | 0.106 | 0.094 | 0.405 |
+| trajectory + ball | **0.662** ± 0.065 | **0.825** ± 0.035 | **0.701** ± 0.041 | **0.857** ± 0.014 |
+| trajectory | 0.417 ± 0.028 | 0.526 ± 0.034 | 0.574 ± 0.048 | 0.754 ± 0.022 |
+| uniform chance | 0.025 | 0.105 | 0.100 | 0.403 |
 
-**The with-ball number must not be quoted without the per-match split.** The ball is censored
-on 132831 (clamped to the pitch rectangle, no `ballStatus`) and intact on 128057:
+± is the standard deviation across the five folds. **Report this, not a single split.** The
+across-fold SD is 4.3x (trajectory) and 2.3x (+ball) the across-seed SD, so which matches are
+held out matters several times more than initialisation, and the Challenge pair happens to be
+the weakest of the five folds for the trajectory condition (0.391 against a 0.417 mean).
 
-| test match | ball | no ball → with ball, macro mAP@1s |
-|---|---|---|
-| 128057 | intact | 0.472 → **0.769** |
-| 132831 | clamped | 0.365 → 0.357 |
+`tab_bas_results.tex` gives the per-match breakdown on the Challenge fold, which must
+accompany any with-ball figure: the ball is intact in 128057 (0.451 -> 0.782 macro mAP@1s)
+and clamped in 132831 (0.360 -> 0.576).
 
-So the ball is worth +0.30 where it is real and nothing where it is censored. Pooling the two
-averages incompatible regimes.
-
-**The manuscript is deliberately not edited here.** `paper/HANDOFF_TO_CODING_AGENT.md` says
-"Don't change the paper" and "Leave alone: the paper's prose. Report findings; the paper
-agent writes them." Confirmed with Atom on 2026-08-14.
+**Protocol sensitivity worth knowing.** Holding the test pair fixed and changing only the
+validation pair from {117093, 132877} to {117092, 117093} moves the with-ball figure from
+0.519 to 0.670 -- five times the seed SD -- because 132877 is one of the clamped-ball matches.
+The validation rule is therefore fixed as part of the protocol: each fold validates on the
+next fold's test pair.
 
 ## Three things the prose has to say, and currently does not
 
@@ -54,7 +59,7 @@ agent writes them." Confirmed with Atom on 2026-08-14.
    0.405 is what a fixed-cadence guess achieves on this test split, because Pass occurs every
    2.4 s and Drive every 2.7 s. The `tab:bas_results` table above includes that row.
 
-3. **The benchmark is 21,432 events, not 23,663.** 2,232 events fall in a third 45-minute
+3. **The benchmark is 21,432 events, not 23,663.** 2,231 events fall in a third 45-minute
    period, in three matches, for which no video and no GSR file exists. Per Atom's decision
    they are excluded from the benchmark and from the headline count. See
    `docs/bas-findings.md` §1.

@@ -56,7 +56,7 @@ HIDDEN=128 DROPOUT=0.2 bash scripts/bas/ablate.sh    # which feature groups matt
 
 ## Three things that will bite anyone who skips the audit
 
-1. **Three matches have a third 45-minute period with no video and no GSR file.** 2,232
+1. **Three matches have a third 45-minute period with no video and no GSR file.** 2,231
    events (9.4%) have no input data. Scoring a perfect period-1-and-2 prediction against
    the released files gives mAP@1s **0.8409 instead of 1.0000**, all of the loss on test
    match 132831. `src/data_utils/bas_periods.py` is the one place that decides this;

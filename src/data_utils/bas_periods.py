@@ -2,14 +2,14 @@
 
 THE PROBLEM THIS SOLVES
     Three of the ten matches (117092, 132831, 132877) were played as THREE 45-minute
-    periods. 2,232 events -- 9.4% of the 23,663 annotated, and 22.8% of test match 132831 --
+    periods. 2,231 events -- 9.4% of the 23,663 annotated, and 22.8% of test match 132831 --
     fall in a third period for which no video and no GSR file exist. Scoring against events
     that have no input data depresses every model's recall by a per-match amount, so they
     are outside the benchmark. The benchmark is 21,432 events.
 
 WHY NEITHER FIELD IN THE FILE IS ENOUGH ON ITS OWN
     ``gameTime`` is ``"<period> - <ABSOLUTE mm:ss>"``. Its prefix is unreliable on exactly
-    those three matches: 2,129 third-period events carry no prefix and 103 carry "1" or "2"
+    those three matches: 2,129 third-period events carry no prefix and 102 carry "1" or "2"
     next to a clock past 90 minutes, e.g. ``"1 - 135:27"``.
 
     ``position`` cannot replace it, because the periods OVERLAP on the nominal clock --

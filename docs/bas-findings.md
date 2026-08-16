@@ -21,7 +21,7 @@ independent of the event files:
   matchTimeStart="5400000" matchTimeEnd="8130000">`, i.e. a real 45.5-minute frame range.
 - `132831`'s raw folder holds `132831_segment_0.mp4`, `_segment_1.mp4` **and** `_segment_2.mp4`.
 
-**2,232 events — 9.4% of the 23,663 annotated — fall in that third period, and no third
+**2,231 events — 9.4% of the 23,663 annotated — fall in that third period, and no third
 video and no third GSR file exist for any of the three matches.** Only
 `<match>_panorama_{1st,2nd}_half.mp4` and `<match>_{1st,2nd}.json` were released.
 
@@ -30,14 +30,15 @@ Per match, as a share of that match's annotations:
 | match | annotated | period 1 | period 2 | period 3 | period 3 share |
 |---|---|---|---|---|---|
 | 117092 | 3,142 | 1,029 | 1,057 | **1,056** | 33.6% |
-| 132831 **(test)** | 3,162 | 1,250 | 1,191 | **721** | 22.8% |
+| 132831 **(test)** | 3,162 | 1,249 | 1,191 | **722** | 22.8% |
 | 132877 | 2,731 | 1,183 | 1,095 | **453** | 16.6% |
-| the other seven | 14,628 | 7,482 | 7,144 | 2 | 0.0% |
-| **total** | **23,663** | **10,944** | **10,487** | **2,232** | **9.4%** |
+| the other seven | 14,628 | 7,482 | 7,146 | 0 | 0.0% |
+| **total** | **23,663** | **10,943** | **10,489** | **2,231** | **9.4%** |
 
-The two stray period-3 events among the other seven matches are single events in 118576 and
-118577 that land just past the end of their half's tracking. One event is not a period; the
-`--paper-stats` period count requires a block of at least 50 before calling a period played.
+These counts shifted slightly when `t0` was corrected (§3): an event within a frame or two of
+a period boundary can cross it. Earlier drafts of this document quoted 2,225 and then 2,232;
+2,231 is the figure from the current measured period table, and is the only one consistent
+with the 21,432-event benchmark that the dataset build reports.
 
 The consequence is not cosmetic. Scoring a *perfect* period-1-and-2 prediction against the
 released files gives **mAP@1s 0.8409 instead of 1.0000**, and the entire penalty lands on
@@ -53,8 +54,8 @@ count. **The benchmark is 21,432 events.**
 `gameTime` is `"<period> - <ABSOLUTE mm:ss>"` — the clock does not restart at each half, so a
 second-half event reads `"2 - 45:00"`. That much was already known. What is new:
 
-**The period prefix is unreliable on exactly the three-period matches.** Of the 2,232
-third-period events, 2,129 carry no prefix at all and **103 carry a prefix of `1` or `2` beside
+**The period prefix is unreliable on exactly the three-period matches.** Of the 2,231
+third-period events, 2,129 carry no prefix at all and **102 carry a prefix of `1` or `2` beside
 a clock past 90 minutes** — for example `{"gameTime": "1 - 135:27", "position": "8127120"}`.
 Trusting the prefix puts those events 135 minutes into a 45-minute half.
 
@@ -68,7 +69,7 @@ events. Measured overlap, per match, in the first half's overrun past 45:00: 118
 accepts it only when the resulting frame index lands inside that period's annotated GSR frame
 range — i.e. only when the event actually has input data. That is the property the benchmark
 depends on, and it keeps the 19 prefix-`2` events past 90 minutes that really are
-second-half stoppage while rejecting the 103 that are not.
+second-half stoppage while rejecting the 102 that are not.
 
 ## 3. The event clock, and the two clocks I conflated
 
@@ -314,12 +315,21 @@ tracks; offline spotter; upper bound assuming perfect GSR.
 
 | | macro mAP@1s | weighted mAP@1s | macro mAP@5s | weighted mAP@5s |
 |---|---|---|---|---|
-| **with ball** (101 feat) | **0.487** [0.464–0.519] | **0.721** [0.695–0.734] | 0.550 [0.531–0.577] | **0.788** [0.780–0.794] |
-| **no ball** (82 feat) | 0.412 [0.405–0.418] | 0.476 [0.470–0.479] | **0.565** [0.563–0.567] | 0.728 [0.719–0.737] |
-| uniform cadence (chance) | 0.025 | 0.106 | 0.094 | 0.405 |
+| **with ball** (101 feat) | **0.662** ± 0.065 | **0.825** ± 0.035 | **0.701** ± 0.041 | **0.857** ± 0.014 |
+| **no ball** (82 feat) | 0.417 ± 0.028 | 0.526 ± 0.034 | 0.574 ± 0.048 | 0.754 ± 0.022 |
+| uniform cadence (chance) | 0.025 | 0.105 | 0.100 | 0.403 |
 
-Brackets are the range over three seeds. **A support-weighted mAP@5s below 0.405 is worse
-than guessing**, so the chance row is not decoration.
+± is the standard deviation across the five cross-match folds, which is **4.3× (trajectory)
+and 2.3× (+ball) the standard deviation across training seeds**. Which matches are held out
+matters several times more than initialisation. The Challenge pair is the weakest of the five
+folds for the trajectory condition, at 0.391 against a mean of 0.417.
+
+**The validation pair matters even more than the test pair.** Holding test fixed at the
+Challenge matches and changing only validation from {117093, 132877} to {117092, 117093} moves
+the with-ball figure from 0.519 to **0.670** — five times the seed SD — because 132877 is one
+of the two clamped-ball matches, so a with-ball model tuned on it selects a decode threshold
+suited to censored data. An earlier version of this document reported 0.487 as the with-ball
+headline for exactly that reason; it was a protocol artefact, not a property of the model.
 
 ### What the ball is worth depends entirely on whether it is intact
 
