@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering
+  \caption{The ten SoccerTrack v2 matches, their split assignment and the BAS annotation counts. \emph{Periods} is the number of $45\,\text{min}$ periods played; three matches were played as three periods and only the first two were filmed and tracked, so the \emph{Benchmark} column counts the events with a corresponding video and game-state annotation and \emph{Unfilmed} counts those without. \emph{Link} is the fraction of benchmark events naming their actor. $\ast$ marks the two matches whose recorded ball track is clamped to the pitch rectangle and therefore never leaves play.}
+  \label{tab:bas_dataset}
+  \small
+  \begin{tabular}{llrrrrrrl}
+    \toprule
+    Match & Split & Periods & Frames & Min. & Annot. & Benchmark & Unfilmed & Link \\
+    \midrule
+    117092 & train & 3 & 134,951 & 90 & 3,142 & 2,086 & 1,056 & 99.2\% \\
+    117093 & val & 2 & 138,125 & 92 & 2,252 & 2,252 & 0 & 99.7\% \\
+    118575 & train & 2 & 145,777 & 97 & 2,117 & 2,117 & 0 & 99.7\% \\
+    118576 & train & 2 & 146,152 & 97 & 2,131 & 2,131 & 0 & 99.2\% \\
+    118577 & train & 2 & 145,427 & 97 & 1,946 & 1,946 & 0 & 98.6\% \\
+    118578 & train & 2 & 141,851 & 95 & 2,106 & 2,106 & 0 & 99.7\% \\
+    128057 & test & 2 & 138,025 & 92 & 1,932 & 1,932 & 0 & 99.5\% \\
+    128058 & train & 2 & 137,276 & 92 & 2,144 & 2,144 & 0 & 99.7\% \\
+    132831$^\ast$ & test & 3 & 136,151 & 91 & 3,162 & 2,440 & 722 & 99.7\% \\
+    132877$^\ast$ & val & 3 & 137,039 & 91 & 2,731 & 2,278 & 453 & 99.9\% \\
+    \midrule
+    Total & & & 1,400,774 & 934 & 23,663 & 21,432 & 2,231 & 99.5\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
