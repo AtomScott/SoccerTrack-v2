@@ -54,6 +54,22 @@ module declares as an input**. That exclusion is load-bearing: `embeddings` is i
 list, yet `main_subject_filter` and `team` both consume it, so an unconditional drop would break the
 run.
 
+**The columns must be deleted in place.** The first version of this patch used
+`detections = detections.drop(columns=...)` and freed *nothing*. `EngineDatapipe.update()` stores a
+**reference** to the frame (`datastruct/datapipe.py`: `self.detections = detections`), and each
+module's datapipe is constructed once for the entire run (`engine.py` caches it on the module as
+`_datapipe`). Rebinding the engine loop's local therefore leaves the original frame — `body_masks`
+and all — pinned by `models['reid']._datapipe.detections`, and you end up holding **two** frames
+instead of one. Measured on a 60,000-row stand-in:
+
+| variant | engine's frame | frame pinned by datapipe | total live |
+|---|---|---|---|
+| `drop(columns=…)` (rebinds) | 0.08 GB | 0.58 GB | **0.65 GB** — worse than the 0.58 GB before |
+| `del detections[col]` (in place) | 0.08 GB | same object | **0.08 GB** |
+
+Deleting in place keeps a single object, so every datapipe reference stays valid and the arrays are
+genuinely released. Reproduce with `scratchpad/mem/test_inplace2.py`.
+
 Backup: `offline.py.backup-pre-forget-fix`.
 
 > **Scope, stated honestly:** this does *not* explain the 10-minute OOM. That kill happened at 61%
