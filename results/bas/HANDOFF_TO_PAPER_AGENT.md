@@ -14,11 +14,16 @@ must not be.
 
 Five-fold cross-match cross-validation, all ten matches, SoccerNet metric.
 
-| input | macro mAP@1s | wtd mAP@1s | macro mAP@5s | wtd mAP@5s |
+| method | macro mAP@1s | wtd mAP@1s | macro mAP@5s | wtd mAP@5s |
 |---|---|---|---|---|
-| **trajectory + ball** (101 feat) | **0.599** ± 0.064 | **0.796** ± 0.036 | **0.666** ± 0.045 | **0.825** ± 0.028 |
-| **trajectory** (82 feat) | 0.222 ± 0.021 | 0.253 ± 0.030 | 0.524 ± 0.047 | 0.673 ± 0.026 |
+| **learned, trajectory + ball** (101 feat) | **0.599** ± 0.064 | **0.796** ± 0.036 | **0.666** ± 0.045 | **0.825** ± 0.028 |
+| **learned, trajectory** (82 feat) | 0.222 ± 0.021 | 0.253 ± 0.030 | 0.524 ± 0.047 | 0.673 ± 0.026 |
+| prior rule-based (uses the ball) | 0.053 ± 0.024 | 0.183 ± 0.080 | 0.091 ± 0.028 | 0.303 ± 0.082 |
 | uniform cadence (chance) | 0.008 | 0.033 | 0.065 | 0.283 |
+
+The prior method's row carries two handicaps that are properties of the method, not of the
+evaluation, and must be stated with it — see §10. It is above chance at τ = 1 s but at
+τ = 5 s its weighted score (0.303) is within noise of the chance floor (0.283).
 
 ± is the standard deviation across the five folds. Ground-truth tracks; offline (non-causal)
 spotter; upper bound on any system that must estimate tracks first.
@@ -170,3 +175,67 @@ assumed, and because several figures in earlier drafts of this handover were wro
   Only the last is consistent with the 21,432-event benchmark.
 - **The prior rule-based detector required three separate fixes** before it produced a
   meaningful number at all — see §10.
+
+## 10. The prior rule-based detector
+
+`scripts/event_detection_tracking/event_detection.py` derives possession from ball-to-player
+distances and emits events from possession transitions and ball geometry. It uses the ball,
+so the fair comparison is against the **trajectory + ball** row.
+
+| fold | test pair | macro mAP@1s | wtd mAP@1s | macro mAP@5s | wtd mAP@5s |
+|---|---|---|---|---|---|
+| 0 | 128057, 132831 (Challenge) | 0.040 | 0.129 | 0.066 | 0.215 |
+| 1 | 117092, 117093 | 0.079 | 0.272 | 0.122 | 0.406 |
+| 2 | 118575, 118576 | 0.071 | 0.240 | 0.115 | 0.354 |
+| 3 | 118577, 118578 | 0.056 | 0.197 | 0.092 | 0.316 |
+| 4 | 128058, 132877 | 0.020 | 0.078 | 0.059 | 0.226 |
+| **mean** | | **0.053** ± 0.024 | **0.183** ± 0.080 | **0.091** ± 0.028 | **0.303** ± 0.082 |
+
+### It could not be run at all as it stood. Three separate defects.
+
+1. **Its input files do not exist.** It reads a per-match pitch-plane CSV from directories
+   that are empty for all ten matches. `scripts/bas/make_pitch_plane_csv.py` regenerates them
+   from the raw tracking XML, verified byte-identical against the two surviving originals.
+2. **It crashed on every match.** It indexed the frame at `match_time == 0.0` exactly; no
+   match's clock lands on zero, so the selection was empty and it raised `KeyError`. A second
+   latent bug left `plus_team_id` unbound on some matches.
+3. **A hardcoded cache path made it reuse one match's data for all matches.** The
+   ball-to-player distance table — the input to all its possession logic — was written to and
+   read from a path fixed to match 117093 while every sibling path is per-match, and it is
+   cached on disk. Matches processed after the first emitted 0–17 predictions instead of
+   ~2,200, and the run completes without error. **Anyone who has run this on more than one
+   match has wrong results.**
+
+A fourth issue is not a defect but a mismatch: its timestamps are on the **tracking clock**,
+while the benchmark is on the **event clock**, and the two differ by one second on 14 of 20
+halves. Uncorrected it scores 0.004 macro mAP@1s on 128057; with the measured per-half offset
+applied, 0.087. A free-shift sweep peaks at −1000 ms with 0.0886, so the measured correction
+accounts for essentially all of it.
+
+### Two handicaps that bound what it can score
+
+- **It emits no confidence.** Every prediction carries the constant string `"0.5"`, so its
+  output has no ranking and average precision — which is defined over a ranked list — is
+  measured on an unordered set.
+- **Its input is unfiltered.** The original filename says "filtered" and the repository
+  history mentions a Kalman filter; whatever smoothing was applied is unrecoverable, so its
+  thresholds are being applied to a noisier signal than they were tuned for.
+
+Its scores are therefore a **lower bound**, and it should be presented as "a prior rule-based
+method, reproduced with fixes" rather than as a clean head-to-head baseline.
+
+### It fails almost completely on the clamped-ball matches
+
+| match | predictions | ground truth | macro mAP@1s |
+|---|---|---|---|
+| 117093 | 2,570 | 2,252 | 0.107 |
+| 128057 | 2,263 | 1,932 | 0.087 |
+| eight matches with an intact ball | ~2,000–2,600 | | 0.040–0.107 |
+| **132831** (ball clamped) | **436** | 2,440 | **0.004** |
+| **132877** (ball clamped) | **510** | 2,278 | **0.004** |
+
+It emits roughly a fifth of its usual output on the two matches whose ball never leaves the
+pitch, because it derives `Out` from the ball crossing a line and the rest of its event
+segmentation chains off that. This is an **independent, second demonstration** of what the
+ball clamping costs — the first being the learned model's +0.47 on 128057 against +0.34 on
+132831 — and it is a strong argument for repairing the ball at source before release.
