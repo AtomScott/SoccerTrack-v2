@@ -21,7 +21,14 @@ THREE THINGS THIS EVALUATOR DOES THAT A NAIVE ONE DOES NOT
     recall by a different amount on every match. See src/data_utils/bas_periods.py.
     tests/test_bas_map_periods.py fails if the filter is removed.
 
-3.  IT REPORTS SUPPORT NEXT TO EVERY PER-CLASS NUMBER, and a support-weighted mean beside
+3.  IT MATCHES SOCCERNET EXACTLY, which the paper's citation requires. Their tolerance is a
+    HALF-width (``@1s`` means +/-0.5 s), their assignment runs from ground truth to the
+    highest-scoring prediction in the window, and their PR curve is sampled at 200 fixed
+    confidence thresholds. Getting any of the three wrong changes the number by a factor of
+    two or more; tests/test_bas_map_soccernet_parity.py checks all three against a port of
+    their source.
+
+4.  IT REPORTS SUPPORT NEXT TO EVERY PER-CLASS NUMBER, and a support-weighted mean beside
     the macro mean. The class imbalance is 301x: Pass has 9,316 events in the benchmark and
     Header has 31, of which 5 are in the test split. A 12-class macro average gives that
     5-instance noise the same weight as Pass. Both means are reported, always labelled, and
@@ -46,11 +53,13 @@ from src.data_utils.soccertrack_v2 import BAS_LABELS, Event, _parse_bas
 # ---------------------------------------------------------------------------
 
 def ap_tolerant(scores: Sequence[float], tp_flags: Sequence[int], n_gt: int) -> float:
-    """11-point interpolated AP from a ranked list of true/false-positive flags.
+    """AP exactly as SoccerNet computes it: 200 fixed confidence thresholds, 11-point
+    interpolation over the recall axis.
 
-    ``scores`` is used only to sort; ``tp_flags[i]`` says whether the i-th prediction
-    matched an as-yet-unmatched ground-truth event. Kept separate from the matching so the
-    decoder tuner can reuse it without rebuilding Event objects.
+    NOT a cumulative-per-prediction PR curve. SoccerNet sweeps ``np.linspace(0, 1, 200)`` and
+    evaluates precision and recall at each threshold, then interpolates. Using every
+    prediction as its own threshold gives a finer curve and a different number, and the paper
+    cites their protocol, so we match theirs. See tests/test_bas_map_soccernet_parity.py.
     """
     if n_gt == 0:
         return float("nan")
@@ -58,33 +67,61 @@ def ap_tolerant(scores: Sequence[float], tp_flags: Sequence[int], n_gt: int) -> 
     f = np.asarray(tp_flags, float)
     if f.size == 0:
         return 0.0
-    order = np.argsort(-s, kind="stable")
-    f = f[order]
-    tp = np.cumsum(f)
-    recall = tp / n_gt
-    precision = tp / np.arange(1, f.size + 1)
+    prec, rec = [], []
+    for threshold in np.linspace(0, 1, 200):
+        idx = np.where(s >= threshold)[0]
+        tp = float(f[idx].sum())
+        prec.append(tp / len(idx) if len(idx) else 0.0)
+        rec.append(tp / n_gt)
+    prec, rec = np.array(prec), np.array(rec)
+    order = np.argsort(rec)
+    prec, rec = prec[order], rec[order]
     ap = 0.0
-    for i in range(11):
-        m = recall >= i / 10
-        ap += (precision[m].max() if m.any() else 0.0) / 11
-    return float(ap)
+    for j in np.arange(11) / 10:
+        m = rec >= j
+        ap += float(prec[m].max()) if m.any() else 0.0
+    return float(ap / 11)
 
 
 def match_greedy(pred: list[Event], gt: list[Event], tol_ms: int) -> np.ndarray:
-    """Flag each prediction (already ranked) as TP=1 / FP=0 against unmatched GT."""
-    matched = [False] * len(gt)
+    """TP/FP flags per prediction, using SoccerNet's assignment.
+
+    TWO THINGS HERE ARE NOT THE OBVIOUS CHOICE, AND BOTH MATTER.
+
+    The window is HALF the nominal tolerance. SoccerNet's condition is
+    ``abs(pred - gt) <= delta / 2`` with ``delta = tolerance_seconds * framerate``, so
+    "mAP@1s" accepts a prediction within +/-0.5 s. An earlier version of this function
+    accepted +/-1 s and therefore scored a strictly easier task than the protocol the paper
+    cites, inflating AP by a factor of two to four on random data.
+
+    Assignment runs FROM GROUND TRUTH. For each ground-truth event, in time order, the
+    highest-scoring unmatched prediction inside the window is claimed. Matching from
+    predictions to the nearest ground truth instead -- the obvious reading of "greedy" --
+    disagrees whenever a window holds several candidates, which at a Pass every 2.4 s is the
+    normal case rather than an edge case.
+
+    tests/test_bas_map_soccernet_parity.py checks both against a port of their source.
+    """
+    half = tol_ms / 2.0
+    order_p = sorted(range(len(pred)), key=lambda i: (pred[i].half, pred[i].t_ms))
+    order_g = sorted(range(len(gt)), key=lambda i: (gt[i].half, gt[i].t_ms))
     flags = np.zeros(len(pred), np.int8)
-    for i, p in enumerate(pred):
-        best_j, best_dt = -1, tol_ms + 1
-        for j, g in enumerate(gt):
-            if matched[j] or g.half != p.half:
+    used = [False] * len(pred)
+    for gi in order_g:
+        g = gt[gi]
+        best_i, best_score = None, -1.0
+        for pi in order_p:
+            p = pred[pi]
+            if p.half != g.half or used[pi]:
                 continue
-            dt = abs(p.t_ms - g.t_ms)
-            if dt <= tol_ms and dt < best_dt:
-                best_dt, best_j = dt, j
-        if best_j >= 0:
-            matched[best_j] = True
-            flags[i] = 1
+            if abs(p.t_ms - g.t_ms) > half:
+                continue
+            sc = p.score if p.score is not None else 0.0
+            if sc > best_score:
+                best_score, best_i = sc, pi
+        if best_i is not None:
+            used[best_i] = True
+            flags[best_i] = 1
     return flags
 
 
