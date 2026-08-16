@@ -125,8 +125,15 @@ def main() -> int:
 
     start = a.start
     end = vn if a.nframes < 0 else min(vn, start + a.nframes - 1)
-    end = min(end, n_img_gt)                      # clamp: GT runs past the video
+    # Clamp so that every staged video frame k has a ground-truth frame k+offset to attach.
+    # Using min(end, n_img_gt) is NOT enough: with a positive offset the window reaches GT frame
+    # end+offset, so the last `offset` frames can fall past the end of the annotations. That
+    # produced CLPD-132877-1st with 67,688 images but seq_length 67,700, and TrackLab's dataset
+    # loader then died with "All arrays must be of the same length".
+    end = min(end, n_img_gt - offset)
     count = end - start + 1
+    if count < 1:
+        print(f"nothing to stage: offset {offset} exceeds the annotated range"); return 1
     print(f"GT images {n_img_gt}  declared {declared[0]}x{declared[1]} (stale)", flush=True)
     print(f"START OFFSET {offset} frames ({offset/25.0:.2f} s) from {osrc}", flush=True)
     print(f"  -> video frame k carries GT frame k+{offset}; "
