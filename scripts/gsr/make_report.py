@@ -175,6 +175,8 @@ overflow-x:auto;font-size:.84rem}
 .dim{color:var(--dim)}
 .good{color:var(--good);font-weight:650}.bad{color:var(--bad);font-weight:650}
 .missing{color:var(--dim);font-style:italic;font-size:.9rem}
+.wrong{border-left:4px solid #b3261e;background:#fdf0ef;padding:.7rem 1rem;margin:1rem 0;
+       border-radius:0 6px 6px 0}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px}
 ul,ol{margin:10px 0;padding-left:22px}li{margin:5px 0}
 .tag{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;
@@ -330,6 +332,7 @@ whose answer was established independently.</blockquote>""")
 <li><a href="#window2">Why minute 1 is worse than minute 0</a></li>
 <li><a href="#experiments">Fix experiments</a></li>
 <li><a href="#gta">GTA behaviour</a></li>
+<li><a href="#degrade">Degradation with sequence length</a></li>
 <li><a href="#cost">Runtime and memory</a></li>
 <li><a href="#code">Code changes and defects found</a></li>
 <li><a href="#open">Open questions</a></li>
@@ -592,6 +595,49 @@ value on one match's evidence.</blockquote>""")
                             "25-frame offset is correct for this match too. Its much lower "
                             "absolute scores are genuine match difficulty, not a staging fault."))
 
+    # ---------------- degradation ----------------
+    S.append('<h2 id="degrade">Degradation with sequence length</h2>')
+    deg = read_csv(M / "degradation.csv")
+    degd = read_csv(M / "degradation_defaultteam.csv")
+    if deg:
+        dd = {r["label"]: r.get("gs_hota") for r in degd}
+        rows = []
+        for r in deg:
+            lab = r["label"]
+            det = r.get("gs_hota")
+            trk = dd.get(lab)
+            fa = "&mdash;" if det in (None, "", "NA") else f"{float(det):.3f}"
+            fb = "&mdash;" if trk in (None, "", "NA") else f"{float(trk):.3f}"
+            if det in (None, "", "NA"):
+                fa = '<span class="missing">OOM-killed</span>'
+            best = ""
+            if det not in (None, "", "NA") and trk not in (None, "", "NA"):
+                best = "detection-level" if float(det) > float(trk) else "tracklet-level"
+            rows.append([lab, r["frames"],
+                         f'{int(r["frames"])/25/60:.1f} min', fb, fa, best])
+        S.append(table(["length", "frames", "minutes", "tracklet-level team (stock)",
+                        "detection-level team", "better"], rows, highlight_col=4,
+                       note="One match (128057, 1st half), nested prefixes of identical footage, "
+                            "so every point sees the same content -- the only variable is how much "
+                            "of it the global modules must reconcile at once."))
+        S.append("""<p><b>Both configurations peak at 1 minute and fall away on either side</b>,
+and they <b>cross over</b>: stock tracklet-level team clustering is clearly better at 30&nbsp;s and
+1&nbsp;min (40.4 / 57.8 against 37.2 / 47.6), and clearly worse by 5&nbsp;min (19.5 against 31.0).
+There is no single best configuration across lengths, which means any length sweep has to fix one
+config for all points or it measures the config change rather than the length.</p>
+<p>The mechanism is fragmentation. Predicted tracklets go 26 &rarr; 35 &rarr; 42 &rarr; 60 against
+<b>22 real players</b>, so jersey reads and team votes are spread across ever more fragments. Team
+accuracy at 5&nbsp;min under stock clustering is 51.6% &mdash; indistinguishable from chance on two
+classes; detection-level clustering lifts it to 86.6%. Because GS-HOTA partitions detections into
+classes by (role, team, jersey), a wrong attribute is not a partial credit loss, it is no match at
+all.</p>
+<p class="wrong"><b>The 10-minute point is missing, not zero.</b> It was OOM-killed rather than
+scored, so the curve beyond 5&nbsp;minutes is unmeasured. Do not read the gap as a collapse to
+nought.</p>""")
+        S.append(img_tag(W / "degradation.png", "GS-HOTA against sequence length"))
+    else:
+        S.append('<p class="missing">no degradation sweep yet</p>')
+
     # ---------------- cost ----------------
     S.append('<h2 id="cost">Runtime and memory</h2>')
     rows = []
@@ -607,10 +653,54 @@ value on one match's evidence.</blockquote>""")
                               "some superlinearity remains beyond the quadratic-merge fix. "
                               "Fitting s/frame &prop; n^0.22 projects ~3.75 s/frame and "
                               "<b>~70 h</b> for a full 67,625-frame half."))
-    S.append("""<p><b>Memory is not a constraint.</b> Peak main-process RSS was 3.0 / 3.3 /
-4.7&nbsp;GB against 61&nbsp;GB physical, and it does not grow with sequence length in the way I
-first projected. An earlier estimate of 25&ndash;35&nbsp;GB was wrong; it assumed the tracker
-state pickle scaled linearly and dominated, which did not happen.</p>""")
+    S.append("""<p class="wrong"><b>Retracted:</b> an earlier version of this report said
+&ldquo;memory is not a constraint&rdquo;. That was wrong, and it was wrong for a measurable
+reason worth recording. It came from <b>main-process RSS only</b>, on runs of 5&nbsp;minutes and
+under. The 10-minute run was then <b>OOM-killed at 61% through PRTReID</b> on a 61&nbsp;GB
+machine, with throughput collapsing from 4.24&nbsp;it/s to 25.91&nbsp;s/it over two batches as it
+began thrashing.</p>
+<p><b>Measure PSS, not RSS.</b> With <code>num_cores=12</code> the dataloader forks twelve
+workers that share most of their pages with the parent, so summing RSS counts the same memory
+twelve times. A process tree reading 43&nbsp;GB of RSS was <b>12.9&nbsp;GB of PSS</b>. Every
+memory number below is PSS across the whole tree.</p>""")
+    wk = read_csv(M / "workers.csv")
+    if wk:
+        peaks = {}
+        for r in wk:
+            m = r.get("module") or "?"
+            try:
+                v = float(r.get("tree_pss_gb") or 0)
+            except ValueError:
+                continue
+            if m != "?" and v > peaks.get(m, 0):
+                peaks[m] = v
+        if peaks:
+            S.append(table(["module", "peak tree PSS", "workers"],
+                           [[k, f"{v:.2f} GB", "12"] for k, v in peaks.items()],
+                           note="Worker count is constant at 12 across module boundaries and tree "
+                                "PSS FALLS between modules as the previous model's weights are "
+                                "released, so dataloader workers are torn down correctly. The "
+                                "hypothesis that workers accumulate per module was refuted here."))
+    S.append("""<h3>An orphaned-worker leak <span class="tag">found</span></h3>
+<p>When the parent is OOM-killed its <code>pt_data_worker</code> children are reparented to init
+and <b>never reaped</b>. Twelve workers from the killed 10-minute run were found alive
+<b>23&nbsp;hours later</b> holding <b>8.79&nbsp;GB PSS</b>, which would have sunk the next run
+before it started. They are the residue of that crash, not its cause. Check before any long
+run:</p>
+<pre>pgrep -f 'sn_gamestate.main' | while read p; do \\
+  [ "$(ps -o ppid= -p $p | tr -d ' ')" = 1 ] &amp;&amp; echo $p; done</pre>
+<h3><code>forget_columns</code> applied at video teardown <span class="tag">fixed</span></h3>
+<p>Modules declare <code>forget_columns</code> to release heavy intermediates, but TrackLab only
+applied it when the whole video finished. PRTReID's <code>body_masks</code> is a
+1&times;64&times;32 float32 array &mdash; <b>8&nbsp;KB per detection</b> that nothing downstream
+reads &mdash; so it was carried through all eleven remaining modules: <b>2.5&nbsp;GB at
+10&nbsp;minutes, 11&nbsp;GB at 45&nbsp;minutes</b>. Now released at module end, but only for
+columns no later module declares as an input: <code>embeddings</code> is also in PRTReID's forget
+list and <i>is</i> consumed by <code>main_subject_filter</code> and <code>team</code>.</p>
+<p class="wrong"><b>This is not the cause of the OOM.</b> The kill happened 61% <i>through</i>
+PRTReID and this fix only takes effect once PRTReID <i>finishes</i>, so it was never reached. It
+is a real defect that matters for 45-minute runs. The mechanism that actually exhausts memory
+inside PRTReID is still under investigation and is not yet claimed.</p>""")
 
     # ---------------- code ----------------
     S.append('<h2 id="code">Code changes and defects found</h2>')
