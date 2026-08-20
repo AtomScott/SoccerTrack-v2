@@ -19,10 +19,26 @@ detection-level team clustering.
 Accuracy **peaks at one minute and falls monotonically after**, with no sign of levelling out. The
 45-minute figure is 38% of the one-minute figure on identical footage.
 
-**Fragmentation is the mechanism.** Predicted tracklet count runs from 1.1× the true player count
-at 30 seconds to **15.0× at a full half**. GS-HOTA partitions detections into classes by
-`(role, team, jersey)`, so a tracklet split in two cannot carry one identity — and the per-tracklet
-votes for role, team and jersey each get a smaller, noisier sample to work from.
+**Attributes are the dominant loss, not raw fragmentation.** Measured on 36,665 confident
+geometric matches (≤2 m) at 45 minutes:
+
+| attribute | accuracy | verdict |
+|---|---|---|
+| role | **97.92%** | solved |
+| team | 76.17% | 24% of detections land in the wrong class |
+| jersey | **45.95%** | more than half wrong |
+
+GS-HOTA partitions detections into classes by `(role, team, jersey)`, so a wrong attribute is **no
+match at all**, not a partial-credit loss. With jersey at 46% the score is capped before
+association is even considered. Jersey is *wrong*, not *absent* — only 3.4% of predictions carry a
+null jersey, so this is a recognition-quality problem rather than a coverage one.
+
+**The tracklet count overstates fragmentation.** 347 tracklets against 23 players sounds like 15×,
+but **282 of them (81%) hold just 0.2% of all detections** — a tail of junk. About 65 tracklets
+carry the remaining 99.8%, so real fragmentation is closer to **2.8×**. Median predicted tracklet
+length is 8 detections; median ground-truth identity is 67,625. A further 41 tracklets span more
+than 3× as many frames as they have detections, meaning ids are being re-used across gaps rather
+than tracking one player continuously.
 
 The attributes-off column separates the two failure modes. At 45 minutes geometry and detection are
 still respectable (DetA 51.2, LocA 84.7) — the pipeline still *finds* players and puts them in the
