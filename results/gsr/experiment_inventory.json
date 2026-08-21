@@ -1,0 +1,874 @@
+[
+ {
+  "name": "Sequence-length sweep (30s/1min/5min, initial config)",
+  "what_was_tried": "Ran the identical 14-module TrackLab GSR pipeline on nested prefixes of CLPD-128057-1st (750/1500/7500 frames) via run_sweep.sh to measure how GS-HOTA and wall time scale with sequence length.",
+  "numbers": "sweep_summary.csv: 30s,750 frames,wall 1031s,GS-HOTA 37.155; 1min,1500,wall 2228s,GS-HOTA 33.471; 5min,7500,wall 17204s,GS-HOTA 14.409 (all exit 0). Detail (sweep_scores.json, attrs ON, full window): 30s HOTA 37.155/DetA 15.990/AssA 86.438/LocA 90.630, ids 26 vs gt_ids 22; 1min HOTA 33.471/DetA 14.668/AssA 76.425, ids 35; 5min HOTA 14.409/DetA 4.939/AssA 42.068, ids 60. Attrs OFF: 30s 77.446, 1min 61.603, 5min 39.166. Wall time is superlinear: 2.2x frames -> 2.2x time, 10x frames -> 16.7x time.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/sweep_summary.csv, sweep_scores.json, run_sweep.sh (plot: gsr_length_sweep.png)",
+  "reader": "metrics"
+ },
+ {
+  "name": "Frame-alignment correction (misaligned vs corrected scoring)",
+  "what_was_tried": "The first scoring pass evaluated predictions misaligned against GT; re-scoring after fixing the alignment roughly doubled every score. The pre-fix scores are kept in a .bak file.",
+  "numbers": "Misaligned (sweep_scores.misaligned.json.bak, attrs ON, full): 30s HOTA 18.791, 1min 14.996, 5min 8.848; attrs OFF: 30s 41.080, 1min 28.043, 5min 21.026. Corrected (corrected_scores.json / sweep_scores.json): 30s 37.155, 1min 33.471, 5min 14.409; attrs OFF 77.446 / 61.603 / 39.166. E.g. 30s attrs-OFF LocA rose 76.510 -> 89.557.",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/sweep_scores.misaligned.json.bak, corrected_scores.json, sweep_scores.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Per-half frame offset estimation",
+  "what_was_tried": "Estimated a per-match, per-half frame offset between video and annotations by maximizing pitch-occupancy over 60 probe frames; recorded offset, occupancy at best vs 0, gain, and z-score for all 10 matches x 2 halves.",
+  "numbers": "frame_offsets.csv (match,half,offset,occupancy,occ_at_0,gain,z): 117092 1st 0 (z 4.38), 2nd 27 (gain 0.0374, z 2.79); 117093 1st 25 (gain 0.0726, z 3.3), 2nd 0 (z 3.81); 118575 1st 2 (gain 0.0009), 2nd 1 (0.0003); 118576 1st 27 (0.0634), 2nd 29 (0.0693); 118577 1st 0, 2nd 24 (0.0638); 118578 1st 26 (0.0499), 2nd 1 (0.0001); 128057 1st 25 (0.0821, z 3.52), 2nd 26 (0.0957, z 3.92); 128058 1st 26 (0.0877), 2nd 24 (0.0872); 132831 1st 147 (gain 0.001, z 1.70), 2nd 301 (0.0143, z 2.53) \u2014 anomalous, low confidence; 132877 1st 16 (0.0037, z 2.39), 2nd 30 (0.0034, z 2.05).",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/frame_offsets.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Full dataset staging with offsets applied",
+  "what_was_tried": "Staged all 20 halves (10 matches) into the GameState layout with the chosen per-half offset; recorded split, image and annotation counts, and status.",
+  "numbers": "staged_all.csv: all 20 rows status ok. Applied offset is 25 for most halves, 0 for 117092-1st/117093-2nd/118575-both/118577-1st/118578-2nd; note 132831 was staged with offset 25 (not the low-confidence 147/301 estimates). Test split = 128057 (both halves) + 132831 (both halves); rest valid. Sizes e.g. 117092-1st 67375 images / 1549593 annotations; 118575-2nd 73425 / 1680218; 128057-1st 67625 / 1555375.",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/staged_all.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Attribute ablation (what gates GS-HOTA)",
+  "what_was_tried": "Post-hoc ablation on 30s and 1min outputs: null out jersey, team, both, force role=player, and compute the attributes-OFF ceiling, to identify which predicted attribute limits GS-HOTA.",
+  "numbers": "attr_results.json, 30s: baseline HOTA 37.155 (DetA 15.990, AssA 86.438); jersey->null 6.195; team->null 0.0; role->player 37.155 (identical to baseline); jersey+team->null 0.0; ceiling attributes OFF 77.446 (DetA 73.681, AssA 81.626). 1min: baseline 33.471; jersey->null 7.049; team->null 0.0; role->player 33.471; jersey+team->null 0.0; ceiling 61.603. Team attribute is a hard gate (nulling it zeroes the score); role is irrelevant; jersey null is catastrophic too.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/attr_results.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Attribute post-processing variants (30s)",
+  "what_was_tried": "Tried detection-level team assignment, a 750-frame windowed team variant, and a GTA fix on the 30s clip to improve attribute quality post hoc.",
+  "numbers": "attr_matrix.csv: baseline 37.155 (180s); team-detlevel 37.155 (184s, no change); team-detlevel-w750 37.119 (178s, -0.036); gtafix 37.155 (179s, no change); gtafix-teamdet 37.155 (185s, no change).",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/attr_matrix.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Jersey-number gate tuning (min_roi_area x min_obb_ar)",
+  "what_was_tried": "Swept the jersey-number ROI gates (min_roi_area 100/250/500, min_obb_ar 0.3/0.6) on 30s, 1min and 2min clips of 128057-1st.",
+  "numbers": "jersey_sweep.csv: 30s: a500-r0.6 37.155; a250-r0.6 43.753; a100-r0.6 40.352; a250-r0.3 46.438 (best 30s); a100-r0.3 43.089. 1min: a500-r0.6 33.471; a250-r0.6 46.456; a100-r0.6 57.824 (best); a250-r0.3 49.05; a100-r0.3 57.108. 2min: a500-r0.6 32.274; a250-r0.6 42.265; a100-r0.6 44.81 (best); a250-r0.3 42.265; a100-r0.3 44.81. Relaxing the default a500-r0.6 gate gives up to +24.35 GS-HOTA at 1min.",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/jersey_sweep.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Gate tuning transfer to match 117093",
+  "what_was_tried": "Re-ran the ROI-gate sweep on match 117093 to check whether the relaxed gates generalize beyond 128057.",
+  "numbers": "tune_117093.csv: (min_roi_area,min_obb_ar -> GS-HOTA): 500,0.6 -> 13.572; 350,0.3 -> 15.233; 300,0.3 -> 15.885; 250,0.3 -> 16.729; 200,0.3 -> 17.037; 150,0.3 -> 19.457; 250,0.6 -> 16.444; 100,0.6 -> 20.709 (best). Same direction as 128057 (relaxed gates win) but absolute scores are far lower on this match.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/tune_117093.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Pose-anchor model sweep (ViTPose size)",
+  "what_was_tried": "Swapped the ViTPose backbone (huge/base/small) on the 1min/1500-frame clip to see if pose model capacity affects GS-HOTA or runtime.",
+  "numbers": "pose_sweep.csv: vitpose-plus-huge GS-HOTA 57.824, wall 2265s, pose stage 19:57; vitpose-plus-base 57.824, 2227s, 19:56; vitpose-plus-small 57.824, 2224s, 19:57 (1500 frames each). Identical accuracy, near-identical runtime \u2014 pose stage time is not model-bound.",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/pose_sweep.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "ViTPose stride sweep",
+  "what_was_tried": "Ran pose estimation every Nth frame (stride 1/2/5/10) to cut the ~20-minute pose stage, checking the accuracy cost.",
+  "numbers": "stride_sweep.csv: stride 1 GS-HOTA 57.824 (wall 2241s, pose 20:00); stride 2 52.114 (1638s, 10:07); stride 5 50.426 (1269s, 04:08); stride 10 50.426 (1154s, 02:08). Stride 2 already costs -5.71 GS-HOTA for halving pose time.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/stride_sweep.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Length degradation with tuned gates + default team (interim config)",
+  "what_was_tried": "Measured the degradation curve of the tuned-gate/default-team configuration across clip lengths before the team fix.",
+  "numbers": "degradation_defaultteam.csv: 30s 40.352; 1min 57.824; 2min 44.810; 5min 19.484. (Non-monotone at 30s because the 30s clip is a harder window.)",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/degradation_defaultteam.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Config variants at 5min (config 5)",
+  "what_was_tried": "On the 5min clip, compared gates-only vs gates+team-fix, plus a GTA fix, a bbox width fix, and a tracklet-consolidation variant on top of the team fix.",
+  "numbers": "config5.csv: gates-only 19.484 (9218s); gates-team 30.974 (9407s, +11.49 over gates-only); gates-team-gtafix NA (705s \u2014 run did not produce a score); team-widthfix 29.353 (9544s, -1.62 vs gates-team); team-consolidate 29.351 (9447s, -1.62).",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/config5.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Final degradation curve (30s to full 45-min half)",
+  "what_was_tried": "The headline length-degradation table for the final configuration, extending to a full 45-minute half run as two stages.",
+  "numbers": "degradation.csv: 30s,750,GS-HOTA 37.155,wall 212s,tail; 1min,1500,47.589,694s,tail; 2min,3000,39.882,2194s,tail; 5min,7500,30.974,9406s,tail; 10min,15000,25.604,19672s,full; 45min,67625,18.094,132480s,full (two-stage). Full half costs ~36.8 h wall.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/degradation.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "10-min full-pipeline score (CLPD-128057-1st-10min)",
+  "what_was_tried": "Scored the 10-minute prefix with the official GS-HOTA evaluator, attrs ON and OFF.",
+  "numbers": "score_10min.json: attrs ON HOTA 25.6036 (DetA 18.3253, AssA 35.7891, LocA 87.0455); attrs OFF HOTA 33.9079 (DetA 51.5148, AssA 22.4838); ids 99 vs gt_ids 22; dets 298426 vs gt_dets 330000; dropped_non_finite 470 of 298896 predictions.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_10min.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "45-min baseline score (CLPD-128057-1st, full half)",
+  "what_was_tried": "End-to-end score of the complete 45-minute first half, the anchor for all post-hoc prior experiments.",
+  "numbers": "score_45min.json: attrs ON HOTA 18.09373844223864 (DetA 14.6725, AssA 22.3191, LocA 86.8365); attrs OFF HOTA 26.0358 (DetA 51.2087, AssA 13.4092); ids 345 vs gt_ids 23; dets 1374394 vs gt_dets 1487750; dropped_non_finite 6002 of 1380396 predictions.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Post-hoc structural prior: per-tracklet team override",
+  "what_was_tried": "Overwrote each tracklet's team with a structural prior (hard assignment) on the 45-min output.",
+  "numbers": "score_45min_prior_team.json: HOTA 16.3499 (DetA 14.7014, AssA 18.1894) vs baseline 18.0937 \u2014 a -1.74 regression.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min_prior_team.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Post-hoc structural prior: jersey override",
+  "what_was_tried": "Overwrote jersey numbers with a structural prior on the 45-min output.",
+  "numbers": "score_45min_prior_jersey.json: HOTA 16.4243 (DetA 10.7113, AssA 25.1854) vs baseline 18.0937 \u2014 a -1.67 regression (AssA up, DetA down hard).",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min_prior_jersey.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Post-hoc structural prior: team + jersey combined",
+  "what_was_tried": "Applied both structural priors together on the 45-min output.",
+  "numbers": "score_45min_prior_both.json: HOTA 14.6745 (DetA 10.8574, AssA 19.8348) vs baseline 18.0937 \u2014 the worst variant, -3.42.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min_prior_both.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Post-hoc team majority-vote per tracklet",
+  "what_was_tried": "Replaced per-frame team labels with each tracklet's majority-vote team on the 45-min output (also a global-assignment variant).",
+  "numbers": "score_45min_prior_team_vote.json: HOTA 19.7244 (DetA 16.5673, AssA 23.4934) vs baseline 18.0937 \u2014 +1.63, the best post-hoc result. score_45min_prior_team_global.json: HOTA 19.2946 (DetA 15.9618, AssA 23.3330) \u2014 +1.20, slightly below the vote.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min_prior_team_vote.json, score_45min_prior_team_global.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Jersey-number vote threshold sweep (on top of team vote)",
+  "what_was_tried": "Swept a jersey-number voting threshold (0/5/20/100) and a null-weak variant (5/20) for post-hoc jersey smoothing on the 45-min output.",
+  "numbers": "jn_thr0 / jn_thr5 / jn_thr20 all HOTA 17.5693 (DetA 11.3749, AssA 27.1397); jn_thr100 HOTA 17.2299 (DetA 10.7893, AssA 27.5177) \u2014 all below baseline 18.0937. jn_nullweak5 and jn_nullweak20 both HOTA 19.7244, identical to team-vote alone (jersey nulling for weak votes adds nothing beyond the team vote).",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min_prior_jn_thr0.json, _jn_thr5.json, _jn_thr20.json, _jn_thr100.json, _jn_nullweak5.json, _jn_nullweak20.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Identity-count cap to 23 ids",
+  "what_was_tried": "Post-hoc merged/capped the 345 predicted identities down to 58 (targeting the 23 GT ids), alone and combined with the team vote.",
+  "numbers": "score_45min_prior_id23_baseline.json: HOTA 18.093674 with ids 58 vs baseline 18.093738 with ids 345 \u2014 reducing 345 ids to 58 changes GS-HOTA by only -0.00006. score_45min_prior_id23_teamvote.json: HOTA 19.724354 (ids 58) vs team-vote 19.724415 (ids 345) \u2014 identical to 4 decimals. Id-count reduction alone buys nothing; tracklets are impure mixtures.",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/score_45min_prior_id23_baseline.json, score_45min_prior_id23_teamvote.json",
+  "reader": "metrics"
+ },
+ {
+  "name": "Single-pass 45-min run: memory failure",
+  "what_was_tried": "Attempted the full 45-minute half in one pipeline pass while sampling memory every 30 s (sample_mem.sh) to answer 'will a 45-minute half run out of RAM?'.",
+  "numbers": "mem_45min.csv: tree_rss_gb steady at 83.01-83.07 GB during Rfdetr (batches 1273-2257 of 8454), then '# process 998481 exited at 2026-08-11 19:50:49 JST' \u2014 the run died ~27% into detection at ~83 GB tree RSS. mem_5min.csv peak: tree_rss 59.03 GB at Parseqapi (elapsed 16983s trace, batch 885/1167). mem_30s peaks ~34.85 GB (Prtreid), mem_1min ~39.21 GB final sample.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/mem_45min.csv, mem_45min_partial.csv, mem_5min.csv, mem_1min.csv, mem_30s.csv, sample_mem.sh",
+  "reader": "metrics"
+ },
+ {
+  "name": "Memory attribution: PRTReid accumulates, workers hold 40 GB",
+  "what_was_tried": "Instrumented per-module and per-worker memory (PSS, worker RSS, largest child) to find where the RAM goes on long runs.",
+  "numbers": "prtreid_trace.csv: Prtreid tree PSS grows linearly 11.29 GB at 18% (batch 846) -> 41.66 GB at 51% (batch 2387), ~+2.3 GB per 2% progress \u2014 unbounded accumulation. memprobe.csv: during Prtreid, 13 workers hold 40.69 GB RSS total, largest child 3.29 GB, parent only ~6 GB. workers.csv: 14 children / 12 workers, tree PSS reaches 49.18 GB in Prtreid. pss10_fixed.csv: after a first fix attempt, Prtreid still climbs to 46.96 GB (sys_used 55.76 GB). detreid.csv: Rfdetr is flat ~12.3-12.6 GB; early Prtreid 9.20 -> 10.04 GB. arena-default.csv (glibc default arenas): tree PSS 8.50 -> 10.60 GB over batches 85 -> 3262, slow creep.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/prtreid_trace.csv, memprobe.csv, workers.csv, pss10_fixed.csv, detreid.csv, arena-default.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Two-stage pipeline split (stage A detection+pose, stage B reid onward)",
+  "what_was_tried": "Split the pipeline into stage A (RF-DETR + ViTPose) and stage B (PRTReid, pose-region extractor, PARSeq, calibration) so a full 45-minute half fits in RAM; verified with per-stage memory traces on short and full-half runs.",
+  "numbers": "stage1_pss.csv (10-min stage A): Rfdetr flat ~13.06-13.21 GB, Vitposeapi flat ~10.22-10.72 GB. stage2_pss.csv (stage B reid): oscillates 9.10-17.49 GB (bounded sawtooth, no growth). half-stageA.csv (full half): Rfdetr ~16.27-16.38 GB flat over 8454 batches, Vitposeapi ~18.0 GB flat, completed 43396/43396 batches. half-stageB.csv (full half): Prtreid peaks 43.09 GB tree PSS at batch 21698/21698 (sys_used 60.1 GB) but completes; Manualcalibfromannotations flat at 33.79 GB to the end. full10.csv (fixed 10-min full run): peak 16.34 GB at Prtreid, ends 7.45-9.64 GB. This split produced the 45-min GS-HOTA 18.094 at 132480 s wall (degradation.csv row '45min,67625,18.094,132480,full (two-stage)').",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/stage1_pss.csv, stage2_pss.csv, half-stageA.csv, half-stageB.csv, full10.csv, degradation.csv",
+  "reader": "metrics"
+ },
+ {
+  "name": "Common-window control (750-frame overlap scoring)",
+  "what_was_tried": "Scored each sweep run restricted to the common first 750 frames ('common750' window) to separate genuine degradation from window difficulty: if longer runs score worse even on the identical frames, the tracker itself degrades.",
+  "numbers": "corrected_scores.json/sweep_scores.json common750 attrs OFF: 30s-run 77.446, 1min-run 77.381, 5min-run 77.626 \u2014 geometry/association on the shared window is stable regardless of run length. Common750 attrs ON: 30s-run 37.155, 1min-run 37.155, but 5min-run 16.343 (DetA 3.361, AssA 80.688) \u2014 attribute quality on the same frames collapses when the run is longer; ids on the window grow 26 -> 28 -> 29.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/sweep_scores.json, corrected_scores.json, score_sweep.py",
+  "reader": "metrics"
+ },
+ {
+  "name": "45-minute full-half GSR baseline (headline run)",
+  "what_was_tried": "Run the TrackLab/sn-gamestate GSR pipeline end to end on a complete 45-minute half (match 128057, 1st half, test split) \u2014 the first complete half the pipeline ever produced; before this work it could not finish 10 minutes.",
+  "numbers": "67,625 frames, 1,388,671 detections, ~37 hours of compute in two resumable stages. GS-HOTA 18.094 with attributes, 26.036 attributes-off. 345 predicted tracklets vs 23 real players (15.0x). DetA 51.2, LocA 84.7, AssA 13.4 (attrs off). The two-stage split sits before reid so embeddings are never written to disk.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/README.md; /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md; commit 084aff7",
+  "reader": "repo"
+ },
+ {
+  "name": "Sequence-length sweep (nested prefixes, identical footage)",
+  "what_was_tried": "Score the pipeline on nested prefixes of one half so the only variable is how much footage the global modules reconcile at once. Fixed config throughout: jersey gates min_roi_area=100, min_obb_aspect_ratio=0.6, detection-level team clustering.",
+  "numbers": "30s: 750 frames, 16.5k det, GS-HOTA 37.155, 26 tracklets, 4 min wall. 1 min: 1,500 fr, 33k, 47.589 (peak), 35 trk, 12 min. 2 min: 3,000 fr, 66k, 39.882, 42 trk, 37 min. 5 min: 7,500 fr, 165k, 30.974, 60 trk, 2.6 h. 10 min: 15,000 fr, 301k, 25.604 (attrs off 33.908), 99 trk, 5.5 h. 45 min: 67,625 fr, 1,389k, 18.094 (attrs off 26.036), 345 trk, ~37 h. Peaks at 1 minute, falls monotonically; 45-min figure is 38% of the 1-minute figure on identical footage.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/README.md (length_sweep_128057_1st.csv); /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md",
+  "reader": "repo"
+ },
+ {
+  "name": "Attribute ablation on the full 45-minute half",
+  "what_was_tried": "Switch each attribute (role, team, jersey) on in turn on the finished 45-minute predictions to measure each attribute's marginal GS-HOTA cost.",
+  "numbers": "Geometry+association only: GS-HOTA 26.036, DetA 51.209, AssA 13.409. +role: 25.637 (DetA 49.358, AssA 13.480). +team: 22.364 (DetA 35.116, AssA 14.374). +jersey (official): 18.094 (DetA 14.672, AssA 22.319). Marginal cost: role -0.40, team -3.27, jersey -4.27; total attribute cost 7.94. 26.036 is the ceiling for the official metric. Ceiling = sqrt(51.209 x 13.409) = 26.2; perfect detection raises it to 36.6, perfect association to 71.6.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/attribute_ablation_45min.md; commit 9330abb",
+  "reader": "repo"
+ },
+ {
+  "name": "Attribute accuracy at 45 minutes (per-detection)",
+  "what_was_tried": "Measure per-attribute accuracy on confident geometric matches (<=2 m) at 45 minutes to locate the loss.",
+  "numbers": "On 36,665 confident geometric matches: role 97.92%, team 76.17%, jersey 45.95%. Only 3.4% of jersey predictions are null \u2014 jersey is wrong, not absent (recognition-quality problem, not coverage). Note: only 41 referee detections in 1.38M and this match's GT contains no referees, so the 97.92% role figure is dominated by players.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/README.md; /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md; commit a283428",
+  "reader": "repo"
+ },
+ {
+  "name": "Fragmentation claim corrected: 81% of tracklets are junk",
+  "what_was_tried": "Check the distribution behind the '347 tracklets vs 23 players = 15x fragmentation' claim; the earlier write-up asserted fragmentation as the mechanism without checking.",
+  "numbers": "282 of 347 tracklets (81%) hold 0.2% of all detections; ~65 tracklets carry the remaining 99.8%, so real fragmentation is ~2.8x, not 15x. Median predicted tracklet length 8 detections vs median GT identity 67,625. 41 tracklets span more than 3x as many frames as they hold detections (ids re-used across gaps).",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/README.md; commit a283428",
+  "reader": "repo"
+ },
+ {
+  "name": "Junk-tracklet filter (minimum tracklet length)",
+  "what_was_tried": "Drop the junk-tracklet tail by minimum length thresholds to see if it improves GS-HOTA.",
+  "numbers": "min length 0: 18.094 (345 tracklets); 10: 18.097 (155); 100: 18.104 (65); 500: 18.108 (59). Worth 0.014 points maximum \u2014 removing 81% of tracklets changes nothing. Recorded so it is not tried again.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/attribute_ablation_45min.md; commit 9330abb",
+  "reader": "repo"
+ },
+ {
+  "name": "Structural priors applied per-frame (all backfired)",
+  "what_was_tried": "Apply game-supplied exact constraints (verified true of this half's GT: exactly 22 detections/frame, 11 per team, 23 identities, jersey unique within team, no referees) post-hoc to the finished 45-minute predictions, per frame. Pipeline's unconstrained team split was 45.9/54.1 where truth is 50/50.",
+  "numbers": "Baseline 18.094 (DetA 14.672, AssA 22.319). 11-per-team per frame: 16.350 (DetA 14.701, AssA 18.189) = -1.74. Jersey unique within team: 16.424 (DetA 10.711, AssA 25.185) = -1.67. Both together: 14.674 (DetA 10.857, AssA 19.835) = -3.42. The per-frame team prior IMPROVED per-detection team accuracy 76.17% -> 82.86% (on 36,683 matched pairs) and still lost 1.74 GS-HOTA, via 124,186 team-label flips inside tracklets.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/structural_priors_45min.md; commit cb0f480",
+  "reader": "repo"
+ },
+ {
+  "name": "Track-level team prior (best score measured)",
+  "what_was_tried": "Same 11-per-team prior, but committed at track level: one team per tracklet. Post-hoc on saved predictions, not an end-to-end pipeline change.",
+  "numbers": "11-per-team -> one team per tracklet: GS-HOTA 19.724 (DetA 16.567, AssA 23.493), +1.63 vs 18.094 \u2014 best measured on this half (+9% relative). One team per tracklet decided once: 19.295 (DetA 15.962, AssA 23.333), +1.20. Same prior per-frame vs per-track is a 3.37-point swing from placement alone; track-level variants produce zero label flips vs 124,186 per-frame. Caveat: post-hoc, not validated by an end-to-end rerun.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/structural_priors_45min.md; /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md; commit db0e349",
+  "reader": "repo"
+ },
+ {
+  "name": "Jersey uniqueness constraints (track level)",
+  "what_was_tried": "Force jersey numbers unique within a team at track level, with and without a support threshold; also try nulling weak jerseys instead.",
+  "numbers": "Unique within team (any support): 17.569 (DetA 11.375, AssA 27.140) \u2014 the largest AssA gain seen anywhere (+4.8) yet still loses overall. Support >= 100: 17.230 (DetA 10.789, AssA 27.518). Nulling weak jerseys: 19.724 \u2014 changes nothing (pipeline already nulls those tracklets). Reason: median per-tracklet jersey support is 0.0; 75% of tracklets carry no jersey evidence at all.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/structural_priors_45min.md; commit db0e349",
+  "reader": "repo"
+ },
+ {
+  "name": "Post-hoc identity re-grouping of tracklets",
+  "what_was_tried": "Re-group the 347 tracklets into 58 identities by appearance-based merging under a hard temporal-exclusion constraint (two formulations: greedy closest-pair merging; largest-first slot colouring), verified to be using the new ids.",
+  "numbers": "AssA moved 13.409 -> 13.410 (+0.001). Both formulations stall at 57-58 groups because tracklets are sparse frame sets with gaps (conflict graph is not an interval graph). Null result explained by purity measurement (see tracklet-purity entry).",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/structural_priors_45min.md; /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md; commit db0e349",
+  "reader": "repo"
+ },
+ {
+  "name": "Tracklet purity measurement (why nothing post-hoc helps)",
+  "what_was_tried": "Measure what the predicted tracklets actually contain against ground truth, to explain the re-grouping null result.",
+  "numbers": "Mean tracklet purity (detection-weighted) 55.8%; median distinct GT identities inside one tracklet: 13; median predicted tracklets per real player: 31; largest single tracklet's share of one player commonly 20-45%. Tracklets are mixtures of ~13 players, not fragments of one \u2014 they would have to be split, so association must be fixed in the online tracker.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/structural_priors_45min.md; /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md; commit db0e349",
+  "reader": "repo"
+ },
+ {
+  "name": "Temporal windowing of team clustering",
+  "what_was_tried": "Cluster teams per time window (fixed windows at 1/5/10/15 min plus a confidence-adaptive variant) instead of one global fit over all 1.39M detections, on the hypothesis that appearance drift over 45 minutes degrades team accuracy.",
+  "numbers": "All variants scored WORSE than one global fit: 55-68% team accuracy vs 76.20% global. Appearance drift is not the limitation. Refuted \u2014 do not re-try.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md (section 4)",
+  "reader": "repo"
+ },
+ {
+  "name": "Kit-colour features for team clustering",
+  "what_was_tried": "Replace/augment ReID embeddings with kit-colour features for team clustering.",
+  "numbers": "Cluster separation 2.3-4.2 vs 0.63 for embeddings (crisp clusters), but only +1.45 team accuracy \u2014 the clusters separate illumination rather than kit.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md (section 4)",
+  "reader": "repo"
+ },
+ {
+  "name": "Detection-level team clustering module (tracklet_team_detection_level)",
+  "what_was_tried": "New module: k-means over detection-level embeddings with per-tracklet voting, replacing stock tracklet-mean clustering which collapses when tracklets fragment.",
+  "numbers": "At 5 min: team accuracy 51.6% (chance on two classes) -> 86.6%; GS-HOTA 19.484 -> 30.974. But it crosses over: 30s tracklet-level 40.352 vs detection-level 37.155; 1 min 57.824 vs 47.589; 2 min \u2014 vs 39.882; 5 min 19.484 vs 30.974. No single best team module across lengths; any length sweep must fix one config.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 3); /home/atom/SoccerTrack-v2/results/gsr/README.md; commit 2354e9c",
+  "reader": "repo"
+ },
+ {
+  "name": "manual_calib_metre (homography objective in metre space)",
+  "what_was_tried": "Fit the calibration homography objective in metre space rather than pixel space.",
+  "numbers": "Measured -2.9 and -8.1 GS-HOTA. Default reverted to homography_objective: pixel. Kept as a negative result so the experiment is not repeated.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 3); commit 5091f43",
+  "reader": "repo"
+ },
+ {
+  "name": "vitpose_strided (strided pose detector)",
+  "what_was_tried": "Stride ViTPose to cut its dominant share of pipeline runtime.",
+  "numbers": "Sub-2x speedup cost too much accuracy (exact accuracy delta not recorded in the source). Not in use.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 3)",
+  "reader": "repo"
+ },
+ {
+  "name": "merge_dataframes de-quadratification (TrackLab engine.py)",
+  "what_was_tried": "Per-batch results were merged by rebuilding the whole accumulated detections frame each batch \u2014 O(len(frame)) twice over per batch, quadratic total, the main reason 45-minute halves were projected at ~63 h. Fixed in place.",
+  "numbers": "Before: 1.02 s/batch at batch 0 rising to 3.74 s/batch by batch 2353. After: flat 0.90-0.97 s/batch. Validated on a full 750-frame pipeline run before and after: GS-HOTA 29.135% both times, metric summary files byte-identical, only prediction differences were float noise at 3.9e-11 m.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 2); /home/atom/SoccerTrack-v2/scripts/gsr/README.md",
+  "reader": "repo"
+ },
+ {
+  "name": "forget_columns applied at module end, deleted in place (offline.py)",
+  "what_was_tried": "TrackerState only applied forget_columns at video teardown, so PRTReID's body_masks (1x64x32 float32, 8 KB/detection, unread downstream) was carried through all eleven remaining modules. First fix attempt used drop(columns=...) which freed nothing because EngineDatapipe holds a reference to the frame; fixed by deleting columns in place.",
+  "numbers": "body_masks carried: 2.5 GB at 10 minutes, 11 GB at 45 minutes. On a 60,000-row stand-in: drop(columns=...) leaves 0.65 GB live (WORSE than the 0.58 GB before \u2014 two frames instead of one); del detections[col] in place leaves 0.08 GB. Caveat stated in source: this does NOT explain the 10-minute OOM, which occurred at 61% through PRTReID before this fix takes effect.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 2); commit f1cd816",
+  "reader": "repo"
+ },
+ {
+  "name": "OptimizationConsistency O(N^2) fix (build_track_evidence + process)",
+  "what_was_tried": "build_track_evidence iterated the track_id column's VALUES (once per detection, not per unique id), rebuilding a full-length mask each time; repeats overwrote each other identically. Replaced with one grouped pass (ddof=0 stated explicitly to match np.std vs pandas defaults). process had the same shape; replaced with groupby('image_id', sort=True) writing back only role_detection.",
+  "numbers": "The module produced no output for 2 h 22 m on five minutes of footage; projected 25-45 hours on a 45-minute half \u2014 larger than all GPU stages combined. On the real 30-second state (15,642 detections, 26 tracklets): 107.798 s -> 0.006 s, 18,920x faster, worst field difference 0.000e+00 (bit-identical).",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 2); commit 51527d1",
+  "reader": "repo"
+ },
+ {
+  "name": "GTA tracklet distance made linear (refine_tracklets.py)",
+  "what_was_tried": "get_distance materialised three full n1 x n2 GPU tensors to compute one scalar (mean pairwise cosine distance). Replaced with the exact separable identity: mean = 1 - dot(mean(a), mean(b)) for unit-normalised features, O(n1+n2) instead of O(n1*n2).",
+  "numbers": "GPU memory by length (x3 tensors): 5 min 0.68 GB; 10 min 2.70 GB; 15 min 6.08 GB; 45 min 54.88 GB (single largest pair matrix 18.29 GB) against a 16 GB GPU with ~7.3 GB already held by models. After fix at 45 min: 54.88 GB -> 0.28 GB, a 198x reduction. Exactness verified to float32 rounding: worst difference 5.96e-08 vs float32 eps 1.19e-07, over tracklet sizes to 6000x6000, overlapping-times short circuit still returns 1.0. Caveat: no full pipeline run has yet confirmed identical GS-HOTA before/after.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 2); commit 691bd39",
+  "reader": "repo"
+ },
+ {
+  "name": "10-minute OOM root cause: glibc arena retention (malloc_trim fix)",
+  "what_was_tried": "The 10-minute run was OOM-killed 61% through PRTReID with 35.5 GB on the parent's heap while the detections frame held 0.23 GB (~99% of resident memory not live). Five hypotheses refuted by measurement (frame columns, forget_columns, worker copy-on-write, per-module worker accumulation, glibc dynamic mmap threshold); diagnosis: glibc per-thread arena retention. Fix: malloc_trim(0) every 100 batches (TRACKLAB_MALLOC_TRIM=100).",
+  "numbers": "Growth (GB per 100 batches): 2 min full 3-module 0.067; 5 min reid alone 0.075; 10 min reid alone 0.067; 10 min [bbox_detector, reid] 0.059; 10 min FULL pipeline 1.97 \u2014 detection count flat across 4.5x range so N is not the driver. With malloc_trim: PRTReID peaked at 16.34 GB vs 41.66 GB and climbing to a projected 87 GB; 58.2 GB reclaimed across 69 trim events; parent RSS steady ~5 GB; full 14-module run completed. Anti-pattern recorded: tracemalloc itself accounted for ~10 GB in one measurement and produced a false 'found it'.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (sections 2-4); commit 325011a",
+  "reader": "repo"
+ },
+ {
+  "name": "Memory-claim retraction: PSS not RSS; orphaned workers",
+  "what_was_tried": "Retract the report's claim that 'memory is not a constraint' (based on parent-only RSS on runs of 5 min and under); re-measure all figures as PSS across the process tree; document the orphaned dataloader-worker leak.",
+  "numbers": "A tree reading 43 GB of RSS was 12.9 GB of PSS (12 forked workers share pages). Refuted: workers do not accumulate across module boundaries (count holds at 12). Real leak: children of an OOM-killed parent are reparented to init and never reaped \u2014 twelve found alive 23 hours later holding 8.79 GB PSS.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 4); commit 2354e9c",
+  "reader": "repo"
+ },
+ {
+  "name": "connect_track.py fixes (role AttributeError; pixel-vs-metre thresholds)",
+  "what_was_tried": "use_spatial_connect=True crashed with AttributeError ('Tracklet' has no 'role'); the reads were dead and deleted. The module's spatial thresholds were then fixed from pixel to metre units (pixel distance is perspective-dependent) \u2014 a genuine bug fix targeting association, the dominant lever.",
+  "numbers": "After the unit fix the module merged ZERO tracklets in practice, so it changes nothing. Threshold units caveat: the patches doc flags that any GTA spatial-connect result is unvalidated until thresholds are converted; the handoff (section 6, item 5) records the merged-zero outcome.",
+  "verdict": "neutral",
+  "source": "/home/atom/SoccerTrack-v2/docs/gsr-tracklab-patches.md (section 1); /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md (section 6); /home/atom/SoccerTrack-v2/results/gsr/attribute_ablation_45min.md (work list)",
+  "reader": "repo"
+ },
+ {
+  "name": "score_one.py: offline scoring that drops non-finite pitch coordinates",
+  "what_was_tried": "TrackLab's evaluator raised 'matrix contains invalid numeric entries' on the finished 10-minute run because calibration emits NaN/inf pitch coordinates near the horizon; score_one.py drops them (equivalent to the tracker never reporting them), always prints the discard count, and scores attrs on and off.",
+  "numbers": "470 of 298,896 predictions (0.16%) carried NaN/infinite pitch coordinates at 10 minutes. 10-minute score: GS-HOTA 25.604 with attributes, 33.908 without, from 99 predicted tracklets vs 22 real players. Non-finite fraction grows with length: 0.16% at 10 min -> 0.435% at 45 min. Separately: TrackLab's own evaluator deadlocked after inference (three processes blocked on futexes, frozen CPU counters, 12h39m), so all long-sequence scores come from score_one.py.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/results/gsr/README.md; /home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md (section 5); commit bd41491",
+  "reader": "repo"
+ },
+ {
+  "name": "num_cores=12 DataLoader workers",
+  "what_was_tried": "Raise engine.num_workers from the shipped value of 1 (which starves the GPU) to 12 on a 24-core machine.",
+  "numbers": "Measured 2.05x speedup: 2.14 -> 1.04 s/batch; GPU idle samples 11/18 -> 3/24.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/README.md; commit a45df79",
+  "reader": "repo"
+ },
+ {
+  "name": "Per-module cost profile (750-frame clip, RTX 4060 Ti 16 GB, 4096x1080)",
+  "what_was_tried": "Time the whole 14-module pipeline per module on a 30-second (750-frame) clip to project full-half cost.",
+  "numbers": "ViTPose 512 batches 10:31 (56% of total, ~26 crops/s); RF-DETR 94 batches 1:36; PRTReID 256 batches 0:51; PARSeq 128 batches 0:27; PoseBasedRegionExtractor 512 batches 0:09; ManualCalib 750 batches 0:05; total ~15:00. Scaled to a 67,625-frame half: roughly 20 h (GPU stages).",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/README.md",
+  "reader": "repo"
+ },
+ {
+  "name": "30-second attribute ablation (early clip-level)",
+  "what_was_tried": "Attribute ablation on the 30-second clip, before the 45-minute run existed.",
+  "numbers": "roles+teams+jersey (official): GS-HOTA 29.13, DetA 9.70, AssA 87.60, LocA 92.15, DetRe 17.57. roles+teams no jersey: 49.99 (DetA 34.99, AssA 71.67, LocA 86.61, DetRe 50.65). roles only: 62.53. no attributes: 64.41 (DetRe 72.14). Jersey costs 20.9 points, team 12.5; detection recall 72%. Source warns: do not quote AssA 87.60 as an association result \u2014 with attributes on it is a selection effect.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/README.md; commit a45df79",
+  "reader": "repo"
+ },
+ {
+  "name": "GS-HOTA prediction-path fix (three defects)",
+  "what_was_tried": "Scoring the first real GSR predictions raised three sequential errors in soccertrack_records_to_gs: (1) bbox_pitch carried only x/y_bottom_middle where the scorer reads six keys; (2) image_id was an int where the scorer calls len(); (3) predictions numbered frames 0-based vs the GT's 1-based string ids, so no prediction ever matched. The existing identity test never called the converter.",
+  "numbers": "After fix, tests/test_gs_hota_prediction_path.py: HOTA=1.000000, LocA=1.000000, 6600 pred detections = 6600 GT detections; identity test unchanged at 1.000000. id-mapping coverage measured 100%: 67,625 of 67,625 prediction frames for 128057 1st half. Also reconciled _SN_CATEGORIES with the released files (1 player, 2 goalkeeper, 3 referee, 4 ball; previously said 4=other, 5=ball) \u2014 no score changed.",
+  "verdict": "shipped",
+  "source": "commit b807ed9 (git log body); PR #21 (commit 6f5c47c)",
+  "reader": "repo"
+ },
+ {
+  "name": "Per-half frame offset: measured, not assumed",
+  "what_was_tried": "Measure the label-to-imagery frame offset per half with two independent methods (padding_info arithmetic; a box-occupancy estimator over candidate lags) instead of assuming a uniform value. Three earlier estimator versions failed (background-subtraction centroid returned 67 vs a known 25; cap.set(CAP_PROP_POS_FRAMES) seeking injected its own offset).",
+  "numbers": "Offsets cluster at ~0 and ~25 frames and vary by HALF: offset 0 for 117092 1st, 117093 2nd, 118575 1st+2nd, 118577 1st, 118578 2nd; offset 25 for the other fourteen. Methods agree on 18 of 18 halves with signal; 132831 and 132877 flat (gain 0.001-0.004, z below 2.6) so arithmetic applied without independent confirmation. A one-second misalignment cost the GSR baseline GS-HOTA 18.79 vs 37.16 on the same data. Labels re-staged for all 20 halves; frames untouched.",
+  "verdict": "shipped",
+  "source": "commit 7f2cd66 (git log body); /home/atom/SoccerTrack-v2/docs/experiment-design-bas.md (18.79 vs 37.16 figure)",
+  "reader": "repo"
+ },
+ {
+  "name": "BAS evaluator fixes: four loader defects plus confidence ranking",
+  "what_was_tried": "BAS evaluation could not load a single released file: (1) wrong top-level key ('actions' not 'annotations'); (2) labels UPPER CASE vs declared Title Case, raising on the first event; (3) a third period in a different format (gameTime without half prefix, position past 5,400,000 ms) crashing the split; (4) position is absolute from match start, not per-half as docs/format-bas.md and the paper state (verified on 117093: half-2 events run 2,700,760-5,506,280 ms) \u2014 Event.image_id put every half-2 event 67,500 frames late. Separately (ca1c953): _map_per_class sorted predictions by time, discarding confidence ranking, and Event had no score field, so AP was a time-ordered traversal, not average precision. Fixed: Event gains score; ranked descending.",
+  "numbers": "After fixes: 23,663 events parse across all ten matches (previously zero); mAP@1s = 1.0000 and mAP@5s = 1.0000 on GT-vs-itself, all 12 classes at 1.0. Third-period blocks: 1007 (117092), 691 (132831), 431 (132877) = 2,129 events, now inferred from position rather than dropped. New ranking test discriminates: AP 1.0000 with false positives ranked last vs 0.5000 ranked first. Half-2 in-half times reach ~48 minutes under the nominal 45-min subtraction (documented as approximate; frame-exact work uses frameStart in tracker_box_metadata.xml).",
+  "verdict": "shipped",
+  "source": "commits 2e9c414, ca1c953, 22fd921 (git log bodies); PR #23 (4b7461c); /home/atom/SoccerTrack-v2/docs/experiment-design-bas.md",
+  "reader": "repo"
+ },
+ {
+  "name": "Staging and calibrated-keypoint tooling (release-defect repairs)",
+  "what_was_tried": "Stage 45-minute halves for TrackLab, repairing released-label defects: stale width/height metadata, colliding sequence ids/names, GT annotating more frames than the video contains, and a missing calibrated-keypoints file for 19 of 20 halves. A later staging clamp bug was also fixed.",
+  "numbers": "Metadata says 3840x1504; real frames are 4096x1080. info.id is '1' in all 20 released files; info.name collides between halves. GT annotates ~25 more frames than the video; seq_length clamped. Staging costs ~110 GB of JPEGs per half at -q:v 2 (1.67 MB/frame). make_calibrated_keypoints.py validates by regenerating 117093's shipped set: image->pitch agreement 0.0000 m over 725 on-pitch grid points; canvas normalisation needed because raw balance=0 undistortion puts 128057's control points at x in [-7973, 11234] for a 4096-wide image. Clamp bug: CLPD-132877-1st staged 67,688 images against declared seq_length 67,700 and TrackLab refused to load; fixed to clamp to n_img_gt - offset. Prefix sequences symlink img1 so the length study costs zero extra disk.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/README.md; commits a45df79, 5091f43 (git log bodies)",
+  "reader": "repo"
+ },
+ {
+  "name": "track_buffer sweep and ReID-swap candidates (association hypotheses)",
+  "what_was_tried": "Two untested candidate causes for AssA 13.4: BoT-SORT's track_buffer: 30 (a player unmatched for 1.2 s at 25 fps becomes a new identity, while soccer occlusions routinely exceed that), and the tracker's association ReID weights being clip_duke.pt (CLIP trained on DukeMTMC pedestrian surveillance \u2014 teammates in matching kit near worst case). A track_buffer sweep (30/90/250) at 10 min was running at handoff; the ReID swap was untried.",
+  "numbers": "No results in at handoff \u2014 log at scratchpad/logs/buffer_sweep.log. The handoff explicitly instructs: do not present these as causes, only candidates. Also open: four exact reductions from the module scan (GKRoleAssignment, generate_tracklets, add_removed_detections, np.isin on string image_id) worth ~3-4 h of a 25 h run, not accuracy.",
+  "verdict": "in-flight",
+  "source": "/home/atom/SoccerTrack-v2/docs/handoff-gsr-for-paper.md (sections 3, 6, 7)",
+  "reader": "repo"
+ },
+ {
+  "name": "45-min half baseline score (CLPD-128057-1st)",
+  "what_was_tried": "Scored the full 45-minute half prediction with the official GS-HOTA evaluator, attributes on and off; this is the reference every prior experiment compares against.",
+  "numbers": "attributes ON (official GS-HOTA): GS-HOTA 18.094, DetA 14.672, AssA 22.319, LocA 86.836. attributes OFF (geometry + association): GS-HOTA 26.036, DetA 51.209, AssA 13.409, LocA 84.677. 345 predicted tracklets vs 23 real players. 1,380,396 object predictions, dropped 6,002 (0.43%) with non-finite pitch coordinates.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/score45.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Attribute ablation on the 45-min half",
+  "what_was_tried": "Re-scored the same prediction with attributes progressively enabled to measure what each attribute costs GS-HOTA.",
+  "numbers": "nothing (geometry + association only) 26.036 / DetA 51.209 / AssA 13.409 / 345 IDs; role only 25.637 / 49.358 / 13.480; role + team 22.364 / 35.116 / 14.374; role + team + jersey = OFFICIAL 18.094 / 14.672 / 22.319. Marginal cost: + role only -0.398; + role + team -3.273; + role + team + jersey -4.270.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/ablate45.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Dropping short tracklets (official metric)",
+  "what_was_tried": "Filtered predicted tracklets below a minimum length before scoring, to test whether junk fragments hurt the official metric.",
+  "numbers": "min tracklet length 0: 18.094 / DetA 14.672 / AssA 22.319 / 345 IDs; length 10: 18.097 / 14.677 / 155 IDs; length 50: 18.103 / 14.687 / 72 IDs; length 100: 18.104 / 14.689 / 65 IDs; length 500: 18.108 / 14.695 / 59 IDs. AssA constant at 22.319 throughout.",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/ablate45.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Tracklet purity audit",
+  "what_was_tried": "Measured how pure each substantial predicted tracklet is (share of its detections belonging to one GT player) and how fragmented each real player is across predicted tracklets.",
+  "numbers": "59 predicted tracklets matched to GT; 41 with >=200 matched detections. Detection-weighted mean purity over substantial tracklets: 55.8%. Median distinct GT identities per substantial tracklet: 13 (worst examples: tracklet 8.0 purity 19.5% with 17 distinct GT ids; tracklet 1.0 purity 32.8% with 15; best: tracklet 52.0 purity 98.4%). Other direction: median predicted tracklets per real player: 31 (e.g. GT id 17 split over 39 tracklets, largest share 32.5%).",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/tracklet_purity.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Team-assignment window designs",
+  "what_was_tried": "Compared the pipeline's team assignment against global k-means and windowed/centroid-stitched/confidence-adaptive re-clustering of the 256-d ReID embeddings.",
+  "numbers": "baseline: pipeline output (global k-means + side labelling) 76.20% (1 window); global k-means, one fit for the whole half 71.90%; fixed 1-minute windows 59.86% (46 windows); fixed 5-minute 62.29% (10); fixed 10-minute 61.27% (5); fixed 15-minute 63.14% (4); confidence-adaptive close at 3% separation drop 61.38% (8); at 7% 55.34% (4); at 15% 67.85% (2); fixed 5-min + per-tracklet median smoothing 64.02%. Global fit 6s, separation 0.772. Data: 1,346,086 player detections, 54,100 GT detections on 2,705 sampled frames, 34,957 matched pairs.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/team_designs.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Torso colour vs ReID embedding for team assignment",
+  "what_was_tried": "Compared team-classification accuracy and cluster separation of raw torso colour features against the 256-d ReID embedding currently used.",
+  "numbers": "ReID embedding (256-d, what is used now): team acc 77.23%, separation 0.631; torso colour CIELAB median (3-d): 78.68%, 2.325; ab chroma only (2-d): 76.66%, 2.954; L lightness only (1-d): 72.63%, 4.209. 271 frames sampled, 5,420 GT player boxes, 3,522 matched torso patches, frames read in 15s.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/team_colour.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Structural priors on unconstrained k-means (round 1)",
+  "what_was_tried": "Replaced the pipeline's team clustering with unconstrained per-detection k-means, then added 11-per-team and one-team-per-tracklet priors.",
+  "numbers": "Unconstrained global split: 67,048 / 1,309,715 = 4.9% / 95.1% (ground truth by construction 50.0% / 50.0%). Team acc: baseline pipeline output 76.17%; unconstrained k-means (per detection) 52.39%; + prior exactly 11 per team per frame 60.23%; + prior one team per tracklet (vote) 50.37%; + both priors (balance then vote) 63.01%. Data: 1,376,763 player+GK detections, 36,683 matched pairs.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/team_priors.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Structural priors on pipeline clusters (round 2, attribute accuracy)",
+  "what_was_tried": "Applied the same priors on top of the pipeline's own cluster labels instead of re-clustering, measuring team and jersey attribute accuracy.",
+  "numbers": "Pipeline cluster split: 45.9% / 54.1% (truth 50/50). TEAM acc: baseline (cluster + tracklet vote) 76.17%; per-detection cluster, no vote 75.69%; + one team per tracklet (vote) 75.69%; + exactly 11 per team per frame 82.86%; + balance THEN tracklet vote 80.48%. JERSEY acc: per-detection as produced 45.94%; per-tracklet confidence-weighted vote 45.94%; + jersey unique within team (Hungarian) 45.94%. Data: 1,376,763 player+GK detections, 36,683 matched pairs.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/priors_round2.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Per-frame balance + jersey-uniqueness priors scored on GS-HOTA (v1)",
+  "what_was_tried": "Wrote three prediction variants applying the 11-per-team per-frame balance prior and the jersey-uniqueness (Hungarian) prior to the 45-min half, then scored them on GS-HOTA.",
+  "numbers": "Application: 1,380,396 detections; prior_team changed team on 390,885 detections; prior_jersey changed jersey on 582,114; prior_both changed both (390,885 team, 582,114 jersey); cluster 0 mean x 7.5 -> right, cluster 1 mean x -1.3 -> left; jersey Hungarian assigned 24/88 candidates (team 0, 27 tracklets) and 22/83 (team 1, 22 tracklets). Scores (attrs ON): prior_team GS-HOTA 16.350 / DetA 14.701 / AssA 18.189 / LocA 87.523; prior_jersey 16.424 / 10.711 / 25.185 / 87.079; prior_both 14.674 / 10.857 / 19.835 / 87.885. Baseline was GS-HOTA 18.094 (attrs on) / 26.036 (attrs off). All three worse than baseline.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/apply_priors.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/score_priors.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Team prior v2: tracklet-vote and global variants",
+  "what_was_tried": "Re-designed the team prior so labels never flip within a tracklet: a per-tracklet vote variant and a global variant, scored on GS-HOTA.",
+  "numbers": "Application (1,380,396 detections, 347 tracklets): prior_team_vote changed team on 161,126 detections; prior_team_global on 50,262; label flips within tracklets \u2014 per-frame balance 124,186, balance+vote 0, one-shot per tracklet 0. Scores: prior_team_vote GS-HOTA 19.724 / DetA 16.567 / AssA 23.493 / LocA 87.238; prior_team_global 19.295 / 15.962 / 23.333 / 87.225. References: baseline 18.094, per-frame balance 16.350. prior_team_vote is +1.630 over baseline and becomes the new reference.",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/apply_priors_v2.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/score_priors2.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Jersey-number prior threshold variants",
+  "what_was_tried": "Jersey-number assignment variants with support thresholds (thr0/5/20/100) and null-weak variants layered on the team-vote prior, scored on GS-HOTA.",
+  "numbers": "Support stats: tracklet jersey support median 0.0, 75th 0.0, 90th 130.8, max 6165.5. Coverage: thr0 1,314,014 with a number / 66,382 abstained; thr5 1,308,593 / 71,803; thr20 1,270,788 / 109,608; thr100 1,134,919 / 245,477; nullweak5 1,321,753 / 58,643; nullweak20 1,272,721 / 107,675. Scores: prior_jn_thr0, thr5, thr20 all GS-HOTA 17.569 / DetA 11.375 / AssA 27.140 / LocA 87.498; thr100 17.230 / 10.789 / 27.518 / 87.593; nullweak5 and nullweak20 both 19.724 / 16.567 / 23.493 / 87.238 \u2014 numerically identical to prior_team_vote alone (ambiguous whether the jersey prior contributed anything). Reference: baseline 18.094 | prior_team_vote 19.724.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/jersey_variants.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/score_jn.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Identity-merge prior (merge 347 tracklets toward 23 players)",
+  "what_was_tried": "Merged the 347 predicted tracklets toward the 23 real identities using embedding-based agglomeration (and a colour-based variant), then scored the rewritten track ids.",
+  "numbers": "Embedding version: 1,380,396 detections, 347 tracklets -> target 23; merging stopped at 58 clusters: no disjoint pair remains; detections per identity [46419, 46251, 45723, 44778, 42916, 41802, 40763, 39605] ... [2482, 2356, 2242]; 855,090 track_ids rewritten. Colour version: stopped at 57 identity slots (ground truth has 23); members per identity [74, 65, 57, 20, 19, 12, 11, 7, 7, 4]; 1,380,396 rewritten. Scores: prior_id23_baseline GS-HOTA 18.094 / DetA 14.672 / AssA 22.319 / LocA 86.836 (identical to baseline); prior_id23_teamvote 19.724 / 16.567 / 23.493 / 87.238 (identical to prior_team_vote). Merging changed the score by exactly nothing.",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/identity_prior.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/identity_colour.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/score_id.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Rewritten routine consistency check (18,920x speedup)",
+  "what_was_tried": "Verified a rewritten implementation against the original on a real state to confirm bit-exact output before adopting it.",
+  "numbers": "Using real state: 15,642 detections, 26 tracklets. Original 107.798 s; rewritten 0.006 s; speedup 18,920x. 26 tracklets, identical keys; worst field difference 0.000e+00; verdict line: EXACT.",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/consistency_check.log",
+  "reader": "logs"
+ },
+ {
+  "name": "use_spatial_connect A/B (2-min segment)",
+  "what_was_tried": "A/B of GTA's spatial-connect option. The first spatial=true attempt crashed; a clean rerun completed and was compared to spatial=false.",
+  "numbers": "use_spatial_connect=false rc=0: GS-HOTA = 39.882. First use_spatial_connect=true attempt rc=1: torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 960.00 MiB. GPU 0 has a total capacity of 15.60 GiB (crash in prtreid hrnet forward). Rerun spatial-on rc=0: GS-HOTA = 39.882 \u2014 identical to spatial off. Tracklet counts (spatial-on): 85 before removing irregular boxes -> 69; splitting 69 -> 70; merging 70 -> 27; adding removed detections 27 -> 42; after connecting: 42. Both arms end at 42 tracklets.",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/spatial_ab.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/spatial_on_wrap.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/spatial_true.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Buffer sweep (buffer=30)",
+  "what_was_tried": "Sweep over tracker buffer size; the run is still in progress.",
+  "numbers": "buffer_sweep.log is 0 bytes (no scores yet). buf30.log is mid-run at 'Prtreid: 62% 2917/4703 [10:26<06:30, 4.58it/s]' \u2014 no GS-HOTA, acc, or purity lines exist yet in either file.",
+  "verdict": "in-flight",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/buffer_sweep.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/buf30.log",
+  "reader": "logs"
+ },
+ {
+  "name": "ViTPose model-size sweep (1500-frame clip)",
+  "what_was_tried": "Swapped the pose model between vitpose-plus-huge, -base, and -small on a 1500-frame clip to see if pose capacity affects GS-HOTA or wall time.",
+  "numbers": "vitpose-plus-huge: GS-HOTA 57.824, wall 2265s, pose 19:57; vitpose-plus-base: 57.824, 2227s, 19:56; vitpose-plus-small: 57.824, 2224s, 19:57. Identical score for all three; total_frames 1500.",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/pose_sweep.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Pose stride sweep",
+  "what_was_tried": "Ran pose estimation every Nth frame (stride 1/2/5/10) to trade GS-HOTA for speed.",
+  "numbers": "stride 1: GS-HOTA 57.824, wall 2241s, pose 20:00; stride 2: 52.114, 1638s, 10:07; stride 5: 50.426, 1269s, 04:08; stride 10: 50.426, 1154s, 02:08.",
+  "verdict": "rejected",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/stride_sweep.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Initial sequence-length sweep (Aug 11-12)",
+  "what_was_tried": "Ran the full pipeline end-to-end on 30s, 1min, and 5min clips to establish how GS-HOTA and wall time scale with sequence length.",
+  "numbers": "30s (750 frames): wall 1031s, GS-HOTA 18.791, exit 0; 1min (1500 frames): wall 2228s, GS-HOTA 14.996; 5min (7500 frames): wall 17204s, GS-HOTA 8.848. (Per-run logs confirm: 'GS-HOTA = 18.791%', '= 14.996%', '= 8.848%' with EVAL_SPACE=pitch, USE_JERSEY_NUMBERS=True, USE_TEAMS=True, USE_ROLES=True, EVAL_DIST_TOL=5.)",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/sweep_driver.log (details in sweep_30s.log, sweep_1min.log, sweep_5min.log)",
+  "reader": "logs"
+ },
+ {
+  "name": "Degradation-with-length sweep from cached state (Aug 15)",
+  "what_was_tried": "Re-ran length degradation using cached tracker states for the tail stages (30s-5min) and a full pipeline for 10min.",
+  "numbers": "30s (750 frames): GS-HOTA 37.155, 212s, tail; 1min (1500): 47.589, 694s; 2min (3000): 39.882, 2194s; 5min (7500): 30.974, 9406s; 10min (15000, full pipeline): GS-HOTA NA, 14500s \u2014 process 2011145 Killed (deg_10min run died before scoring).",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/degradation.log",
+  "reader": "logs"
+ },
+ {
+  "name": "30s config matrix (team-detlevel / gtafix variants)",
+  "what_was_tried": "Compared five pipeline config variants on the 30s clip.",
+  "numbers": "baseline GS-HOTA 37.155 (180s); team-detlevel 37.155 (184s); team-detlevel-w750 37.119 (178s); gtafix 37.155 (179s); gtafix-teamdet 37.155 (185s).",
+  "verdict": "neutral",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/matrix_30s.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Jersey ROI-filter tuning on CLPD-117093-1st (valid split)",
+  "what_was_tried": "Grid over min_roi_area x min_obb_aspect_ratio on a validation half; the first session partially failed, a second session reusing the cached state completed.",
+  "numbers": "Session 1 (tune_117093.log): area=500/ar=0.6 -> GS-HOTA 13.572; 350/0.3 -> 15.233; 300/0.3 -> 1.0409 (anomalous); 250/0.3, 200/0.3, 150/0.3, 250/0.45 -> all NA (runs failed after ~5 min each). Session 2 reusing state (tune_grid.log): 300/0.3 -> 15.885; 250/0.3 -> 16.729; 200/0.3 -> 17.037; 150/0.3 -> 19.457; 250/0.6 -> 16.444; 100/0.6 -> 20.709.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/tune_117093.log, /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/tune_grid.log",
+  "reader": "logs"
+ },
+ {
+  "name": "Jersey ROI-filter sweep on 1min and 2min clips",
+  "what_was_tried": "Swept min_roi_area {500,250,100} x min_obb_aspect_ratio {0.6,0.3} at two clip lengths; min_roi_area=100 / ar=0.6 was the clear winner and matches the config later sweeps run at (57.824 on 1min).",
+  "numbers": "1min: 500/0.6 -> GS-HOTA 33.471 (622s); 250/0.6 -> 46.456 (612s); 100/0.6 -> 57.824 (617s); 250/0.3 -> 49.05 (610s); 100/0.3 -> 57.108 (623s). 2min: 500/0.6 -> 32.274 (2196s); 250/0.6 -> 42.265 (2441s); 100/0.6 -> 44.81 (2165s); 250/0.3 -> 42.265 (2227s); 100/0.3 -> 44.81 (2273s).",
+  "verdict": "shipped",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/jersey_chain.log",
+  "reader": "logs"
+ },
+ {
+  "name": "GT-to-video frame-offset calibration (all 20 halves)",
+  "what_was_tried": "Estimated the frame offset between annotations and video for every match half by maximising occupancy agreement.",
+  "numbers": "Typical offsets 0-30 frames (0.00-1.20 s), e.g. 128057 1st: offset 25 (1.00 s), occ 0.2227 vs occ@0 0.1406, gain 0.0821, z 3.52; 128057 2nd: offset 26, gain 0.0957, z 3.92. Anomaly: 132831 1st offset 147 (5.88 s, occ 0.9894, z 1.7) and 2nd offset 301 (12.04 s, occ 0.9692, z 2.53). Full 20-row table in log; CSV written to scratchpad/metrics/frame_offsets.csv.",
+  "verdict": "informational",
+  "source": "/tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/logs/offsets_all.log",
+  "reader": "logs"
+ },
+ {
+  "name": "1-second label/imagery alignment defect (25-frame offset) \u2014 discovery and fix",
+  "what_was_tried": "Staged sequences attached ground-truth frame N to video frame N, but the video is missing 25 frames from the start of the annotated period, so every label described the scene 1.0 s later than the pixels. Labels were re-staged with a 25-frame shift; frames untouched.",
+  "numbers": "Players move 1.7-2.9 m in that second vs the 5 m matching tolerance. Two independent confirmations of 25 frames: (a) arithmetic \u2014 <match>_padding_info.csv declares first half 0-2,706,000 ms = 67,650 frames at 25 fps (exactly GT's seq_length) while the video holds 67,625; (b) assignment-free cross-correlation of detector output vs labels rises from corr 0.9670 at lag 0 to 0.9981 at lag 26-28 (arithmetic value applied). Visual check on frame 931: median box displacement 75 px, max 120 px. Official GS-HOTA (attrs on, identical pipeline/detector state): 30 s window 18.791 -> 37.155 (+18.36); 1 min 14.996 -> 33.471 (+18.48). The 30s-vs-1min gap goes from 3.80 points on a base of 19 (20%) to 3.68 on a base of 37 (10%).",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 249-279)",
+  "reader": "report"
+ },
+ {
+  "name": "Why the alignment defect was missed",
+  "what_was_tried": "An earlier check claimed to have verified frame alignment by matching a staged clip's labels against production labels and finding identical bbox_image values.",
+  "numbers": "No numbers; both sides of the comparison were annotations, so it could only confirm two label files agree with each other \u2014 structurally incapable of detecting a label-to-pixel offset.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 274-279)",
+  "reader": "report"
+ },
+ {
+  "name": "Per-half offset measurement across all 20 halves",
+  "what_was_tried": "The offset is not uniform \u2014 it falls into two clusters, ~0 and ~25 frames, varying by half rather than by match, so it was determined per half via (a) arithmetic (End-Start) x fps / 1000 from padding_info minus video frame count, and (b) a detector-free box-occupancy estimator (GT boxes on players vs empty grass).",
+  "numbers": "Trust criterion in the report: occupancy gain >= 0.03, or gain < 1e-6 with z >= 3.0. Arithmetic matched the measurement on every half where the measurement had signal. Matches 132831 and 132877 show a flat occupancy curve (gain 0.001-0.004, z below 2.6), so the arithmetic offset was applied there WITHOUT independent confirmation. Per-half values live in frame_offsets.csv / staged_all.csv (read at runtime, not embedded in the script).",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 281-323)",
+  "reader": "report"
+ },
+ {
+  "name": "Failed offset-estimator versions (negative results)",
+  "what_was_tried": "Three earlier estimator versions failed their own validation before the box-occupancy version was adopted: a background-subtraction centroid method, and a frame-seeking method using cap.set(CAP_PROP_POS_FRAMES).",
+  "numbers": "Background-subtraction centroid gave 67 against a known 25 (players stand still at kickoff, so the median background contains them). cap.set(CAP_PROP_POS_FRAMES) injected an unknown offset of its own because it is not frame-accurate on these files. The box-occupancy version reproduces 25 on both halves whose answer was established independently.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 313-318)",
+  "reader": "report"
+ },
+ {
+  "name": "Length-invariance decomposition: identical first 750 frames scored out of runs of different length",
+  "what_was_tried": "Score the identical first 750 frames taken out of 30 s / 1 min / 5 min runs, attrs off vs on, to separate the length effect from content difficulty. Detection, localisation and association are length-invariant; everything that degrades with length is in the attributes (assigned globally per tracklet).",
+  "numbers": "common750 attrs OFF, HOTA: 30s 77.446, 1min 77.381, 5min 77.626 (flat); DetA 73.68/73.66/73.59; AssA 81.63/81.51/82.08; LocA 89.56/89.56/89.57. common750 attrs ON, HOTA: 30s 37.155, 1min 37.155, 5min 16.343 (DetA 15.99/15.99/3.36; AssA 86.44/86.44/80.69). Full-window attrs ON HOTA: 30s 37.155, 1min 33.471, 5min 14.409; full-window attrs OFF: 30s 77.446, 1min 61.603, 5min 39.166. Predicted ids grow 26 -> 35 -> 60 vs gt_ids 22; dets 15,642/16,500 (30s), 30,931/33,000 (1min), 148,371/165,000 (5min).",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 213-245, 363-384) + /tmp/claude-1001/-home-atom-SoccerTrack-v2/8acc50ba-afad-4d96-bf18-9788c3b48488/scratchpad/metrics/sweep_scores.json",
+  "reader": "report"
+ },
+ {
+  "name": "Windowing the evaluation does not repair the attribute corruption",
+  "what_was_tried": "Checked whether scoring only a 30-second window of a 5-minute run recovers the attrs-on score.",
+  "numbers": "The attributes-on figure for the 5-minute run's own first 750 frames (common750, attrs on) is 16.343 vs 37.155 for the 30 s run \u2014 the labels were corrupted upstream by global clustering/voting; only changing how attributes are assigned can recover it.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 381-384) + sweep_scores.json (same scratchpad path)",
+  "reader": "report"
+ },
+ {
+  "name": "Attribute ablation on match 117093, 30 s clip",
+  "what_was_tried": "Re-score one prediction file with attribute flags toggled to apportion the GS-HOTA cost among jersey, team, role.",
+  "numbers": "roles+teams+jersey (official): GS-HOTA 29.13, DetA 9.70, AssA 87.60, LocA 92.15, DetRe 17.57, DetPr 17.73. roles+teams no jersey: 49.99, 34.99, 71.67, 86.61, 50.65, 51.11. roles only: 62.53, 55.87, 70.34, 87.14, 69.55, 70.18. no attributes (geometry only): 64.41, 59.61, 70.09, 86.50, 72.14, 72.79. Jersey numbers cost 20.9 points, team classification 12.5, roles 1.9. Caveat: AssA 87.60 in row 1 is a selection effect and must not be quoted as an association result.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 406-420)",
+  "reader": "report"
+ },
+ {
+  "name": "Why minute 1 is worse than minute 0 (match 128057, 1-minute run)",
+  "what_was_tried": "Split the 1-minute run into its two 30 s windows (attrs off throughout). Detections are not going missing \u2014 they fail to match, i.e. land outside the 5 m tolerance. Prime suspect: static calibration (one thin-plate spline + one homography from 65 keypoints) whose error grows away from the centre circle as play spreads after kickoff.",
+  "numbers": "frames 1-750 (0-30 s): GS-HOTA 40.98, DetA 39.59, AssA 42.49, LocA 76.52, DetRe 50.76, DetPr 53.55, preds/GT 15,642/16,500. frames 751-1500 (30-60 s): 20.84, 21.45, 20.30, 70.71, 30.87, 33.31, 15,289/16,500. LocA falls only 5.8 points while DetRe falls 19.9 (LocA averages only over already-matched pairs). Calibration error at its own 65 keypoints: median 2.295 m, p95 7.770 m for this match, vs a 5 m matching tolerance.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 422-440)",
+  "reader": "report"
+ },
+ {
+  "name": "GTA behaviour across lengths and two GTA config defects",
+  "what_was_tried": "Extracted GTA's own tracklet bookkeeping from run logs (30s/1min/5min vs GT 22/22/23 tracklets) and audited sn_gamestate/configs/modules/gta/gta.yaml.",
+  "numbers": "GTA merge error: exact at 30 s, +5 at 1 min, +11 at 5 min; it also discards a stable ~13% of detections at every length (per-run counts read from logs at runtime, not embedded). Defect 1: irregular_box_params.avg_box_params.image_width: 1920 while frames are 4096 wide \u2014 with num_regions_x: 4, region_x = center_x // 480 clamps to 3, so three narrow strips cover the left 35% of the frame and the remaining 65% collapses into one region, flagging legitimate detections. Defect 2: use_spatial_connect: False \u2014 pitch-space re-linking fully configured (connect_dist_thres: 100, connect_frame_thres: 30, use_bbox_pitch: True) but switched off; the mechanism long sequences most need.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 460-494)",
+  "reader": "report"
+ },
+ {
+  "name": "Fix-experiment methodology: tail-only reruns with control",
+  "what_was_tried": "Every fix variant re-runs only the pipeline tail from a saved pre-calibration state, so detector, pose, ReID and tracking stages are byte-identical across variants; a control re-run with original settings reproduces the baseline exactly.",
+  "numbers": "Control reproduces the baseline score exactly (no numeric drift quoted).",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 497-501)",
+  "reader": "report"
+ },
+ {
+  "name": "Per-attribute cost measurement (30 s / 1 min)",
+  "what_was_tried": "Toggled one scorer flag at a time to price each attribute against the attributes-off ceiling; raw accuracy measured on geometry-matched pairs within 2 m.",
+  "numbers": "role: accuracy 100.0% / 100.0%, cost 0.00 / 0.00. team: 93.9% / 97.5%, cost -3.93 / -0.45. jersey: 31.0% / 32.5%, cost -41.47 / -29.63 (GS-HOTA points lost, 30 s / 1 min).",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 503-510)",
+  "reader": "report"
+ },
+ {
+  "name": "Abstention (null attributes) as a lever",
+  "what_was_tried": "Forced jersey -> null and team -> null to test whether abstaining on uncertain attributes helps, since a null maps to a class the ground truth does not contain.",
+  "numbers": "jersey -> null scores 6.19 against a 37.155 baseline; team -> null scores 0.00. Abstention is punished, not rewarded \u2014 confidence thresholding is not a lever, only genuine accuracy is.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 511-515)",
+  "reader": "report"
+ },
+ {
+  "name": "Jersey-number failure diagnosed as a funnel, not a model defect",
+  "what_was_tried": "Traced detections through the jersey-reading pipeline stages.",
+  "numbers": "total detections 31,107 (100%); jersey region proposed 926 (3.0%); read at confidence >= 0.8: 496 (1.6%); tracklets with >= 1 reading: 8 of 65 (12%); distinct numbers emitted 6-7 of 21 in GT. Median player box 25x55 px; median torso region 132 px^2 (~12x11 px). Gate min_roi_area=500 passes just 6.9% of detections; shoulder confidence is not the constraint (97.8% pass).",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 517-527)",
+  "reader": "report"
+ },
+ {
+  "name": "Team-fix variant matrix (attr_matrix) \u2014 variants that did not help",
+  "what_was_tried": "A matrix of attribute-fix variants (read from attr_matrix.csv at report time) evaluated at short lengths.",
+  "numbers": "Report's verdict: 'All flat.' Explanation embedded: team costs under 4 points at these lengths, so nothing improving team can move a score dominated by a 41-point jersey deficit; they should pay at 5 minutes, where team accuracy collapses to 51.6%. (Per-variant numbers live in attr_matrix.csv, not embedded in the script.)",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 529-537)",
+  "reader": "report"
+ },
+ {
+  "name": "Pose-derived foot anchor (ViTPose ankles instead of box bottom-middle)",
+  "what_was_tried": "Replace the bounding-box bottom-middle ground anchor with the ViTPose ankle joint for pitch localisation.",
+  "numbers": "19% worse localisation: 1.139 -> 1.357 m. The ankle joint sits above the ground-contact point; the box bottom, ~5.5 px below the ankles, approximates it better.",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 538-542)",
+  "reader": "report"
+ },
+ {
+  "name": "Metre-space homography fitting",
+  "what_was_tried": "Fit the homography in metres instead of pixels, since m/px varies 9x across the pitch depth.",
+  "numbers": "Far-half keypoint residual improved 3.98 -> 2.45 m, but GS-HOTA got worse: 37.155 -> 34.268 at 30 s, 33.471 -> 25.383 at 1 min. The near half degraded and most players are on the near half. Lesson: p90 keypoint residual is a poor proxy for GS-HOTA (weights all pitch locations equally, players do not).",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 542-547)",
+  "reader": "report"
+ },
+ {
+  "name": "Jersey region gate loosening (min_roi_area / min_obb_ar)",
+  "what_was_tried": "Loosened two configuration values in modules/jersey_number_det/pose_based_jn_det, turning sequence length from a liability into an asset (more read attempts per player accumulate into a correct per-tracklet majority vote). Full grid values read from jersey_sweep.csv at report time.",
+  "numbers": "Headline embedded in KPI: 1 min with jersey gates fixed = 57.82 vs 33.47 baseline (+24.35). Baseline gates are area 500, ar 0.6. Caveat embedded: values were first explored on 128057 which is in the reported test split (fitting to the evaluation); a tuning grid on 117093 (valid split) is running so values are selected on non-reported data, then verified on 128057 \u2014 until then treat 250/100 and 0.3/0.6 as exploratory. Optima disagree between lengths: 250/0.3 best at 30 s, 100/0.6 at 1 min.",
+  "verdict": "in-flight",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 231, 549-587)",
+  "reader": "report"
+ },
+ {
+  "name": "117093 staging/alignment verification (valid-split tuning prerequisite)",
+  "what_was_tried": "Independently verified 117093's alignment after staging, before using it for threshold selection.",
+  "numbers": "Residual lag +2 frames (0.08 s), correlation 0.99949 \u2014 the 25-frame offset is correct for this match too. Its much lower absolute scores are genuine match difficulty, not a staging fault. (Grid values live in tune_117093.csv, not embedded.)",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 588-596)",
+  "reader": "report"
+ },
+ {
+  "name": "Degradation with sequence length: tracklet-level vs detection-level team, crossover",
+  "what_was_tried": "One match (128057, 1st half), nested prefixes of identical footage, comparing stock tracklet-level team clustering against detection-level team assignment across lengths.",
+  "numbers": "Both configurations peak at 1 minute and fall away on either side, and they cross over: stock tracklet-level is better at 30 s and 1 min (40.4 / 57.8 vs 37.2 / 47.6) and clearly worse by 5 min (19.5 vs 31.0). Mechanism: fragmentation \u2014 predicted tracklets go 26 -> 35 -> 42 -> 60 against 22 real players. Team accuracy at 5 min under stock clustering is 51.6% (indistinguishable from chance on two classes); detection-level lifts it to 86.6%. The 10-minute point is missing, not zero: it was OOM-killed rather than scored, so the curve beyond 5 minutes is unmeasured.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 598-639)",
+  "reader": "report"
+ },
+ {
+  "name": "Retraction: 'memory is not a constraint' + 10-minute OOM kill",
+  "what_was_tried": "Earlier report claimed memory was not a constraint, based on main-process RSS only on runs of 5 minutes and under; the 10-minute run then died. Lesson recorded: measure PSS across the whole process tree, not RSS.",
+  "numbers": "10-minute run OOM-killed at 61% through PRTReID on a 61 GB machine, throughput collapsing from 4.24 it/s to 25.91 s/it over two batches as it began thrashing. With num_cores=12 the dataloader forks 12 workers sharing most pages: a process tree reading 43 GB of RSS was 12.9 GB of PSS.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 656-665)",
+  "reader": "report"
+ },
+ {
+  "name": "Hypothesis that dataloader workers accumulate per module \u2014 refuted",
+  "what_was_tried": "Tracked per-module peak tree PSS and worker counts across module boundaries (data from workers.csv at report time).",
+  "numbers": "Worker count is constant at 12 across module boundaries and tree PSS FALLS between modules as the previous model's weights are released, so dataloader workers are torn down correctly. (Per-module PSS peaks live in workers.csv, not embedded.)",
+  "verdict": "rejected",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 666-683)",
+  "reader": "report"
+ },
+ {
+  "name": "Orphaned-worker leak after OOM kill",
+  "what_was_tried": "Found that when the parent is OOM-killed, its pt_data_worker children are reparented to init and never reaped; documented a pre-run check.",
+  "numbers": "Twelve workers from the killed 10-minute run found alive 23 hours later holding 8.79 GB PSS \u2014 residue of the crash, not its cause; would have sunk the next run before it started.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 684-691)",
+  "reader": "report"
+ },
+ {
+  "name": "forget_columns applied at video teardown instead of module end",
+  "what_was_tried": "TrackLab only applied modules' forget_columns when the whole video finished, so PRTReID's body_masks (which nothing downstream reads) was carried through all eleven remaining modules. Fixed to release at module end, but only for columns no later module declares as input (embeddings is also in PRTReID's forget list but IS consumed by main_subject_filter and team).",
+  "numbers": "body_masks is a 1x64x32 float32 array \u2014 8 KB per detection; carried cost 2.5 GB at 10 minutes, 11 GB at 45 minutes. Explicitly NOT the cause of the OOM: the kill happened 61% through PRTReID and this fix only takes effect once PRTReID finishes; the mechanism that exhausts memory inside PRTReID is still under investigation and not yet claimed.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 692-703)",
+  "reader": "report"
+ },
+ {
+  "name": "Quadratic merge_dataframes fix in TrackLab engine",
+  "what_was_tried": "merge_dataframes in tracklab/engine/engine.py ran once per batch and was O(rows accumulated) twice over \u2014 enlarging the frame one row at a time (each enlargement reindexing everything) then DataFrame.update aligning the small batch against every accumulated row \u2014 so per-batch cost grew linearly and total cost quadratically. Patched; original preserved as engine.py.backup-pre-quadratic-fix.",
+  "numbers": "s/batch unpatched -> patched: batches 0-152: 1.020 -> 0.901; 456-608: 1.158 -> 0.954; 912-1064: 1.651 -> 0.967. Growth from 1st to 2nd half of run: 2.03x -> 1.02x. Invisible at 750 frames (~16.5k rows), crippling at a 67,625-frame half (~1.7M rows). Validation: full 750-frame pipeline before and after gives GS-HOTA 29.135% both times, metric summary files byte-identical, only prediction differences float noise at 3.9e-11 m.",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 707-722)",
+  "reader": "report"
+ },
+ {
+  "name": "Residual superlinearity in runtime and full-half projection",
+  "what_was_tried": "After the quadratic-merge fix, per-frame cost still climbs with length; fitted a power law to project a full half.",
+  "numbers": "s/frame still climbing: 1.375 -> 1.485 -> 2.294. Fitting s/frame proportional to n^0.22 projects ~3.75 s/frame and ~70 h for a full 67,625-frame half (~3 days; the test split has four halves). ViTPose alone is 56% of the cost.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 651-655, 755-756)",
+  "reader": "report"
+ },
+ {
+  "name": "GS-HOTA prediction path could not score a real file \u2014 three defects fixed",
+  "what_was_tried": "Fixed three sequential defects in the flat-records-to-GameState converter used for predictions: bbox_pitch carried only two of the six keys the pitch-space scorer reads; image_id was an int so the scorer's unmatched-id branch called len() on it; and predictions numbered frames 0-based while ground truth uses strings where \"3000001\" is 1-based frame 1, so nothing ever matched.",
+  "numbers": "No metric numbers embedded; the existing identity test could not catch any of it because the released ground truth is already GameState, so the test symlinks one file in as both sides and never calls the converter. See PR #25 (https://github.com/AtomScott/SoccerTrack-v2/pull/25).",
+  "verdict": "shipped",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 723-732)",
+  "reader": "report"
+ },
+ {
+  "name": "Released-data defects (documented, for the dataset paper)",
+  "what_was_tried": "Audit of the released GSR ground-truth files against the actual imagery.",
+  "numbers": "(1) images[].width/height say 3840x1504; real frames are 4096x1080 \u2014 proven by matching bbox_image byte-for-byte against an independently staged clip. (2) info.id is \"1\" in all 20 released files and info.name collides between the two halves of a match. (3) Ground truth annotates ~25 more frames than the video contains. (4) docs/format-gsr.md describes a flat record list; the files are GameState, so the repo's own _parse_gsr would crash on every one. (5) Calibrated keypoints ship for 117093 only, so no other match could run at all.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 734-743)",
+  "reader": "report"
+ },
+ {
+  "name": "Match difficulty spread (117093 vs 128057)",
+  "what_was_tried": "Compared 30-second official scores across the two matches run so far; flagged as needing understanding before per-match numbers go in the paper.",
+  "numbers": "117093 scores GS-HOTA 29.14 at 30 s where 128057 scores 18.79, with LocA 92.15 vs 77.13.",
+  "verdict": "informational",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 757-759)",
+  "reader": "report"
+ },
+ {
+  "name": "Open question: windowed attribute assignment",
+  "what_was_tried": "Proposed (not yet run in this report's era): make TrackletTeamClustering and MajorityVoteTracklet operate per window instead of over the whole video, targeting the measured cause while leaving the length-invariant pipeline parts alone.",
+  "numbers": "No numbers \u2014 listed as open question 1.",
+  "verdict": "in-flight",
+  "source": "/home/atom/SoccerTrack-v2/scripts/gsr/make_report.py (lines 746-751)",
+  "reader": "report"
+ }
+]
