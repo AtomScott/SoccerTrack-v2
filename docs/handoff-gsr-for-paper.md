@@ -184,8 +184,10 @@ unless stated.
    Table 1 uses one configuration throughout — say so.
 3. **The +1.63 improvement is post-hoc**, applied to saved predictions, not a pipeline change. It has
    not been validated by an end-to-end rerun.
-4. **The `track_buffer` and Duke-ReID hypotheses in §3 are untested.** A sweep (30/90/250) was
-   running at handoff; results are not in. Do not present them as causes, only as candidates.
+4. **The `track_buffer` hypothesis is now tested and refuted**: raising it (30/90/250) scores
+   25.604 / 23.181 / 19.908 — monotonically worse, tracklet count flat. Do not cite short ID
+   memory as the fragmentation cause. The Duke-ReID hypothesis remains untested — a candidate,
+   not a cause.
 5. `use_spatial_connect` was fixed from pixel to metre units (a genuine bug — pixel distance is
    perspective-dependent), but **merged zero tracklets in practice**, so it changes nothing.
 6. Attribute accuracy at 5 min in panel 2 of the chart comes from an earlier measurement that may

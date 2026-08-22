@@ -168,9 +168,15 @@ rest <0:10 each. GPU stages project to ~20 h/half.
   median of **13 distinct GT identities**; each player is scattered across a median of **31
   tracklets**. Tracklets are *mixtures*, not fragments — association must be fixed online, in the
   tracker *(the central diagnostic finding)*.
-- **Untested candidates** *(in flight)*: `track_buffer: 30` = 1.2 s ID memory at 25 fps (sweep
-  30/90/250 running); tracker association ReID is `clip_duke.pt` (pedestrian surveillance) —
-  teammates in identical kit are its worst case.
+- **`track_buffer` sweep (30/90/250 at 10 min)** *(rejected — hypothesis refuted)*: raising the
+  ID memory makes things monotonically WORSE: 25.604 / 23.181 / 19.908 official, 33.908 / 32.033 /
+  31.693 attrs-off, tracklet count flat (99/100/104). Longer memory does not rejoin fragments; it
+  gives the Duke-pedestrian ReID more chances to re-associate wrongly. Bonus: the buf30 arm
+  reproduced the 10-minute baseline **exactly** (25.604), validating the stage-replay path
+  end-to-end. (`scratchpad/logs/buffer_sweep.log`)
+- **Remaining untested candidate**: tracker association ReID is `clip_duke.pt` (pedestrian
+  surveillance) — teammates in identical kit are its worst case. Best-motivated remaining idea for
+  the association problem, untried.
 
 ---
 
