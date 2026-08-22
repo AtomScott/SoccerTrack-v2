@@ -94,11 +94,13 @@ temporal-exclusion constraint moved AssA from **13.409 to 13.410**. Two formulat
 tracklets are sparse frame *sets* with gaps, so the conflict graph is not an interval graph.
 Regrouping whole tracklets cannot work — the units are themselves impure and would have to be split.
 
-**Likely proximate causes, identified but NOT yet validated** (see §6):
-- BoT-SORT runs with `track_buffer: 30` — a player unmatched for **1.2 s at 25 fps** becomes a new
-  identity. Soccer occlusions routinely exceed that.
+**Proximate cause — one candidate tested and refuted, one open** (see §6):
+- ~~BoT-SORT's `track_buffer: 30` (1.2 s ID memory)~~ — **refuted by sweep**: raising it to 90/250
+  scores monotonically *worse* (25.604 → 23.181 → 19.908) with tracklet count flat. Short memory is
+  not why players fragment; longer memory only adds wrong re-associations.
 - The tracker's association ReID weights are `clip_duke.pt` — CLIP trained on **DukeMTMC pedestrian
-  surveillance**. Teammates in matching kit are close to the worst case for such a model.
+  surveillance**. Teammates in matching kit are close to the worst case for such a model. Untested;
+  the best-motivated remaining candidate.
 
 ---
 
