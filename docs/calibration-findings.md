@@ -147,7 +147,12 @@ is undesirable in a read-only analysis.
 
 ## Still open
 
-- Regenerate 132831's GSR labels from the corrected calibration.
+- ~~Regenerate 132831's GSR labels from the corrected calibration.~~ **Done 2026-08-21**:
+  `bbox_image` and the pitch `lines` in `production/gsr/132831/132831_{1st,2nd}.json` were
+  regenerated via `scripts/gsr/regenerate_132831_bbox_image.py` (originals kept as
+  `*.json.pre-bbox-image-fix-backup`; `bbox_pitch` byte-identical; out-of-frame boxes
+  370/1,097 → 0/0). `bbox_pitch` never needed regenerating — it does not pass through the
+  camera calibration.
 - Decide whether the GSR pitch `lines` get renormalised per match, or whether documenting
   the 3840×1504 normaliser is sufficient for the release.
 - Decide whether the paper should record that a test-split match's calibration was
