@@ -46,6 +46,25 @@ def main() -> int:
     a = ap.parse_args()
 
     seq = a.seq or a.gt.parent.name
+
+    # The GT side needs the same finite-pitch guard as the predictions: 132831's converter writes
+    # bbox_pitch keys as None where source coordinates are missing, and trackeval's
+    # get_raw_seq_data does arithmetic on them (None - float) and dies. A GT detection with no
+    # finite pitch position cannot be matched in pitch space by any method, so dropping it is the
+    # only reading under which pitch-space scoring is defined at all. The count is printed.
+    gt = json.loads(a.gt.read_text())
+    gt_kept, gt_dropped = [], 0
+    for e in gt["annotations"]:
+        if e.get("supercategory") == "object" and not finite_pitch(e):
+            gt_dropped += 1
+            continue
+        gt_kept.append(e)
+    if gt_dropped:
+        n_gt = sum(1 for e in gt["annotations"] if e.get("supercategory") == "object")
+        print(f"{seq}: GT has {gt_dropped:,} of {n_gt:,} object annotations "
+              f"({100.0 * gt_dropped / max(1, n_gt):.2f}%) without finite pitch coordinates; dropped")
+    gt["annotations"] = gt_kept
+
     pred = json.loads(a.pred.read_text())
     entries = pred["predictions"]
 
@@ -66,7 +85,7 @@ def main() -> int:
         # SKIP_SPLIT_FOL=True, so GT sits directly under GT_FOLDER with no split directory
         gt_root = tmp / "gt" / seq
         gt_root.mkdir(parents=True)
-        shutil.copy(a.gt, gt_root / "Labels-GameState.json")
+        (gt_root / "Labels-GameState.json").write_text(json.dumps(gt))
         pr_root = tmp / "pred" / "t" / "data"
         pr_root.mkdir(parents=True)
         (pr_root / f"{seq}.json").write_text(json.dumps(pred))
