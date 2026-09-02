@@ -55,6 +55,9 @@ def find_in_dir(dirpath):
     if not dirpath.is_dir():
         return None
     for p in sorted(dirpath.glob("*.json")):
+        # Cloud dirs also hold pred.json (hundreds of MB); never parse those.
+        if p.name == "pred.json" or p.stat().st_size > 5_000_000:
+            continue
         s = load_score(p)
         if s:
             return s
