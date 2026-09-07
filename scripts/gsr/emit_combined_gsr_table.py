@@ -54,7 +54,7 @@ def main():
         r"  first 30 seconds; halves whose 45-minute end-to-end runs completed",
         r"  within the compute budget (Section~\ref{subsec:methods_scale}) are",
         r"  also evaluated at full length, the complete held-out test split",
-        r"  (marked $\dagger$) among them. The 132831 full-half rows are",
+        r"  (marked $\dagger$) among them. The 132831 first-half row is",
         r"  rescored from the saved predictions after correcting a",
         r"  staging-time temporal offset; the residual misalignment is at most",
         r"  5 frames ($0.2$\,s), well under the metric's $5$\,m tolerance.",
