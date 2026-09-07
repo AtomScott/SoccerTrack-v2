@@ -2,11 +2,19 @@
 """Compile the full 20-half GS-HOTA table from cloud + local score JSONs.
 
 Sources, in the order a half is looked up:
-  fleet-1: /mnt/storage/SoccerTrack-v2/gsr-cloud-results/CLPD-<M>-<H>/*.json
-  fleet-2: /mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-<M>-<H>/*.json
+  fleet-1: results/gsr/cloud/fleet1/CLPD-<M>-<H>/*.json, falling back to
+           /mnt/storage/SoccerTrack-v2/gsr-cloud-results/CLPD-<M>-<H>/*.json
+  fleet-2: results/gsr/cloud/fleet2/CLPD-<M>-<H>/*.json, falling back to
+           /mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-<M>-<H>/*.json
   local:   results/gsr/score_45min_<M>_<H>.json   (128057 was run locally;
            132831 local files are the pred-shift rescoring, used only as a
            fallback and flagged as such)
+
+The results/gsr/cloud tree holds versioned copies of each completed cloud
+half's small artefacts (zscore.json, summary.txt, score.log, staging.log,
+half.log, gshota; never pred.json) plus the two fleet STATUS manifests, so
+that the paper tables regenerate from a clean checkout without the storage
+mount. When a further cloud half completes, copy its artefacts there.
 
 When both fleets have a half, the first finisher is reported and the
 fleet1-vs-fleet2 GS-HOTA delta is recorded in the CSV (fp16 was validated
@@ -30,6 +38,9 @@ HALVES = ["1st", "2nd"]
 
 CLOUD_ROOT = Path("/mnt/storage/SoccerTrack-v2/gsr-cloud-results")
 LOCAL_DIR = Path(__file__).resolve().parents[2] / "results" / "gsr"
+CLOUD_LOCAL = LOCAL_DIR / "cloud"
+# source name -> (in-repo subdir, subdir under the storage mount)
+FLEETS = {"fleet1": ("fleet1", ""), "fleet2": ("fleet2", "gsr2")}
 
 ON_KEY = "attributes ON (official GS-HOTA)"
 OFF_KEY = "attributes OFF (geometry + association)"
@@ -68,12 +79,10 @@ def collect(match, half):
     """Return {source_name: score_dict} for every source that has this half."""
     seq = f"CLPD-{match}-{half}"
     out = {}
-    s = find_in_dir(CLOUD_ROOT / seq)
-    if s:
-        out["fleet1"] = s
-    s = find_in_dir(CLOUD_ROOT / "gsr2" / seq)
-    if s:
-        out["fleet2"] = s
+    for name, (repo_sub, mount_sub) in FLEETS.items():
+        s = find_in_dir(CLOUD_LOCAL / repo_sub / seq) or find_in_dir(CLOUD_ROOT / mount_sub / seq)
+        if s:
+            out[name] = s
     p = LOCAL_DIR / f"score_45min_{match}_{half}.json"
     if p.exists():
         s = load_score(p)

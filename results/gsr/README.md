@@ -7,10 +7,10 @@ detection-level team clustering.
 
 | length | frames | detections | GS-HOTA | attrs off | tracklets | vs 23 real | wall |
 |---|---|---|---|---|---|---|---|
-| 30 s | 750 | 16.5k | 37.155 | — | 26 | 1.1× | 4 min |
-| 1 min | 1,500 | 33k | **47.589** | — | 35 | 1.5× | 12 min |
-| 2 min | 3,000 | 66k | 39.882 | — | 42 | 1.8× | 37 min |
-| 5 min | 7,500 | 165k | 30.974 | — | 60 | 2.6× | 2.6 h |
+| 30 s | 750 | 16.5k | 37.155 | 77.446 | 26 | 1.1× | 4 min |
+| 1 min | 1,500 | 33k | **47.589** | 61.603 | 35 | 1.5× | 12 min |
+| 2 min | 3,000 | 66k | 39.882 | 55.265 | 42 | 1.8× | 37 min |
+| 5 min | 7,500 | 165k | 30.974 | 39.166 | 60 | 2.6× | 2.6 h |
 | 10 min | 15,000 | 301k | 25.604 | 33.908 | 99 | 4.3× | 5.5 h |
 | **45 min (full half)** | **67,625** | **1,389k** | **18.094** | 26.036 | **345** | **15.0×** | **~37 h** |
 
@@ -63,6 +63,7 @@ number should target fragmentation, not detection.
 
 - `length_sweep_128057_1st.csv` — the curve above (detection-level team)
 - `length_sweep_128057_1st_tracklet_team.csv` — the same lengths with stock tracklet-level team
-- `score_10min_128057_1st.json`, `score_45min_128057_1st.json` — full metric breakdowns
+- `score_1min_128057_1st.json`, `score_2min_128057_1st.json`, `score_5min_128057_1st.json`, `score_10min_128057_1st.json`, `score_45min_128057_1st.json` — full metric breakdowns (the 30 s prefix is `score_30s_128057_1st.json`, the same prediction set as the 30 s tier)
+- `cloud/` — versioned copies of the completed cloud halves' small artefacts (zscore.json, summary.txt, logs) and the two fleet STATUS manifests; `compile_full_table.py` and the paper-table emitter read these first and fall back to the storage mount
 
 Reproduce a score with `python scripts/gsr/score_one.py --pred <pred.json> --gt <Labels-GameState.json>`.

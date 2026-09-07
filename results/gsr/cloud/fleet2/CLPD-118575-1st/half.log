@@ -1,0 +1,114 @@
+==== run_half.sh boot 2026-08-30T16:02:43Z ====
+seq=CLPD-118575-1st offset=2
+wrote Labels-GameState.json: 71850 images, 1652550 annotations, 1490 MB
+extracting 71850 frames -> /home/atom/SoccerNetGS/test/CLPD-118575-1st/img1 ...
+extracted 71850 JPEGs, 127.8 GB  (1.78 MB/frame)
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+grep: (standard input): binary file matches
+PIPELINE_EXIT=1 WALL_SECONDS=262582
+CLPD-118575-1st: 1,513,020 object predictions, dropped 116 (0.01%) with non-finite pitch coordinates
+Initializing the dataset class for the SoccerNet Game State Reconstruction task.
+IMPORTANT: The official evaluation metric for the task, i.e. the 'GS-HOTA' will appear under the 'HOTA' name in the evaluation script output.
+This happen because GS-HOTA mainly uses the same logic as the HOTA metric, the HOTA evaluation class is therefore not forked but re-used.
+The key practical difference between the GS-HOTA and the HOTA is actually the similarity metric used to match predictions with ground truth.Since this similarity score is computed outside the HOTA class (i.e. inside the SoccerNetGS dataset class), there was no need to fork it into a GS-HOTA class.
+Please refer to the official paper for more information.
+Using a sigma of 2.042694913268175 for the gaussian similarity metric, based on a distance tolerance of 5 meters.
+
+Evaluating 1 tracker(s) on 1 sequence(s) for 1 class(es) on SoccerNetGS dataset using the following metrics: HOTA, Count
+
+
+Evaluating t
+
+Initializing the dataset class for the SoccerNet Game State Reconstruction task.
+IMPORTANT: The official evaluation metric for the task, i.e. the 'GS-HOTA' will appear under the 'HOTA' name in the evaluation script output.
+This happen because GS-HOTA mainly uses the same logic as the HOTA metric, the HOTA evaluation class is therefore not forked but re-used.
+The key practical difference between the GS-HOTA and the HOTA is actually the similarity metric used to match predictions with ground truth.Since this similarity score is computed outside the HOTA class (i.e. inside the SoccerNetGS dataset class), there was no need to fork it into a GS-HOTA class.
+Please refer to the official paper for more information.
+Using a sigma of 2.042694913268175 for the gaussian similarity metric, based on a distance tolerance of 5 meters.
+
+Evaluating 1 tracker(s) on 1 sequence(s) for 1 class(es) on SoccerNetGS dataset using the following metrics: HOTA, Count
+
+
+Evaluating t
+
+
+  attributes ON (official GS-HOTA)
+      GS-HOTA 16.591   DetA 10.783   AssA 25.732   LocA 82.735
+  attributes OFF (geometry + association)
+      GS-HOTA 26.093   DetA 44.900   AssA 15.476   LocA 82.824
+
+  335 predicted tracklets vs 22 real players
+FINAL STATUS: DONE_PASS_16.591

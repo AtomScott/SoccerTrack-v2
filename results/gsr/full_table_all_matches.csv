@@ -1,11 +1,11 @@
 match,half,source,chosen,fleet_delta_hota,hota,deta,assa,loca,off_hota,off_deta,off_assa,off_loca,dropped,path
-118575,1st,fleet2,True,,16.591,10.783,25.732,82.735,26.093,44.9,15.476,82.824,116,/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-118575-1st/zscore.json
-118575,2nd,fleet2,True,,12.209,6.83,21.835,85.708,23.711,46.015,12.399,83.202,225,/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-118575-2nd/zscore.json
-118578,1st,fleet2,True,,13.36,10.466,17.081,85.328,23.005,49.434,10.8,84.148,281,/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-118578-1st/zscore.json
+118575,1st,fleet2,True,,16.591,10.783,25.732,82.735,26.093,44.9,15.476,82.824,116,/home/atom/SoccerTrack-v2/results/gsr/cloud/fleet2/CLPD-118575-1st/zscore.json
+118575,2nd,fleet2,True,,12.209,6.83,21.835,85.708,23.711,46.015,12.399,83.202,225,/home/atom/SoccerTrack-v2/results/gsr/cloud/fleet2/CLPD-118575-2nd/zscore.json
+118578,1st,fleet2,True,,13.36,10.466,17.081,85.328,23.005,49.434,10.8,84.148,281,/home/atom/SoccerTrack-v2/results/gsr/cloud/fleet2/CLPD-118578-1st/zscore.json
 128057,1st,local,True,,18.09373844223864,14.672497093965763,22.319122012520275,86.83648621206898,26.035793283041862,51.20869164657502,13.409170263794307,84.67703727681922,6002,/home/atom/SoccerTrack-v2/results/gsr/score_45min_128057_1st.json
 128057,2nd,local,True,,12.88988794603812,7.749762543454176,21.47646441196661,86.6688150475618,25.080208178887347,50.82051415145881,12.524342002793984,84.84049465250062,2901,/home/atom/SoccerTrack-v2/results/gsr/score_45min_128057_2nd.json
-128058,1st,fleet2,True,,12.73,9.597,16.908,85.737,25.887,49.146,13.759,84.297,988,/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-128058-1st/zscore.json
+128058,1st,fleet2,True,,12.73,9.597,16.908,85.737,25.887,49.146,13.759,84.297,988,/home/atom/SoccerTrack-v2/results/gsr/cloud/fleet2/CLPD-128058-1st/zscore.json
 132831,1st,local,True,,10.908815952420607,9.562935892509918,12.448448774513308,79.25481268202765,17.019495232684836,37.48646596884295,7.754022684849852,78.11527036579061,10228,/home/atom/SoccerTrack-v2/results/gsr/score_45min_132831_1st.json
-132831,2nd,fleet2,True,,2.936,1.231,7.096,70.189,17.905,41.419,7.766,77.611,1096,/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-132831-2nd/zscore.json
+132831,2nd,fleet2,True,,2.936,1.231,7.096,70.189,17.905,41.419,7.766,77.611,1096,/home/atom/SoccerTrack-v2/results/gsr/cloud/fleet2/CLPD-132831-2nd/zscore.json
 132831,2nd,local,False,,3.4085963449462726,1.8364646018621522,6.418124185023285,73.61422419139217,17.855008081381612,41.76308463116419,7.659103022978235,77.82719680746672,1096,/home/atom/SoccerTrack-v2/results/gsr/score_45min_132831_2nd.json
-132877,2nd,fleet2,True,,9.61,5.659,16.331,78.344,17.179,29.832,10.008,76.643,8544,/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-132877-2nd/zscore.json
+132877,2nd,fleet2,True,,9.61,5.659,16.331,78.344,17.179,29.832,10.008,76.643,8544,/home/atom/SoccerTrack-v2/results/gsr/cloud/fleet2/CLPD-132877-2nd/zscore.json

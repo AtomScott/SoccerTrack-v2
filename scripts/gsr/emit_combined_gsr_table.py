@@ -27,9 +27,17 @@ of every half, one configuration: the adapted pipeline with the weights the
 baseline ships, per-detection team assignment) and, for the attrs-off
 components, from results/gsr/score_30s_<match>_<half>.json. Full-half scores
 are collected with the same source preference as compile_full_table.py
-(fleet1 > fleet2 > local). The full-length tables list only halves with a
-completed run; the author's decision (2026-09-08) is that a gapped table
-"looks unfinished", so no dash cells are emitted.
+(fleet1 > fleet2 > local); the cloud halves are read from the versioned
+copies under results/gsr/cloud/ so that every input is in the repo. The
+full-length tables list only halves with a completed run; the author's
+decision (2026-09-08) is that a gapped table "looks unfinished", so no dash
+cells are emitted.
+
+Every count and hardware statement in the captions is derived from the rows
+(len(test), len(extra), and each row's source tag: "local" is the
+workstation, "fleet1"/"fleet2" the cloud L4 instances), so a newly landed
+half cannot leave a caption contradicting its table body. The four halves of
+the released test split are required to be present.
 """
 
 import csv
@@ -56,6 +64,35 @@ HEADER = [
     "% SoccerTrack-v2 code repo. Do not edit by hand; rerun the script",
     "% when further full-half results land.",
 ]
+
+
+NUMBER_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+                6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+                11: "eleven", 12: "twelve", 13: "thirteen", 14: "fourteen",
+                15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen",
+                19: "nineteen", 20: "twenty"}
+HALF_WORDS = {"1st": "first", "2nd": "second"}
+
+
+def words(n):
+    return NUMBER_WORDS.get(n, str(n))
+
+
+def describe_halves(pairs):
+    """'both halves of 128057 and the first half of 132831' for a list of
+    (match, half) pairs, grouped by match in the order given."""
+    by_match = {}
+    for m, h in pairs:
+        by_match.setdefault(m, []).append(h)
+    parts = []
+    for m, hs in by_match.items():
+        if len(hs) == 2:
+            parts.append(f"both halves of {m}")
+        else:
+            parts.append(f"the {HALF_WORDS[hs[0]]} half of {m}")
+    if len(parts) <= 1:
+        return "".join(parts)
+    return ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
 def mark(match):
@@ -99,9 +136,19 @@ def load_full():
             src = collect(m, h)
             for pref in ("fleet1", "fleet2", "local"):
                 if pref in src:
-                    full[(m, h)] = src[pref]
+                    full[(m, h)] = dict(src[pref], source=pref)
                     break
+    missing_test = [(m, h) for m in TEST_MATCHES for h in HALVES
+                    if (m, h) not in full]
+    assert not missing_test, f"released test split incomplete: {missing_test}"
     return full
+
+
+def rescored_132831_first(full):
+    """True while the 132831 first-half row is the local pred-shift rescoring
+    (source 'local'); a completed cloud rerun staged with the measured offset
+    would replace it and the rescoring sentence must then disappear."""
+    return full[("132831", "1st")]["source"] == "local"
 
 
 def full_row_order(full):
@@ -122,8 +169,9 @@ def emit_30s(sweep):
         r"  every half of all ten matches, the clip length of the",
         r"  SoccerNet-GSR benchmark, run with the SoccerNet pipeline of",
         r"  Section~\ref{subsec:methods_gsr} as adapted by the authors on",
-        r"  released footage, with no component trained on SoccerTrack v2,",
-        r"  under one configuration, the per-detection team assignment.",
+        r"  released footage that includes a test-split half, with no",
+        r"  component's weights trained on SoccerTrack v2, under one",
+        r"  configuration, the per-detection team assignment.",
         r"  GS-HOTA is the official metric, which classes detections by",
         r"  (role, team, jersey); \emph{Attrs off} rescores the same",
         r"  predictions with attribute matching disabled, so that only",
@@ -158,33 +206,77 @@ def emit_30s(sweep):
     return mean30
 
 
+def hardware_sentence(full, rows):
+    """Which rows ran on the workstation and which on the cloud, from the
+    source tag of each row rather than from a hard-coded list."""
+    local = [k for k in rows if full[k]["source"] == "local"]
+    cloud = [k for k in rows if full[k]["source"] != "local"]
+    cloud_tail = (" were run on cloud L4 GPUs with half-precision pose"
+                  " estimation, validated to three decimals against single"
+                  " precision on a 30-second clip (Methods).")
+    if local and cloud:
+        ws = describe_halves(local)
+        ws = ws[0].upper() + ws[1:]
+        other = ("the other half" if len(cloud) == 1
+                 else f"the {words(len(cloud))} other halves")
+        return f"{ws} were run on a workstation GPU; {other}{cloud_tail}"
+    if local:
+        return f"All {words(len(local))} halves were run on a workstation GPU."
+    return f"All {words(len(cloud))} halves{cloud_tail}"
+
+
+def rescoring_sentence(full):
+    if not rescored_132831_first(full):
+        return ""
+    return (" The 132831 first-half row is rescored from the saved"
+            " predictions after correcting a staging-time temporal offset;"
+            " the residual misalignment is at most 5 frames ($0.2$\\,s),"
+            " which displaces a player running at $5$\\,m/s by about"
+            " $1$\\,m, well under the $5$\\,m tolerance.")
+
+
+def wrap_caption(text, indent="  ", width=72):
+    """Break a caption into lines of the emitted file's house width."""
+    out, line = [], indent
+    for word in text.split():
+        if len(line) + len(word) + 1 > width and line.strip():
+            out.append(line.rstrip())
+            line = indent
+        line += word + " "
+    if line.strip():
+        out.append(line.rstrip())
+    return out
+
+
 def emit_full(full):
     test, extra = full_row_order(full)
     test_rows = [full[k] for k in test]
     all_rows = [full[k] for k in test + extra]
+    n_all = len(all_rows)
+    if extra:
+        extra_clause = (f" and {words(len(extra))} further"
+                        f" {'half' if len(extra) == 1 else 'halves'} that the"
+                        " compute budget allowed"
+                        r" (Section~\ref{subsec:methods_scale})")
+    else:
+        extra_clause = ""
+    caption = (
+        r"\caption{Game state reconstruction on the match-length (45-minute)"
+        f" evaluation set: the {words(len(test))} halves of the released test"
+        f" split of the match-level split (marked $\\dagger$){extra_clause},"
+        r" run end to end with the adapted pipeline of Table~\ref{tab:gsr_30s}"
+        " under the same configuration." + rescoring_sentence(full) +
+        " DetA, AssA and LocA are the detection, association and localisation"
+        " components of the official GS-HOTA, which classes detections by"
+        r" (role, team, jersey); \emph{Attrs off} rescores the same predictions"
+        " with attribute matching disabled, so that only geometry and"
+        " association count (its components are listed in Supplementary"
+        r" Table~\ref{tab:gsr_attrs_off}). Means are per column, computed from"
+        " unrounded scores. " + hardware_sentence(full, test + extra) + "}")
     lines = HEADER + [
         r"\begin{table}[!htbp]",
         r"  \centering",
-        r"  \caption{Game state reconstruction on the match-length (45-minute)",
-        r"  evaluation set: the four halves of the released test split of the",
-        r"  match-level split (marked $\dagger$) and five further halves that",
-        r"  the compute budget allowed (Section~\ref{subsec:methods_scale}),",
-        r"  run end to end with the adapted pipeline of",
-        r"  Table~\ref{tab:gsr_30s} under the same configuration. The 132831",
-        r"  first-half row is rescored from the saved predictions after",
-        r"  correcting a staging-time temporal offset; the residual",
-        r"  misalignment is at most 5 frames ($0.2$\,s), well under the",
-        r"  $5$\,m tolerance. DetA, AssA and LocA are the detection,",
-        r"  association and localisation components of the official GS-HOTA,",
-        r"  which classes detections by (role, team, jersey); \emph{Attrs off}",
-        r"  rescores the same predictions with attribute matching disabled,",
-        r"  so that only geometry and association count (its components are",
-        r"  listed in Supplementary Table~\ref{tab:gsr_attrs_off}). Means are",
-        r"  per column, computed from unrounded scores. Both halves of 128057",
-        r"  and the first half of 132831 were run on a workstation GPU; the",
-        r"  six other halves were run on cloud L4 GPUs with half-precision",
-        r"  pose estimation, validated to three decimals against",
-        r"  single precision on a 30-second clip (Methods).}",
+    ] + wrap_caption(caption) + [
         r"  \label{tab:gsr_results}",
         r"  \small",
         r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr@{}}",
@@ -196,17 +288,21 @@ def emit_full(full):
     for m, h in test:
         lines.append(f"    {m}, {h}{mark(m)} & "
                      + fmt([full[(m, h)][k] for k in FULL_METRICS]) + r" \\")
-    lines.append(r"    \midrule")
-    lines.append(r"    \multicolumn{6}{@{}l}{\emph{Additional halves}} \\")
-    for m, h in extra:
-        lines.append(f"    {m}, {h}{mark(m)} & "
-                     + fmt([full[(m, h)][k] for k in FULL_METRICS]) + r" \\")
+    if extra:
+        lines.append(r"    \midrule")
+        lines.append(r"    \multicolumn{6}{@{}l}{\emph{Additional halves}} \\")
+        for m, h in extra:
+            lines.append(f"    {m}, {h}{mark(m)} & "
+                         + fmt([full[(m, h)][k] for k in FULL_METRICS]) + r" \\")
     lines += [
         r"    \midrule",
         "    Mean, test split & "
         + fmt([mean(test_rows, k) for k in FULL_METRICS]) + r" \\",
-        f"    Mean, all {NUMBER_WORDS.get(len(all_rows), len(all_rows))} & "
-        + fmt([mean(all_rows, k) for k in FULL_METRICS]) + r" \\",
+    ]
+    if extra:
+        lines.append(f"    Mean, all {words(n_all)} halves & "
+                     + fmt([mean(all_rows, k) for k in FULL_METRICS]) + r" \\")
+    lines += [
         r"    \bottomrule",
         r"  \end{tabular*}",
         r"\end{table}",
@@ -215,17 +311,12 @@ def emit_full(full):
     print(f"wrote {OUT_FULL_TEX}  ({len(test)} test + {len(extra)} additional halves)")
     print("test-split means: " + ", ".join(
         f"{k}={mean(test_rows, k):.2f}" for k in FULL_METRICS))
-    print(f"all-{len(all_rows)} means: " + ", ".join(
+    print(f"all-{n_all} means: " + ", ".join(
         f"{k}={mean(all_rows, k):.2f}" for k in FULL_METRICS))
     for (m, h) in test + extra:
         s = full[(m, h)]
-        print(f"  full {m}-{h}: {s['hota']:.2f} (src {s['path'].split('/')[-2]})")
-
-
-NUMBER_WORDS = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight",
-                9: "nine", 10: "ten", 11: "eleven", 12: "twelve",
-                13: "thirteen", 14: "fourteen", 15: "fifteen", 16: "sixteen",
-                17: "seventeen", 18: "eighteen", 19: "nineteen", 20: "twenty"}
+        print(f"  full {m}-{h}: {s['hota']:.2f} ({s['source']}, "
+              f"{Path(s['path']).relative_to(REPO) if s['path'].startswith(str(REPO)) else s['path']})")
 
 
 def emit_attrs_off(off30, full):
@@ -235,31 +326,36 @@ def emit_attrs_off(off30, full):
     nfull = len(full_rows)
     mean_off30 = [sum(v[i] for v in off30.values()) / n30 for i in range(3)]
     mean_offfull = [mean(full_rows, k) for k in OFF_METRICS]
+    rescoring = (" the 132831 first-half match-length row is the rescoring"
+                 r" described in Table~\ref{tab:gsr_results};"
+                 if rescored_132831_first(full) else "")
+    caption = (
+        r"\caption{Components of the attributes-off scores of"
+        r" Tables~\ref{tab:gsr_30s} and~\ref{tab:gsr_results}: the same"
+        " predictions rescored with attribute matching disabled, so that DetA,"
+        " AssA and LocA measure geometry and association alone. The upper"
+        " block is the opening 30 seconds of every half; the lower block is"
+        " the match-length evaluation set. Configuration is as in those"
+        f" tables;{rescoring} the released test split is marked $\\dagger$."
+        " Means are per column within each block, computed from unrounded"
+        " scores.}")
     lines = HEADER + [
         r"\begin{table}[!htbp]",
         r"  \centering",
-        r"  \caption{Components of the attributes-off scores of",
-        r"  Tables~\ref{tab:gsr_30s} and~\ref{tab:gsr_results}: the same",
-        r"  predictions rescored with attribute matching disabled, so that",
-        r"  DetA, AssA and LocA measure geometry and association alone. The",
-        r"  upper block is the opening 30 seconds of every half; the lower",
-        r"  block is the match-length evaluation set. Configuration and the",
-        r"  132831 first-half rescoring are as in those tables; the released",
-        r"  test split is marked $\dagger$. Means are per column within each",
-        r"  block, computed from unrounded scores.}",
+    ] + wrap_caption(caption) + [
         r"  \label{tab:gsr_attrs_off}",
         r"  \small",
         r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrr@{}}",
         r"    \toprule",
         r"    Half & DetA & AssA & LocA \\",
         r"    \midrule",
-        r"    \multicolumn{4}{@{}l}{\emph{First 30\,s, all twenty halves}} \\",
+        f"    \\multicolumn{{4}}{{@{{}}l}}{{\\emph{{First 30\\,s, all {words(n30)} halves}}}} \\\\",
     ]
     for m in MATCHES:
         for h in HALVES:
             lines.append(f"    {m}, {h}{mark(m)} & " + fmt(off30[(m, h)]) + r" \\")
     lines += [
-        f"    Mean, all {NUMBER_WORDS.get(n30, n30)} halves & " + fmt(mean_off30) + r" \\",
+        f"    Mean, all {words(n30)} halves & " + fmt(mean_off30) + r" \\",
         r"    \midrule",
         r"    \multicolumn{4}{@{}l}{\emph{Full half (45\,min), match-length evaluation set}} \\",
     ]
@@ -267,7 +363,7 @@ def emit_attrs_off(off30, full):
         lines.append(f"    {m}, {h}{mark(m)} & "
                      + fmt([full[(m, h)][k] for k in OFF_METRICS]) + r" \\")
     lines += [
-        f"    Mean, all {NUMBER_WORDS.get(nfull, nfull)} halves & " + fmt(mean_offfull) + r" \\",
+        f"    Mean, all {words(nfull)} halves & " + fmt(mean_offfull) + r" \\",
         r"    \bottomrule",
         r"  \end{tabular*}",
         r"\end{table}",
