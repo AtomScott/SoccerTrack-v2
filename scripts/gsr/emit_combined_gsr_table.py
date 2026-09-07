@@ -176,8 +176,8 @@ def emit_30s(sweep):
         r"  (role, team, jersey); \emph{Attrs off} rescores the same",
         r"  predictions with attribute matching disabled, so that only",
         r"  geometry and association count (its components are listed in",
-        r"  Supplementary Table~\ref{tab:gsr_attrs_off}). The released test",
-        r"  split of the match-level split is marked $\dagger$. The mean is",
+        r"  Supplementary Table~\ref{tab:gsr_attrs_off}). The test split of",
+        r"  the released match-level split is marked $\dagger$. The mean is",
         r"  over all twenty halves, computed from unrounded scores.}",
         r"  \label{tab:gsr_30s}",
         r"  \small",
@@ -262,8 +262,8 @@ def emit_full(full):
         extra_clause = ""
     caption = (
         r"\caption{Game state reconstruction on the match-length (45-minute)"
-        f" evaluation set: the {words(len(test))} halves of the released test"
-        f" split of the match-level split (marked $\\dagger$){extra_clause},"
+        f" evaluation set: the {words(len(test))} halves of the test split of"
+        f" the released match-level split (marked $\\dagger$){extra_clause},"
         r" run end to end with the adapted pipeline of Table~\ref{tab:gsr_30s}"
         " under the same configuration." + rescoring_sentence(full) +
         " DetA, AssA and LocA are the detection, association and localisation"
