@@ -1,29 +1,44 @@
 #!/usr/bin/env python3
-"""Emit the paper's combined GSR table (30 s sweep + full-half results).
+"""Emit the paper's GSR tables (30 s sweep + full-half results).
 
-Writes a complete table environment to the paper tree
-(sections/gsr_combined_table.tex), which 02_results.tex \\input{}s, so the
-table regenerates with one command as cloud halves land:
+Writes two complete table environments to the paper tree:
+
+  sections/gsr_combined_table.tex   tab:gsr_results, \\input{} by 02_results.tex
+  sections/gsr_attrs_off_table.tex  tab:gsr_attrs_off, \\input{} by 04_methods.tex
+                                    (attributes-off DetA/AssA/LocA so that every
+                                    attrs-off component quoted in the prose has a
+                                    display item)
+
+so both regenerate with one command as cloud halves land:
 
     python3 scripts/gsr/emit_combined_gsr_table.py
 
 30 s scores come from results/gsr/sweep30s_all_matches.csv (first 750 frames
-of every half, one configuration, zero-shot). Full-half scores are collected
-with the same source preference as compile_full_table.py (fleet1 > fleet2 >
-local). Full columns print an em dash for halves without a completed run.
+of every half, one configuration: the adapted pipeline with the weights the
+baseline ships, per-detection team assignment) and, for the attrs-off
+components, from results/gsr/score_30s_<match>_<half>.json. Full-half scores
+are collected with the same source preference as compile_full_table.py
+(fleet1 > fleet2 > local). Full columns print a dash for halves without a
+completed run.
 """
 
 import csv
+import json
 from pathlib import Path
 
 from compile_full_table import MATCHES, HALVES, collect
 
 REPO = Path(__file__).resolve().parents[2]
 SWEEP_CSV = REPO / "results" / "gsr" / "sweep30s_all_matches.csv"
-OUT_TEX = Path("/home/atom/soccertrack-v2/paper/sections/gsr_combined_table.tex")
+SCORE30_DIR = REPO / "results" / "gsr"
+PAPER_SECTIONS = Path("/home/atom/soccertrack-v2/paper/sections")
+OUT_TEX = PAPER_SECTIONS / "gsr_combined_table.tex"
+OUT_OFF_TEX = PAPER_SECTIONS / "gsr_attrs_off_table.tex"
 
 TEST_MATCHES = {"128057", "132831"}
 FULL_METRICS = ["hota", "deta", "assa", "loca", "off_hota"]
+OFF_METRICS = ["off_deta", "off_assa", "off_loca"]
+OFF_KEY = "attributes OFF (geometry + association)"
 
 
 def main():
@@ -49,21 +64,25 @@ def main():
         r"\begin{table}[!htbp]",
         r"  \centering",
         r"  \caption{Game state reconstruction across all ten matches, run",
-        r"  zero-shot (no training on SoccerTrack v2) under one configuration",
-        r"  (Section~\ref{subsec:methods_gsr}). Every half is evaluated on its",
-        r"  first 30 seconds; halves whose 45-minute end-to-end runs completed",
-        r"  within the compute budget (Section~\ref{subsec:methods_scale}) are",
-        r"  also evaluated at full length, the complete held-out test split",
-        r"  (marked $\dagger$) among them. The 132831 first-half row is",
-        r"  rescored from the saved predictions after correcting a",
-        r"  staging-time temporal offset; the residual misalignment is at most",
-        r"  5 frames ($0.2$\,s), well under the metric's $5$\,m tolerance.",
-        r"  DetA, AssA and LocA are the components of the official GS-HOTA,",
-        r"  which classes detections by (role, team, jersey); \emph{Attrs off}",
-        r"  rescores the same predictions with attribute matching disabled, so",
-        r"  that only geometry and association count. Means are per column:",
-        r"  over all twenty halves for the 30-second columns, over the",
-        r"  evaluated halves for the full-length columns.}",
+        r"  with the adapted SoccerNet pipeline of",
+        r"  Section~\ref{subsec:methods_gsr} (no component's weights trained",
+        r"  on SoccerTrack v2) under one configuration, the per-detection",
+        r"  team assignment. Every half is evaluated on its first 30 seconds;",
+        r"  halves whose 45-minute end-to-end runs completed within the",
+        r"  compute budget (Section~\ref{subsec:methods_scale}) are also",
+        r"  evaluated at full length, the complete test split of the",
+        r"  match-level split (marked $\dagger$) among them. The 132831",
+        r"  first-half row is rescored from the saved predictions after",
+        r"  correcting a staging-time temporal offset; the residual",
+        r"  misalignment is at most 5 frames ($0.2$\,s), during which a",
+        r"  sprinting player covers under $2$\,m, inside the metric's $5$\,m",
+        r"  tolerance. DetA, AssA and LocA are the components of the official",
+        r"  GS-HOTA, which classes detections by (role, team, jersey);",
+        r"  \emph{Attrs off} rescores the same predictions with attribute",
+        r"  matching disabled, so that only geometry and association count",
+        r"  (its components are listed in Table~\ref{tab:gsr_attrs_off}).",
+        r"  Means are per column: over all twenty halves for the 30-second",
+        r"  columns, over the evaluated halves for the full-length columns.}",
         r"  \label{tab:gsr_results}",
         r"  \small",
         r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}",
@@ -97,6 +116,64 @@ def main():
     ]
     OUT_TEX.write_text("\n".join(lines) + "\n")
     print(f"wrote {OUT_TEX}  (30s: {n30} halves, full: {nfull} halves)")
+
+    # Second table: attributes-off components (DetA, AssA, LocA) for the 30 s
+    # sweep on all twenty halves and for every completed full half.
+    off30 = {}
+    for m in MATCHES:
+        for h in HALVES:
+            with open(SCORE30_DIR / f"score_30s_{m}_{h}.json") as f:
+                s = json.load(f)["scores"][OFF_KEY]
+            off30[(m, h)] = (s["DetA"], s["AssA"], s["LocA"])
+    off_lines = [
+        "% GENERATED by scripts/gsr/emit_combined_gsr_table.py in the",
+        "% SoccerTrack-v2 code repo. Do not edit by hand; rerun the script",
+        "% when further full-half results land.",
+        r"\begin{table}[!htbp]",
+        r"  \centering",
+        r"  \caption{Components of the attributes-off score of",
+        r"  Table~\ref{tab:gsr_results}: the same predictions rescored with",
+        r"  attribute matching disabled, so that DetA, AssA and LocA measure",
+        r"  geometry and association alone. Populations, configuration and",
+        r"  the 132831 first-half rescoring are as in",
+        r"  Table~\ref{tab:gsr_results}; the test split is marked $\dagger$.",
+        r"  Means are per column, over all twenty halves for the 30-second",
+        r"  columns and over the evaluated halves for the full-length",
+        r"  columns.}",
+        r"  \label{tab:gsr_attrs_off}",
+        r"  \small",
+        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrr@{}}",
+        r"    \toprule",
+        r"    & \multicolumn{3}{c}{First 30\,s, attributes off} & \multicolumn{3}{c}{Full half, attributes off} \\",
+        r"    \cmidrule(lr){2-4} \cmidrule(l){5-7}",
+        r"    Half & DetA & AssA & LocA & DetA & AssA & LocA \\",
+        r"    \midrule",
+    ]
+    for m in MATCHES:
+        for h in HALVES:
+            mark = r"$^\dagger$" if m in TEST_MATCHES else ""
+            cells = [f"{x:.2f}" for x in off30[(m, h)]]
+            if (m, h) in full:
+                cells += [f"{full[(m, h)][k]:.2f}" for k in OFF_METRICS]
+            else:
+                cells += ["--"] * 3
+            off_lines.append(f"    {m}, {h}{mark} & " + " & ".join(cells) + r" \\")
+    mean_off30 = [sum(v[i] for v in off30.values()) / n30 for i in range(3)]
+    mean_offfull = [sum(v[k] for v in full.values()) / nfull for k in OFF_METRICS]
+    off_lines += [
+        r"    \midrule",
+        "    Mean & " + " & ".join(f"{x:.2f}" for x in mean_off30) + " & "
+        + " & ".join(f"{x:.2f}" for x in mean_offfull) + r" \\",
+        r"    \bottomrule",
+        r"  \end{tabular*}",
+        r"\end{table}",
+    ]
+    OUT_OFF_TEX.write_text("\n".join(off_lines) + "\n")
+    print(f"wrote {OUT_OFF_TEX}")
+    print("30s attrs-off means: " + ", ".join(
+        f"{k}={v:.2f}" for k, v in zip(("deta", "assa", "loca"), mean_off30)))
+    print("full attrs-off means: " + ", ".join(
+        f"{k}={v:.2f}" for k, v in zip(OFF_METRICS, mean_offfull)))
     print(f"30s means: official {mean30[0]:.2f}, attrs-off {mean30[1]:.2f}")
     print("full means: " + ", ".join(
         f"{k}={v:.2f}" for k, v in zip(FULL_METRICS, meanfull)))
