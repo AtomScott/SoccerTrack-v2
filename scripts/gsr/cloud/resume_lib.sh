@@ -43,13 +43,33 @@ newest_checkpoint() {
 # into FULL_PIPELINE would compute the wrong (too-long) tail and rerun already-done modules.
 # So this indexes into CURRENT_PIPELINE, which run_pipeline_with_resume keeps pointed at
 # whatever module list is actually running right now.
+# pipeline_for_checkpoint <ckpt_path> -> the module list the attempt that WROTE this file was
+# launched with. Every attempt appends "<epoch> <modules...>" to $TRACKLAB_CHECKPOINT_DIR/.attempts
+# right before launching python; the checkpoint's mtime selects the latest attempt started
+# before it. This is what makes the index unambiguous even when the most recent attempt died
+# before writing any checkpoint of its own (then the newest file belongs to an OLDER attempt,
+# and indexing it into CURRENT_PIPELINE would skip modules -- observed 2026-09-10 as a cascade
+# of KeyErrors). Falls back to the full pipeline (attempt-1 semantics) when no record exists.
+pipeline_for_checkpoint() {
+  local m best="" t rest
+  m=$(stat -c %Y "$1")
+  if [ -s "$TRACKLAB_CHECKPOINT_DIR/.attempts" ]; then
+    while read -r t rest; do
+      [ -n "$t" ] && [ "$t" -le "$m" ] && best="$rest"
+    done < "$TRACKLAB_CHECKPOINT_DIR/.attempts"
+  fi
+  [ -z "$best" ] && best="${FULL_PIPELINE[*]}"
+  echo "$best"
+}
+
 tail_from_checkpoint() {
-  local base idx n j tail=()
+  local base idx n j tail=() plist
   base=$(basename "$1" .pklz)
   idx=$(echo "$base" | rev | cut -d- -f2 | rev)
   idx=$((10#$idx))   # force base-10 (a leading zero would otherwise read as octal)
-  n=${#CURRENT_PIPELINE[@]}
-  for ((j = idx + 1; j < n; j++)); do tail+=("${CURRENT_PIPELINE[$j]}"); done
+  read -r -a plist <<< "$(pipeline_for_checkpoint "$1")"
+  n=${#plist[@]}
+  for ((j = idx + 1; j < n; j++)); do tail+=("${plist[$j]}"); done
   echo "${tail[@]}"
 }
 
@@ -98,9 +118,6 @@ run_pipeline_with_resume() {
   if [ "${RESUME_ON_START:-0}" = 1 ]; then
     CKPT=$(newest_checkpoint)
     if [ -n "$CKPT" ]; then
-      if [ -s "$TRACKLAB_CHECKPOINT_DIR/.current_pipeline" ]; then
-        read -r -a CURRENT_PIPELINE < "$TRACKLAB_CHECKPOINT_DIR/.current_pipeline"
-      fi
       TAIL=$(tail_from_checkpoint "$CKPT")
       if [ -n "$TAIL" ]; then
         PIPE_LIST="[$(echo "$TAIL" | tr ' ' ',')]"
@@ -120,6 +137,7 @@ run_pipeline_with_resume() {
   while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
     echo "=== pipeline attempt $attempt/$MAX_ATTEMPTS (resume_count=$RESUME_COUNT) $(date -u +%FT%TZ) ==="
     [ ${#LOAD_ARGS[@]} -gt 0 ] && echo "    resuming with: ${LOAD_ARGS[*]}"
+    echo "$(date +%s) ${CURRENT_PIPELINE[*]}" >> "$TRACKLAB_CHECKPOINT_DIR/.attempts"
     cd /home/atom/soccernet/gsr || return 1
     .venv/bin/python -u -m sn_gamestate.main -cn soccertrack \
       experiment_name="$EXP" \
