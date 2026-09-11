@@ -401,4 +401,10 @@ if [ -f /home/atom/RUN_DONE ]; then
   echo "startup v3: previous run ended in failure; clearing RUN_DONE so recovery can resume" >> /home/atom/half.log
   rm -f /home/atom/RUN_DONE /home/atom/RESULTS_PULLED
 fi
-sudo -u atom env NUM_CORES=8 bash -c "nohup /home/atom/run_half_v2.sh >/dev/null 2>&1 &"
+# DataLoader worker count: per-instance override via metadata gsr-num-cores (default 8). Fewer
+# workers means fewer forked copies of the parent's detection frame during ReID, which is what
+# pushes busy halves past 62 GB and into a page-cache thrash.
+NC=$(curl -s -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/gsr-num-cores" 2>/dev/null)
+case "$NC" in ''|*[!0-9]*) NC=8;; esac
+echo "startup v3: launching runner with NUM_CORES=$NC" >> /home/atom/half.log
+sudo -u atom env NUM_CORES=$NC bash -c "nohup /home/atom/run_half_v2.sh >/dev/null 2>&1 &"
