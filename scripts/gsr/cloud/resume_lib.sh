@@ -149,7 +149,7 @@ run_pipeline_with_resume() {
       '+modules.jersey_number_det.min_roi_area=100' \
       '+modules.jersey_number_det.min_obb_aspect_ratio=0.6' \
       modules/team=detection_level "${EXTRA[@]}" "${LOAD_ARGS[@]}" \
-      visualization.cfg.save_videos=False use_rich=False num_cores=12 \
+      visualization.cfg.save_videos=False use_rich=False num_cores=${NUM_CORES:-12} \
       >> /home/atom/pipeline.log 2>&1
     RC=$?
     PRED=$(ls -t /home/atom/soccernet/gsr/outputs/"$EXP"/*/*/eval/pred/SoccerNetGS-test/tracklab/"$SEQ".json 2>/dev/null | head -1)
