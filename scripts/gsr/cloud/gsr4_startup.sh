@@ -391,8 +391,10 @@ chown atom:atom /home/atom/run_half_v2.sh /home/atom/resume_lib.sh /home/atom/se
 chmod +x /home/atom/run_half_v2.sh
 mkdir -p /home/atom/ckpts && chown atom:atom /home/atom/ckpts
 [ -f /home/atom/half.log ] && sudo -u atom python3 /home/atom/seed_attempts.py /home/atom/half.log /home/atom/ckpts/.attempts >> /home/atom/half.log 2>&1
-if [ -f /home/atom/RUN_DONE ] && ls /home/atom/results/*/summary.txt >/dev/null 2>&1; then
-  echo "startup v3: run already completed with results on disk; not restarting the runner" >> /home/atom/half.log
+# A run counts as completed only if its summary carries a numeric GS-HOTA; a FAIL_SCORING run
+# also leaves a summary.txt (gshota=none) and must be resumed like any other failure.
+if [ -f /home/atom/RUN_DONE ] && grep -qsE '^gshota=[0-9]' /home/atom/results/*/summary.txt; then
+  echo "startup v3: run already completed with a score on disk; not restarting the runner" >> /home/atom/half.log
   exit 0
 fi
 if [ -f /home/atom/RUN_DONE ]; then
