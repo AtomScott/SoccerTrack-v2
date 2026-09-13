@@ -40,7 +40,7 @@ CLOUD_ROOT = Path("/mnt/storage/SoccerTrack-v2/gsr-cloud-results")
 LOCAL_DIR = Path(__file__).resolve().parents[2] / "results" / "gsr"
 CLOUD_LOCAL = LOCAL_DIR / "cloud"
 # source name -> (in-repo subdir, subdir under the storage mount)
-FLEETS = {"fleet1": ("fleet1", ""), "fleet2": ("fleet2", "gsr2")}
+FLEETS = {"fleet1": ("fleet1", ""), "fleet2": ("fleet2", "gsr2"), "gsr4": ("gsr4", "gsr4")}
 
 ON_KEY = "attributes ON (official GS-HOTA)"
 OFF_KEY = "attributes OFF (geometry + association)"
@@ -107,7 +107,7 @@ def main():
                 continue
             # Cloud reruns supersede the local 132831 pred-shift rescoring;
             # 128057 exists only locally, so "local" is authoritative there.
-            for pref in ("fleet1", "fleet2", "local"):
+            for pref in ("fleet1", "fleet2", "gsr4", "local"):
                 if pref in sources:
                     chosen = pref
                     break

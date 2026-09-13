@@ -52,7 +52,8 @@ def convert(d):
 def main():
     n = 0
     for d in sorted(CLOUD_ROOT.glob("CLPD-*")) + sorted(
-            (CLOUD_ROOT / "gsr2").glob("CLPD-*")):
+            (CLOUD_ROOT / "gsr2").glob("CLPD-*")) + sorted(
+            (CLOUD_ROOT / "gsr4").glob("CLPD-*")):
         if d.is_dir():
             n += convert(d)
     print(f"converted {n} new dir(s)")

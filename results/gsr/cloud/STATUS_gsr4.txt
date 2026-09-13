@@ -1,0 +1,14 @@
+GSR v2 (auto-resume) rerun fleet status  (updated 2026-09-13 16:06:30 JST)  [12 halves, Tokyo]
+HALF             STATUS                   GS-HOTA    RESUMES  HEARTBEAT
+117092-1st       RUNNING/TERMINATED                  4        2026-09-11T07:14:03Z diskfreeG=180 Prtreid:  22%|██▏       | 4748/21640 [36:46<12:33:05,  2.67s/it][A
+117092-2nd       DONE_PASS_/RUNNING       none       1        2026-09-12T13:15:23Z diskfreeG=146 TypeError: 'NoneType' object is not subscriptable
+117093-1st       DONE_PASS_14.284/RUNNING 14.284     1        2026-09-12T11:10:01Z diskfreeG=68 TypeError: 'NoneType' object is not subscriptable
+117093-2nd       DONE_PASS_12.128/RUNNING 12.128     1        2026-09-12T16:14:12Z diskfreeG=63 TypeError: 'NoneType' object is not subscriptable
+118576-1st       DONE_PASS_12.358/RUNNING 12.358     1        2026-09-12T18:24:25Z diskfreeG=85 TypeError: 'NoneType' object is not subscriptable
+118576-2nd       DONE_PASS_11.029/RUNNING 11.029     1        2026-09-12T23:45:02Z diskfreeG=59 TypeError: 'NoneType' object is not subscriptable
+118577-1st       DONE_PASS_18.234/RUNNING 18.234     1        2026-09-13T00:48:27Z diskfreeG=84 2026-09-12 22:44:30 [INFO] __main__: Environment closed, returning from main
+118577-2nd       DONE_PASS_16.542/RUNNING 16.542     1        2026-09-12T21:16:52Z diskfreeG=56 TypeError: 'NoneType' object is not subscriptable
+118578-2nd       DONE_PASS_10.223/RUNNING 10.223     1        2026-09-12T16:02:00Z diskfreeG=113 TypeError: 'NoneType' object is not subscriptable
+128058-2nd       DONE_PASS_12.259/RUNNING 12.259     1        2026-09-12T16:34:34Z diskfreeG=103 TypeError: 'NoneType' object is not subscriptable
+132877-1st       DONE_PASS_10.076/RUNNING 10.076     1        2026-09-12T10:02:23Z diskfreeG=79 TypeError: 'NoneType' object is not subscriptable
+132831-1st       DONE_PASS_/RUNNING       none       1        2026-09-12T19:19:50Z diskfreeG=103 TypeError: 'NoneType' object is not subscriptable

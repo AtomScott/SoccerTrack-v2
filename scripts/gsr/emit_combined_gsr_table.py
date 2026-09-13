@@ -134,7 +134,7 @@ def load_full():
     for m in MATCHES:
         for h in HALVES:
             src = collect(m, h)
-            for pref in ("fleet1", "fleet2", "local"):
+            for pref in ("fleet1", "fleet2", "gsr4", "local"):
                 if pref in src:
                     full[(m, h)] = dict(src[pref], source=pref)
                     break
