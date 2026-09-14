@@ -228,9 +228,10 @@ def emit_combined(sweep, full):
     all_rows = [full[k] for k in rows]
     test_rows = [full[k] for k in test]
     caption = (
-        r"\caption{Game state reconstruction on all " + words(n_all) + " 45-minute"
-        " halves, each scored at match length and on its opening 30 seconds,"
-        " the clip length of the SoccerNet-GSR benchmark: the SoccerNet"
+        r"\caption{Game state reconstruction on all " + words(n_all) + " halves,"
+        " each run and scored over the whole half and, independently, on its"
+        " opening 30 seconds, the clip length of the SoccerNet-GSR benchmark:"
+        " the SoccerNet"
         r" pipeline of Section~\ref{subsec:methods_gsr}, adapted by the authors"
         " on released footage that includes a test-split half, with no"
         " component's weights trained on SoccerTrack v2, run end to end under"
@@ -242,7 +243,11 @@ def emit_combined(sweep, full):
         " count (components in Supplementary"
         r" Table~\ref{tab:gsr_attrs_off}). The test split of the released"
         r" match-level split is marked $\dagger$. Means are per column,"
-        " computed from unrounded scores. " + hardware_sentence(full, rows) + "}")
+        " computed from unrounded scores. Where each half was run is"
+        r" recorded in Section~\ref{subsec:methods_scale}.}")
+    # hardware_sentence(full, rows) is kept for the console record: the
+    # caption no longer carries it (reviewer request, 2026-09-14), Methods does.
+    print("hardware: " + hardware_sentence(full, rows))
     lines = HEADER + [
         r"\begin{table}[!htbp]",
         r"  \centering",
