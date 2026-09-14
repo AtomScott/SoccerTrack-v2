@@ -1,25 +1,23 @@
 #!/usr/bin/env python3
-"""Emit the paper's GSR tables: the two-tier evaluation plus its supplement.
+"""Emit the paper's GSR tables: one twenty-row results table plus its supplement.
 
-Writes three complete table environments (no empty cells anywhere) to the
+Writes two complete table environments (no empty cells anywhere) to the
 paper tree:
 
-  sections/gsr_table_30s.tex        tab:gsr_30s, \\input{} by 02_results.tex
-                                    Tier 1: the opening 30 s of every half of
-                                    all ten matches, one row per match.
-  sections/gsr_table_full.tex       tab:gsr_results, \\input{} by 02_results.tex
-                                    Tier 2: every half at match length (45 min),
-                                    the four halves of the released test split
-                                    plus the sixteen further halves (a budget
-                                    qualifier is emitted only while halves are
-                                    missing).
+  sections/gsr_table_full.tex       tab:gsr_results, \\input{} by 02_results.tex:
+                                    every half of all ten matches, scored at
+                                    match length (GS-HOTA, DetA, AssA, LocA,
+                                    attrs off) and on its opening 30 s
+                                    (GS-HOTA, attrs off), one row per half,
+                                    with a mean over all twenty halves and a
+                                    mean over the released test split.
   sections/gsr_attrs_off_table.tex  tab:gsr_attrs_off, \\input{} by
                                     05_supplementary.tex (Supplementary Table 1):
-                                    attributes-off DetA/AssA/LocA for both
-                                    tiers, so that every attrs-off component
+                                    attributes-off DetA/AssA/LocA at both
+                                    lengths, so that every attrs-off component
                                     quoted in the prose has a display item.
 
-All three regenerate with one command as further full halves land:
+Both regenerate with one command whenever a score file changes:
 
     python3 scripts/gsr/emit_combined_gsr_table.py
 
@@ -29,16 +27,15 @@ baseline ships, per-detection team assignment) and, for the attrs-off
 components, from results/gsr/score_30s_<match>_<half>.json. Full-half scores
 are collected with the same source preference as compile_full_table.py
 (fleet1 > fleet2 > gsr4 > local); the cloud halves are read from the versioned
-copies under results/gsr/cloud/ so that every input is in the repo. The
-full-length tables list only halves with a completed run; the author's
-decision (2026-09-08) is that a gapped table "looks unfinished", so no dash
-cells are emitted.
+copies under results/gsr/cloud/ so that every input is in the repo. All
+twenty halves are required to be present: the table has no dash cells (the
+author's decision of 2026-09-08 is that a gapped table "looks unfinished").
 
 Every count and hardware statement in the captions is derived from the rows
-(len(test), len(extra), and each row's source tag: "local" is the
-workstation, "fleet1"/"fleet2"/"gsr4" the cloud L4 instances), so a newly landed
-half cannot leave a caption contradicting its table body. The four halves of
-the released test split are required to be present.
+and each row's source tag ("local" is the workstation, "fleet1"/"fleet2"/
+"gsr4" the cloud L4 instances, HYBRID_HALVES the halves whose detection and
+pose ran on the cloud before the workstation resumed), so a regenerated table
+cannot leave a caption contradicting its body.
 """
 
 import csv
@@ -52,7 +49,6 @@ REPO = Path(__file__).resolve().parents[2]
 SWEEP_CSV = REPO / "results" / "gsr" / "sweep30s_all_matches.csv"
 SCORE30_DIR = REPO / "results" / "gsr"
 PAPER_SECTIONS = Path("/home/atom/soccertrack-v2/paper/sections")
-OUT_30S_TEX = PAPER_SECTIONS / "gsr_table_30s.tex"
 OUT_FULL_TEX = PAPER_SECTIONS / "gsr_table_full.tex"
 OUT_OFF_TEX = PAPER_SECTIONS / "gsr_attrs_off_table.tex"
 
@@ -160,61 +156,6 @@ def rescored_132831_first(full):
     return full[("132831", "1st")]["source"] == "local"
 
 
-def full_row_order(full):
-    """Test split first, then the additional halves, each in match order."""
-    test = [(m, h) for m in TEST_MATCHES for h in HALVES if (m, h) in full]
-    extra = [(m, h) for m in MATCHES for h in HALVES
-             if (m, h) in full and m not in TEST_MATCHES]
-    return test, extra
-
-
-def emit_30s(sweep):
-    n = len(sweep)
-    mean30 = [sum(v[i] for v in sweep.values()) / n for i in (0, 1)]
-    lines = HEADER + [
-        r"\begin{table}[!htbp]",
-        r"  \centering",
-        r"  \caption{Game state reconstruction on the opening 30 seconds of",
-        r"  every half of all ten matches, the clip length of the",
-        r"  SoccerNet-GSR benchmark, run with the SoccerNet pipeline of",
-        r"  Section~\ref{subsec:methods_gsr} as adapted by the authors on",
-        r"  released footage that includes a test-split half, with no",
-        r"  component's weights trained on SoccerTrack v2, under one",
-        r"  configuration, the per-detection team assignment.",
-        r"  GS-HOTA is the official metric, which classes detections by",
-        r"  (role, team, jersey); \emph{Attrs off} rescores the same",
-        r"  predictions with attribute matching disabled, so that only",
-        r"  geometry and association count (its components are listed in",
-        r"  Supplementary Table~\ref{tab:gsr_attrs_off}). The test split of",
-        r"  the released match-level split is marked $\dagger$. The mean is",
-        r"  over all twenty halves, computed from unrounded scores.}",
-        r"  \label{tab:gsr_30s}",
-        r"  \small",
-        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrr@{}}",
-        r"    \toprule",
-        r"    & \multicolumn{2}{c}{GS-HOTA} & \multicolumn{2}{c}{Attrs off} \\",
-        r"    \cmidrule(lr){2-3} \cmidrule(l){4-5}",
-        r"    Match & 1st half & 2nd half & 1st half & 2nd half \\",
-        r"    \midrule",
-    ]
-    for m in MATCHES:
-        s1, s2 = sweep[(m, "1st")], sweep[(m, "2nd")]
-        lines.append(f"    {m}{mark(m)} & " + fmt([s1[0], s2[0], s1[1], s2[1]])
-                     + r" \\")
-    lines += [
-        r"    \midrule",
-        f"    Mean, all twenty halves & \\multicolumn{{2}}{{c}}{{{r2(mean30[0])}}}"
-        f" & \\multicolumn{{2}}{{c}}{{{r2(mean30[1])}}} \\\\",
-        r"    \bottomrule",
-        r"  \end{tabular*}",
-        r"\end{table}",
-    ]
-    OUT_30S_TEX.write_text("\n".join(lines) + "\n")
-    print(f"wrote {OUT_30S_TEX}  ({n} halves)")
-    print(f"30s means: official {mean30[0]:.2f}, attrs-off {mean30[1]:.2f}")
-    return mean30
-
-
 # Halves whose score file lives in results/gsr (source tag "local") but whose
 # detection and pose stages ran on a cloud L4 instance, the workstation
 # resuming the remaining modules from that checkpoint. Provenance only: the
@@ -273,85 +214,82 @@ def wrap_caption(text, indent="  ", width=72):
     return out
 
 
-def emit_full(full):
-    test, extra = full_row_order(full)
+def emit_combined(sweep, full):
+    """One row per half, match order: 30 s (GS-HOTA, attrs off) then the full
+    half (GS-HOTA, DetA, AssA, LocA, attrs off)."""
+    rows = [(m, h) for m in MATCHES for h in HALVES]
+    missing = [k for k in rows if k not in full or k not in sweep]
+    if missing:
+        raise SystemExit(f"table would have gaps; missing full or 30 s scores for {missing}")
+    test = [k for k in rows if k[0] in TEST_MATCHES]
+    n_all, n_test = len(rows), len(test)
+    mean30 = [sum(sweep[k][i] for k in rows) / n_all for i in (0, 1)]
+    mean30_test = [sum(sweep[k][i] for k in test) / n_test for i in (0, 1)]
+    all_rows = [full[k] for k in rows]
     test_rows = [full[k] for k in test]
-    all_rows = [full[k] for k in test + extra]
-    n_all = len(all_rows)
-    if extra and n_all >= 20:
-        # Every half of the release is scored at match length: no budget
-        # qualifier is needed.
-        extra_clause = f" and the {words(len(extra))} further halves"
-    elif extra:
-        extra_clause = (f" and {words(len(extra))} further"
-                        f" {'half' if len(extra) == 1 else 'halves'} that the"
-                        " compute budget allowed"
-                        r" (Section~\ref{subsec:methods_scale})")
-    else:
-        extra_clause = ""
     caption = (
-        r"\caption{Game state reconstruction on the match-length (45-minute)"
-        f" evaluation set: the {words(len(test))} halves of the test split of"
-        f" the released match-level split (marked $\\dagger$){extra_clause},"
-        r" run end to end with the adapted pipeline of Table~\ref{tab:gsr_30s}"
-        " under the same configuration." + rescoring_sentence(full) +
-        " DetA, AssA and LocA are the detection, association and localisation"
-        " components of the official GS-HOTA, which classes detections by"
-        r" (role, team, jersey); \emph{Attrs off} rescores the same predictions"
-        " with attribute matching disabled, so that only geometry and"
-        " association count (its components are listed in Supplementary"
-        r" Table~\ref{tab:gsr_attrs_off}). Means are per column, computed from"
-        " unrounded scores. " + hardware_sentence(full, test + extra) + "}")
+        r"\caption{Game state reconstruction on all " + words(n_all) + " 45-minute"
+        " halves, each scored at match length and on its opening 30 seconds,"
+        " the clip length of the SoccerNet-GSR benchmark: the SoccerNet"
+        r" pipeline of Section~\ref{subsec:methods_gsr}, adapted by the authors"
+        " on released footage that includes a test-split half, with no"
+        " component's weights trained on SoccerTrack v2, run end to end under"
+        " one configuration, the per-detection team assignment. GS-HOTA is the"
+        " official metric, which classes detections by (role, team, jersey);"
+        " DetA, AssA and LocA are its detection, association and localisation"
+        r" components; \emph{Attrs off} rescores the same predictions with"
+        " attribute matching disabled, so that only geometry and association"
+        " count (components in Supplementary"
+        r" Table~\ref{tab:gsr_attrs_off}). The test split of the released"
+        r" match-level split is marked $\dagger$. Means are per column,"
+        " computed from unrounded scores. " + hardware_sentence(full, rows) + "}")
     lines = HEADER + [
         r"\begin{table}[!htbp]",
         r"  \centering",
     ] + wrap_caption(caption) + [
         r"  \label{tab:gsr_results}",
-        r"  \small",
-        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrr@{}}",
+        r"  \footnotesize",
+        r"  \setlength{\tabcolsep}{4pt}",
+        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}",
         r"    \toprule",
-        r"    Half & GS-HOTA & DetA & AssA & LocA & Attrs off \\",
+        r"    & \multicolumn{2}{c}{Opening 30\,s} & \multicolumn{5}{c}{Full half (45\,min)} \\",
+        r"    \cmidrule(lr){2-3} \cmidrule(l){4-8}",
+        r"    Half & GS-HOTA & Attrs off & GS-HOTA & DetA & AssA & LocA & Attrs off \\",
         r"    \midrule",
-        r"    \multicolumn{6}{@{}l}{\emph{Test split}} \\",
     ]
-    for m, h in test:
+    for m, h in rows:
+        s30 = sweep[(m, h)]
         lines.append(f"    {m}, {h}{mark(m)} & "
-                     + fmt([full[(m, h)][k] for k in FULL_METRICS]) + r" \\")
-    if extra:
-        lines.append(r"    \midrule")
-        lines.append(r"    \multicolumn{6}{@{}l}{\emph{Additional halves}} \\")
-        for m, h in extra:
-            lines.append(f"    {m}, {h}{mark(m)} & "
-                         + fmt([full[(m, h)][k] for k in FULL_METRICS]) + r" \\")
+                     + fmt([s30[0], s30[1]] + [full[(m, h)][k] for k in FULL_METRICS])
+                     + r" \\")
     lines += [
         r"    \midrule",
-        "    Mean, test split & "
-        + fmt([mean(test_rows, k) for k in FULL_METRICS]) + r" \\",
-    ]
-    if extra:
-        lines.append(f"    Mean, all {words(n_all)} halves & "
-                     + fmt([mean(all_rows, k) for k in FULL_METRICS]) + r" \\")
-    lines += [
+        f"    Mean, all {words(n_all)} halves & "
+        + fmt(mean30 + [mean(all_rows, k) for k in FULL_METRICS]) + r" \\",
+        r"    Mean, test split$^\dagger$ & "
+        + fmt(mean30_test + [mean(test_rows, k) for k in FULL_METRICS]) + r" \\",
         r"    \bottomrule",
         r"  \end{tabular*}",
         r"\end{table}",
     ]
     OUT_FULL_TEX.write_text("\n".join(lines) + "\n")
-    print(f"wrote {OUT_FULL_TEX}  ({len(test)} test + {len(extra)} additional halves)")
-    print("test-split means: " + ", ".join(
-        f"{k}={mean(test_rows, k):.2f}" for k in FULL_METRICS))
-    print(f"all-{n_all} means: " + ", ".join(
+    print(f"wrote {OUT_FULL_TEX}  ({n_all} halves, {n_test} in the test split)")
+    print(f"30s means: official {mean30[0]:.2f}, attrs-off {mean30[1]:.2f}"
+          f" (test split {mean30_test[0]:.2f} / {mean30_test[1]:.2f})")
+    print(f"all-{n_all} full means: " + ", ".join(
         f"{k}={mean(all_rows, k):.2f}" for k in FULL_METRICS))
-    for (m, h) in test + extra:
-        s = full[(m, h)]
-        print(f"  full {m}-{h}: {s['hota']:.2f} ({s['source']}, "
-              f"{Path(s['path']).relative_to(REPO) if s['path'].startswith(str(REPO)) else s['path']})")
+    print("test-split full means: " + ", ".join(
+        f"{k}={mean(test_rows, k):.2f}" for k in FULL_METRICS))
+    for m, h in rows:
+        sc = full[(m, h)]
+        print(f"  full {m}-{h}: {sc['hota']:.2f} ({sc['source']}, "
+              f"{Path(sc['path']).relative_to(REPO) if sc['path'].startswith(str(REPO)) else sc['path']})")
 
 
 def emit_attrs_off(off30, full):
-    test, extra = full_row_order(full)
+    order = [(m, h) for m in MATCHES for h in HALVES if (m, h) in full]
     n30 = len(off30)
-    full_rows = [full[k] for k in test + extra]
+    full_rows = [full[k] for k in order]
     nfull = len(full_rows)
     mean_off30 = [sum(v[i] for v in off30.values()) / n30 for i in range(3)]
     mean_offfull = [mean(full_rows, k) for k in OFF_METRICS]
@@ -365,12 +303,12 @@ def emit_attrs_off(off30, full):
                  if rescored_132831_first(full) else "")
     caption = (
         r"\caption{Components of the attributes-off scores of"
-        r" Tables~\ref{tab:gsr_30s} and~\ref{tab:gsr_results}: the same"
+        r" Table~\ref{tab:gsr_results}: the same"
         " predictions rescored with attribute matching disabled, so that DetA,"
         " AssA and LocA measure geometry and association alone. The upper"
         " block is the opening 30 seconds of every half; the lower block is"
-        f" {lower_block_phrase}. Configuration is as in those"
-        f" tables;{rescoring} the released test split is marked $\\dagger$."
+        f" {lower_block_phrase}. Configuration is as in that"
+        f" table;{rescoring} the released test split is marked $\\dagger$."
         " Means are per column within each block, computed from unrounded"
         " scores.}")
     lines = HEADER + [
@@ -393,7 +331,7 @@ def emit_attrs_off(off30, full):
         r"    \midrule",
         f"    \\multicolumn{{4}}{{@{{}}l}}{{\\emph{{{lower_block_header}}}}} \\\\",
     ]
-    for m, h in test + extra:
+    for m, h in order:
         lines.append(f"    {m}, {h}{mark(m)} & "
                      + fmt([full[(m, h)][k] for k in OFF_METRICS]) + r" \\")
     lines += [
@@ -414,8 +352,7 @@ def main():
     sweep = load_sweep()
     full = load_full()
     off30 = load_off30()
-    emit_30s(sweep)
-    emit_full(full)
+    emit_combined(sweep, full)
     emit_attrs_off(off30, full)
 
 
