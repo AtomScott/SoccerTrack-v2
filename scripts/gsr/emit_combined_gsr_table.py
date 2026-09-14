@@ -253,7 +253,11 @@ def emit_full(full):
     test_rows = [full[k] for k in test]
     all_rows = [full[k] for k in test + extra]
     n_all = len(all_rows)
-    if extra:
+    if extra and n_all >= 20:
+        # Every half of the release is scored at match length: no budget
+        # qualifier is needed.
+        extra_clause = f" and the {words(len(extra))} further halves"
+    elif extra:
         extra_clause = (f" and {words(len(extra))} further"
                         f" {'half' if len(extra) == 1 else 'halves'} that the"
                         " compute budget allowed"
