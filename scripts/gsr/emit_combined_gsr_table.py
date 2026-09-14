@@ -8,10 +8,11 @@ paper tree:
                                     Tier 1: the opening 30 s of every half of
                                     all ten matches, one row per match.
   sections/gsr_table_full.tex       tab:gsr_results, \\input{} by 02_results.tex
-                                    Tier 2: the match-length (45 min) evaluation
-                                    set, the four halves of the released test
-                                    split plus the five further halves whose
-                                    runs the compute budget allowed.
+                                    Tier 2: every half at match length (45 min),
+                                    the four halves of the released test split
+                                    plus the sixteen further halves (a budget
+                                    qualifier is emitted only while halves are
+                                    missing).
   sections/gsr_attrs_off_table.tex  tab:gsr_attrs_off, \\input{} by
                                     05_supplementary.tex (Supplementary Table 1):
                                     attributes-off DetA/AssA/LocA for both
@@ -27,7 +28,7 @@ of every half, one configuration: the adapted pipeline with the weights the
 baseline ships, per-detection team assignment) and, for the attrs-off
 components, from results/gsr/score_30s_<match>_<half>.json. Full-half scores
 are collected with the same source preference as compile_full_table.py
-(fleet1 > fleet2 > local); the cloud halves are read from the versioned
+(fleet1 > fleet2 > gsr4 > local); the cloud halves are read from the versioned
 copies under results/gsr/cloud/ so that every input is in the repo. The
 full-length tables list only halves with a completed run; the author's
 decision (2026-09-08) is that a gapped table "looks unfinished", so no dash
@@ -35,13 +36,14 @@ cells are emitted.
 
 Every count and hardware statement in the captions is derived from the rows
 (len(test), len(extra), and each row's source tag: "local" is the
-workstation, "fleet1"/"fleet2" the cloud L4 instances), so a newly landed
+workstation, "fleet1"/"fleet2"/"gsr4" the cloud L4 instances), so a newly landed
 half cannot leave a caption contradicting its table body. The four halves of
 the released test split are required to be present.
 """
 
 import csv
 import json
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 from compile_full_table import MATCHES, HALVES, collect
@@ -99,8 +101,15 @@ def mark(match):
     return r"$^\dagger$" if match in TEST_MATCHES else ""
 
 
+def r2(x):
+    """Two decimals, rounded half-up on the decimal repr: cloud scorers store
+    three decimals, so ties such as 82.735 are real and must not fall to
+    binary half-even."""
+    return str(Decimal(repr(float(x))).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
 def fmt(values):
-    return " & ".join(f"{x:.2f}" for x in values)
+    return " & ".join(r2(x) for x in values)
 
 
 def mean(rows, key):
@@ -194,8 +203,8 @@ def emit_30s(sweep):
                      + r" \\")
     lines += [
         r"    \midrule",
-        f"    Mean, all twenty halves & \\multicolumn{{2}}{{c}}{{{mean30[0]:.2f}}}"
-        f" & \\multicolumn{{2}}{{c}}{{{mean30[1]:.2f}}} \\\\",
+        f"    Mean, all twenty halves & \\multicolumn{{2}}{{c}}{{{r2(mean30[0])}}}"
+        f" & \\multicolumn{{2}}{{c}}{{{r2(mean30[1])}}} \\\\",
         r"    \bottomrule",
         r"  \end{tabular*}",
         r"\end{table}",
@@ -330,6 +339,11 @@ def emit_attrs_off(off30, full):
     nfull = len(full_rows)
     mean_off30 = [sum(v[i] for v in off30.values()) / n30 for i in range(3)]
     mean_offfull = [mean(full_rows, k) for k in OFF_METRICS]
+    complete = nfull == n30
+    lower_block_phrase = ("the full half of the same halves" if complete
+                          else "the match-length evaluation set")
+    lower_block_header = (f"Full half (45\\,min), all {words(nfull)} halves" if complete
+                          else "Full half (45\\,min), match-length evaluation set")
     rescoring = (" the 132831 first-half match-length row is the rescoring"
                  r" described in Table~\ref{tab:gsr_results};"
                  if rescored_132831_first(full) else "")
@@ -339,7 +353,7 @@ def emit_attrs_off(off30, full):
         " predictions rescored with attribute matching disabled, so that DetA,"
         " AssA and LocA measure geometry and association alone. The upper"
         " block is the opening 30 seconds of every half; the lower block is"
-        " the match-length evaluation set. Configuration is as in those"
+        f" {lower_block_phrase}. Configuration is as in those"
         f" tables;{rescoring} the released test split is marked $\\dagger$."
         " Means are per column within each block, computed from unrounded"
         " scores.}")
@@ -348,7 +362,7 @@ def emit_attrs_off(off30, full):
         r"  \centering",
     ] + wrap_caption(caption) + [
         r"  \label{tab:gsr_attrs_off}",
-        r"  \small",
+        r"  \footnotesize",
         r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrr@{}}",
         r"    \toprule",
         r"    Half & DetA & AssA & LocA \\",
@@ -361,7 +375,7 @@ def emit_attrs_off(off30, full):
     lines += [
         f"    Mean, all {words(n30)} halves & " + fmt(mean_off30) + r" \\",
         r"    \midrule",
-        r"    \multicolumn{4}{@{}l}{\emph{Full half (45\,min), match-length evaluation set}} \\",
+        f"    \\multicolumn{{4}}{{@{{}}l}}{{\\emph{{{lower_block_header}}}}} \\\\",
     ]
     for m, h in test + extra:
         lines.append(f"    {m}, {h}{mark(m)} & "
