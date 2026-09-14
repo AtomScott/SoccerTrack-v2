@@ -215,23 +215,39 @@ def emit_30s(sweep):
     return mean30
 
 
+# Halves whose score file lives in results/gsr (source tag "local") but whose
+# detection and pose stages ran on a cloud L4 instance, the workstation
+# resuming the remaining modules from that checkpoint. Provenance only: the
+# caption states where each stage ran, nothing about attempts.
+HYBRID_HALVES = {("117092", "1st")}
+
+
 def hardware_sentence(full, rows):
-    """Which rows ran on the workstation and which on the cloud, from the
-    source tag of each row rather than from a hard-coded list."""
-    local = [k for k in rows if full[k]["source"] == "local"]
+    """Where each row ran, from the source tag of each row (plus the hybrid
+    list above) rather than from a hard-coded description."""
+    local = [k for k in rows if full[k]["source"] == "local" and k not in HYBRID_HALVES]
+    hybrid = [k for k in rows if full[k]["source"] == "local" and k in HYBRID_HALVES]
     cloud = [k for k in rows if full[k]["source"] != "local"]
-    cloud_tail = (" were run on cloud L4 GPUs with half-precision pose"
-                  " estimation, validated to three decimals against single"
-                  " precision on a 30-second clip (Methods).")
-    if local and cloud:
+    parts = []
+    if local:
         ws = describe_halves(local)
-        ws = ws[0].upper() + ws[1:]
+        parts.append(f"{ws[0].upper() + ws[1:]} were run on a workstation GPU")
+    if hybrid:
+        parts.append(f"for {describe_halves(hybrid)}, detection and pose"
+                     " estimation were run on a cloud L4 instance and the"
+                     " remaining modules on the workstation from that checkpoint")
+    if cloud:
         other = ("the other half" if len(cloud) == 1
                  else f"the {words(len(cloud))} other halves")
-        return f"{ws} were run on a workstation GPU; {other}{cloud_tail}"
-    if local:
-        return f"All {words(len(local))} halves were run on a workstation GPU."
-    return f"All {words(len(cloud))} halves{cloud_tail}"
+        if not (local or hybrid):
+            other = f"all {words(len(cloud))} halves"
+        parts.append(f"{other} were run on cloud L4 GPUs")
+    sentence = "; ".join(parts) + "."
+    if cloud or hybrid:
+        sentence += (" Every cloud pose stage used half-precision pose"
+                     " estimation, validated to three decimals against single"
+                     " precision on a 30-second clip (Methods).")
+    return sentence[0].upper() + sentence[1:]
 
 
 def rescoring_sentence(full):
