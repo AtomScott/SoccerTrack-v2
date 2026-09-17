@@ -54,6 +54,8 @@ CLOUD_LOCAL_ROOT = REPO / "results" / "gsr" / "cloud"
 PAPER_SECTIONS = Path("/home/atom/soccertrack-v2/paper/sections")
 OUT_FULL_TEX = PAPER_SECTIONS / "gsr_table_full.tex"
 OUT_OFF_TEX = PAPER_SECTIONS / "gsr_attrs_off_table.tex"
+PREFIX_CSV = REPO / "results" / "gsr" / "prefix_rescoring_all_halves.csv"
+OUT_PREFIX_TEX = PAPER_SECTIONS / "gsr_prefix_table.tex"
 
 TEST_MATCHES = ["128057", "132831"]
 FULL_METRICS = ["hota", "deta", "assa", "loca", "off_hota"]
@@ -384,12 +386,73 @@ def emit_attrs_off(off30, full):
         f"{k}={v:.2f}" for k, v in zip(OFF_METRICS, mean_offfull)))
 
 
+WINDOW_LABELS = ["30s", "1min", "2min", "5min", "10min", "20min", "full"]
+WINDOW_HEADS = ["30\\,s", "1\\,min", "2\\,min", "5\\,min", "10\\,min", "20\\,min", "Whole half"]
+
+
+def emit_prefix_table():
+    """Supplementary table: every whole-half run scored over growing windows
+    from kickoff (compile_prefix_rescoring.py), official and attributes off."""
+    rows = list(csv.DictReader(open(PREFIX_CSV)))
+    order = [(m, h) for m in MATCHES for h in HALVES]
+    val = {}
+    for r in rows:
+        val[(r["match"], r["half"], r["label"])] = (float(r["hota"]), float(r["off_hota"]))
+    missing = [(m, h, l) for m, h in order for l in WINDOW_LABELS if (m, h, l) not in val]
+    if missing:
+        raise SystemExit(f"prefix table would have gaps: {missing[:5]}")
+    n = len(order)
+    caption = (
+        r"\caption{GS-HOTA of the whole-half predictions of"
+        r" Table~\ref{tab:gsr_results} scored over growing windows from"
+        " kickoff: the first 30 seconds, 1, 2, 5, 10 and 20 minutes, and the"
+        " whole half (Methods). The predictions are fixed and only the scored"
+        " window changes, so the last column reproduces"
+        r" Table~\ref{tab:gsr_results}. The upper block is the official"
+        " metric, the lower block the same windows with attribute matching"
+        " disabled. Means are per column, computed from unrounded scores; the"
+        r" released test split is marked $\dagger$.}")
+    lines = HEADER + [
+        r"\begin{table}[!htbp]",
+        r"  \centering",
+    ] + wrap_caption(caption) + [
+        r"  \label{tab:gsr_windows}",
+        r"  \footnotesize",
+        r"  \setlength{\tabcolsep}{4pt}",
+        r"  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lrrrrrrr@{}}",
+        r"    \toprule",
+        "    Half & " + " & ".join(WINDOW_HEADS) + r" \\",
+        r"    \midrule",
+    ]
+    for idx, name in ((0, "Official GS-HOTA"), (1, "Attribute matching disabled")):
+        if idx == 1:
+            lines.append(r"    \midrule")
+        lines.append(f"    \\multicolumn{{8}}{{@{{}}l}}{{\\emph{{{name}}}}} \\\\")
+        for m, h in order:
+            lines.append(f"    {m}, {h}{mark(m)} & "
+                         + fmt([val[(m, h, l)][idx] for l in WINDOW_LABELS]) + r" \\")
+        lines.append(f"    Mean, all {words(n)} halves & "
+                     + fmt([sum(val[(m, h, l)][idx] for m, h in order) / n for l in WINDOW_LABELS])
+                     + r" \\")
+    lines += [
+        r"    \bottomrule",
+        r"  \end{tabular*}",
+        r"\end{table}",
+    ]
+    OUT_PREFIX_TEX.write_text("\n".join(lines) + "\n")
+    print(f"wrote {OUT_PREFIX_TEX}  ({n} halves x {len(WINDOW_LABELS)} windows)")
+    for idx, name in ((0, "official"), (1, "attrs-off")):
+        print(f"window means {name}: " + ", ".join(
+            f"{l}={sum(val[(m, h, l)][idx] for m, h in order) / n:.2f}" for l in WINDOW_LABELS))
+
+
 def main():
     sweep = load_sweep()
     full = load_full()
     off30 = load_off30()
     emit_combined(sweep, full)
     emit_attrs_off(off30, full)
+    emit_prefix_table()
 
 
 if __name__ == "__main__":

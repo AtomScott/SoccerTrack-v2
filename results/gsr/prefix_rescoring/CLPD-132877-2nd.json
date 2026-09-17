@@ -1,0 +1,176 @@
+{
+ "seq": "CLPD-132877-2nd",
+ "n_frames_total": 69346,
+ "gt_dropped_non_finite": 875,
+ "pred_dropped_non_finite": 8544,
+ "prefixes": {
+  "750": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 9.847972710505111,
+    "DetA": 2.0667608513255007,
+    "AssA": 47.05030329801787,
+    "LocA": 78.66651409598892,
+    "ids": 38,
+    "gt_ids": 22,
+    "dets": 15671,
+    "gt_dets": 16500
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 29.370272198424068,
+    "DetA": 24.444617226774646,
+    "AssA": 35.59314771402735,
+    "LocA": 74.88957208964436,
+    "ids": 38,
+    "gt_ids": 22,
+    "dets": 15671,
+    "gt_dets": 16500
+   },
+   "n_frames": 750,
+   "n_pred_entries": 17171
+  },
+  "1500": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 9.471996983567996,
+    "DetA": 1.7848996168644085,
+    "AssA": 50.37964862041515,
+    "LocA": 76.97279152988006,
+    "ids": 44,
+    "gt_ids": 22,
+    "dets": 32092,
+    "gt_dets": 33000
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 32.77908211067448,
+    "DetA": 29.335926626961307,
+    "AssA": 36.75528568674715,
+    "LocA": 77.46525902061887,
+    "ids": 44,
+    "gt_ids": 22,
+    "dets": 32092,
+    "gt_dets": 33000
+   },
+   "n_frames": 1500,
+   "n_pred_entries": 35092
+  },
+  "3000": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 10.437753348816917,
+    "DetA": 1.8337059551877526,
+    "AssA": 59.533705008072765,
+    "LocA": 80.43362585927406,
+    "ids": 51,
+    "gt_ids": 22,
+    "dets": 64587,
+    "gt_dets": 66000
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 32.85629388885156,
+    "DetA": 32.90118818307036,
+    "AssA": 32.919698910678335,
+    "LocA": 77.52064601789877,
+    "ids": 51,
+    "gt_ids": 22,
+    "dets": 64587,
+    "gt_dets": 66000
+   },
+   "n_frames": 3000,
+   "n_pred_entries": 70587
+  },
+  "7500": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 9.442313433900502,
+    "DetA": 1.8965952049956578,
+    "AssA": 47.0353838660024,
+    "LocA": 80.89969480314278,
+    "ids": 66,
+    "gt_ids": 22,
+    "dets": 162498,
+    "gt_dets": 165000
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 29.05655166524542,
+    "DetA": 35.38603165076308,
+    "AssA": 23.998902603182714,
+    "LocA": 77.8069248600262,
+    "ids": 66,
+    "gt_ids": 22,
+    "dets": 162498,
+    "gt_dets": 165000
+   },
+   "n_frames": 7500,
+   "n_pred_entries": 177498
+  },
+  "15000": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 10.746406197824,
+    "DetA": 2.839707398226953,
+    "AssA": 40.691233443796534,
+    "LocA": 80.04310494840085,
+    "ids": 93,
+    "gt_ids": 22,
+    "dets": 323169,
+    "gt_dets": 330000
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 23.92431848161986,
+    "DetA": 32.084819721828936,
+    "AssA": 18.001997825356074,
+    "LocA": 77.21080746737648,
+    "ids": 93,
+    "gt_ids": 22,
+    "dets": 323169,
+    "gt_dets": 330000
+   },
+   "n_frames": 15000,
+   "n_pred_entries": 353169
+  },
+  "30000": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 9.725163607560887,
+    "DetA": 4.54112311987255,
+    "AssA": 20.834028655727085,
+    "LocA": 78.89867234955592,
+    "ids": 131,
+    "gt_ids": 32,
+    "dets": 644278,
+    "gt_dets": 659750
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 19.7648356013584,
+    "DetA": 30.941406479853455,
+    "AssA": 12.766520540783304,
+    "LocA": 76.89362635218504,
+    "ids": 131,
+    "gt_ids": 32,
+    "dets": 644278,
+    "gt_dets": 659750
+   },
+   "n_frames": 30000,
+   "n_pred_entries": 704278
+  },
+  "69346": {
+   "attributes ON (official GS-HOTA)": {
+    "HOTA": 9.610268943430347,
+    "DetA": 5.658902203433103,
+    "AssA": 16.331400307603253,
+    "LocA": 78.3440805093862,
+    "ids": 201,
+    "gt_ids": 35,
+    "dets": 1449240,
+    "gt_dets": 1524693
+   },
+   "attributes OFF (geometry + association)": {
+    "HOTA": 17.179037792973233,
+    "DetA": 29.831621610289684,
+    "AssA": 10.008345289745437,
+    "LocA": 76.64308014340256,
+    "ids": 201,
+    "gt_ids": 35,
+    "dets": 1449240,
+    "gt_dets": 1524693
+   },
+   "n_frames": 69346,
+   "n_pred_entries": 1587932
+  }
+ }
+}
