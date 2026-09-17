@@ -62,6 +62,31 @@ def load_score(path):
     }
 
 
+RESCORING_DIR = LOCAL_DIR / "prefix_rescoring"
+METRICS = ("hota", "deta", "assa", "loca", "off_hota", "off_deta", "off_assa", "off_loca")
+
+
+def overlay_full_precision(match, half, score):
+    """Cloud score.log files carry three decimals, so a 0.005 tie rounds up
+    where the true value rounds down. score_prefixes.py rescored every
+    whole-half prediction file at full precision; when its whole-half window
+    agrees with a source to within the stored precision, take its values."""
+    p = RESCORING_DIR / f"CLPD-{match}-{half}.json"
+    if not p.exists():
+        return score
+    d = json.loads(p.read_text())
+    full = d["prefixes"].get(str(d["n_frames_total"]))
+    if not full:
+        return score
+    on, off = full[ON_KEY], full[OFF_KEY]
+    exact = {"hota": on["HOTA"], "deta": on["DetA"], "assa": on["AssA"], "loca": on["LocA"],
+             "off_hota": off["HOTA"], "off_deta": off["DetA"], "off_assa": off["AssA"],
+             "off_loca": off["LocA"]}
+    if all(abs(exact[k] - score[k]) <= 0.0006 for k in METRICS):
+        return dict(score, **exact, precision="rescoring")
+    return score
+
+
 def find_in_dir(dirpath):
     if not dirpath.is_dir():
         return None
@@ -82,12 +107,12 @@ def collect(match, half):
     for name, (repo_sub, mount_sub) in FLEETS.items():
         s = find_in_dir(CLOUD_LOCAL / repo_sub / seq) or find_in_dir(CLOUD_ROOT / mount_sub / seq)
         if s:
-            out[name] = s
+            out[name] = overlay_full_precision(match, half, s)
     p = LOCAL_DIR / f"score_45min_{match}_{half}.json"
     if p.exists():
         s = load_score(p)
         if s:
-            out["local"] = s
+            out["local"] = overlay_full_precision(match, half, s)
     return out
 
 

@@ -79,7 +79,9 @@ for key, color in (("off_hota", BLUE), ("hota", INK)):
         ax.annotate(f"{mi:.1f}", (xi, mi), textcoords="offset points", xytext=(0, 6),
                     ha="center", fontsize=6.2, color=color)
 for val, color in ((ind_on, INK), (ind_off, BLUE)):
-    ax.scatter([0.5], [val], s=26, facecolor="white", edgecolor=color, linewidth=1.0, zorder=5)
+    # ring larger than the filled dots and with no face, so the 30 s window
+    # marker beneath (53.1 against 53.5 attrs off) stays visible
+    ax.scatter([0.5], [val], s=60, facecolor="none", edgecolor=color, linewidth=1.0, zorder=5)
     ax.annotate(f"{val:.1f}", (0.5, val), textcoords="offset points", xytext=(-7, 0),
                 ha="right", va="center", fontsize=6.2, color=color)
 
@@ -88,8 +90,8 @@ handles = [
            label="attributes off, mean over the twenty halves"),
     Line2D([], [], color=INK, linewidth=1.8, marker="o", markersize=4,
            label="official GS-HOTA, mean over the twenty halves"),
-    Line2D([], [], color=INK, linestyle="none", marker="o", markersize=4.5,
-           markerfacecolor="white", label="independent 30 s runs, mean"),
+    Line2D([], [], color=INK, linestyle="none", marker="o", markersize=6.5,
+           markerfacecolor="none", label="independent 30 s runs, mean"),
 ]
 ax.legend(handles=handles, loc="upper right", frameon=False, fontsize=6.2)
 ax.text(0.53, 3, "bands: range over the twenty halves", fontsize=6.0, color=MUTED, ha="left")
