@@ -149,7 +149,7 @@ ticks = [0.5, 1, 2, 5, 10, 45]
 ax.set_xticks(ticks)
 ax.set_xticklabels(["30 s", "1 min", "2 min", "5 min", "10 min", "whole half\n(45 to 49 min)"])
 ax.minorticks_off()
-ax.set_xlim(0.42, 62)
+ax.set_xlim(0.31, 62)  # room left of the 30 s line for the two value labels
 ax.set_ylim(0, 60)
 ax.set_xlabel("sequence length (log scale)")
 ax.set_ylabel("GS-HOTA (official)")
