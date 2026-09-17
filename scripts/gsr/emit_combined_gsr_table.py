@@ -99,6 +99,14 @@ def describe_halves(pairs):
     return ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
+# Paper labels: M1 to M10 in ascending provider-id order (Table 1 of the paper).
+MATCH_LABEL = {m: f"M{i + 1}" for i, m in enumerate(MATCHES)}
+
+
+def label(match):
+    return MATCH_LABEL[match]
+
+
 def mark(match):
     return r"$^\dagger$" if match in TEST_MATCHES else ""
 
@@ -270,8 +278,7 @@ def emit_combined(sweep, full):
         " count (components in Supplementary"
         r" Table~\ref{tab:gsr_attrs_off}). The test split of the released"
         r" match-level split is marked $\dagger$. Means are per column,"
-        " computed from unrounded scores. Where each half was run is"
-        r" recorded in Section~\ref{subsec:methods_scale}.}")
+        " computed from unrounded scores.}")
     # hardware_sentence(full, rows) is kept for the console record: the
     # caption no longer carries it (reviewer request, 2026-09-14), Methods does.
     print("hardware: " + hardware_sentence(full, rows))
@@ -291,7 +298,7 @@ def emit_combined(sweep, full):
     ]
     for m, h in rows:
         s30 = sweep[(m, h)]
-        lines.append(f"    {m}, {h}{mark(m)} & "
+        lines.append(f"    {label(m)}, {h}{mark(m)} & "
                      + fmt([s30[0], s30[1]] + [full[(m, h)][k] for k in FULL_METRICS])
                      + r" \\")
     lines += [
@@ -362,14 +369,14 @@ def emit_attrs_off(off30, full):
     for m in MATCHES:
         for h in HALVES:
             v = off30[(m, h)]
-            lines.append(f"    {m}, {h}{mark(m)} & " + fmt(v[:3]) + f" & {v[3]} & {v[4]}" + r" \\")
+            lines.append(f"    {label(m)}, {h}{mark(m)} & " + fmt(v[:3]) + f" & {v[3]} & {v[4]}" + r" \\")
     lines += [
         f"    Mean, all {words(n30)} halves & " + fmt(mean_off30) + r" & & \\",
         r"    \midrule",
         f"    \\multicolumn{{6}}{{@{{}}l}}{{\\emph{{{lower_block_header}}}}} \\\\",
     ]
     for m, h in order:
-        lines.append(f"    {m}, {h}{mark(m)} & "
+        lines.append(f"    {label(m)}, {h}{mark(m)} & "
                      + fmt([full[(m, h)][k] for k in OFF_METRICS])
                      + f" & {trk[(m, h)][0]} & {trk[(m, h)][1]}" + r" \\")
     lines += [
@@ -429,7 +436,7 @@ def emit_prefix_table():
             lines.append(r"    \midrule")
         lines.append(f"    \\multicolumn{{8}}{{@{{}}l}}{{\\emph{{{name}}}}} \\\\")
         for m, h in order:
-            lines.append(f"    {m}, {h}{mark(m)} & "
+            lines.append(f"    {label(m)}, {h}{mark(m)} & "
                          + fmt([val[(m, h, l)][idx] for l in WINDOW_LABELS]) + r" \\")
         lines.append(f"    Mean, all {words(n)} halves & "
                      + fmt([sum(val[(m, h, l)][idx] for m, h in order) / n for l in WINDOW_LABELS])
