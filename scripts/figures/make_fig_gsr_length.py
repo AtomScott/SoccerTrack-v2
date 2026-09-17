@@ -1,42 +1,40 @@
-"""fig5_gsr_length.pdf (Fig. 4 of the paper): two panels on sequence length.
+"""fig5_gsr_length.pdf (Fig. 4 of the paper): GS-HOTA against sequence length,
+one line chart.
 
-(a) Every half of the corpus at two lengths: GS-HOTA on the opening 30 s
-    (x) against GS-HOTA over the whole half (y), official (filled) and with
-    attribute matching disabled (hollow). All forty points lie below the
-    identity line; the guide lines mark a factor of two and four. Halves of
-    the three weakest matches (117092, 132831, 132877) are drawn in
-    vermilion, the other seven matches in blue; the released test split
-    (128057, 132831) uses square markers.
-    Data: results/gsr/sweep30s_all_matches.csv (30 s) and
-    results/gsr/full_table_all_matches.csv (chosen rows, full half), i.e.
-    the same numbers as tab:gsr_results.
-(b) GS-HOTA against sequence length on nested prefixes of 128057, first
-    half (Supplementary Table tab:gsr_length), unchanged from the earlier
-    single-panel figure.
+Thin grey lines: each of the twenty halves, from its opening 30 s to its
+whole half (44.9 to 49.0 min at 25 fps), official GS-HOTA, the values of
+tab:gsr_results. Black: the mean over the twenty halves at both lengths
+(29.92 at 30 s, 11.79 over the whole half, plotted at the mean half length).
+Blue: nested prefixes of 128057, first half (Supplementary Table
+tab:gsr_length), the only half scored at intermediate lengths.
+
+Data: results/gsr/sweep30s_all_matches.csv (30 s), results/gsr/
+full_table_all_matches.csv (chosen rows, whole half), per-half frame counts
+from the cloud summary.txt files (results/gsr/cloud/<fleet>/CLPD-*/) and the
+staged Labels-GameState.json of the three workstation halves.
 
 Style matches make_fig3_v2.py (Okabe-Ito, DejaVu Sans 7 pt, 372 pt width).
-Palette (#0072B2, #D55E00) validated with the dataviz skill's checker.
 """
 import csv
+import glob
+import json
 import os
+import re
 
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 
 REPO = "/home/atom/SoccerTrack-v2"
 OUT_DIR = "/home/atom/soccertrack-v2/paper/figures"
+FPS = 25.0
 
 BLUE = "#0072B2"
 RED = "#D55E00"
 INK = "#1a1a1a"
 MUTED = "#555555"
-GRID = "#c8c8c8"
-
-WEAK = {"117092", "132831", "132877"}
-TEST = {"128057", "132831"}
+HALF_LINE = "#9a9a9a"
 
 plt.rcParams.update({
     "pdf.fonttype": 42,
@@ -54,110 +52,110 @@ plt.rcParams.update({
     "text.color": INK,
 })
 
+LOCAL_GT = {
+    ("117092", "1st"): "/mnt/storage/SoccerTrack-v2/SoccerNetGS-117092/test/CLPD-117092-1st/Labels-GameState.json",
+    ("128057", "1st"): "/mnt/storage/SoccerTrack-v2/SoccerNetGS-128057/test/CLPD-128057-1st/Labels-GameState.json",
+    ("128057", "2nd"): "/mnt/storage/SoccerTrack-v2/SoccerNetGS-128057/test/CLPD-128057-2nd/Labels-GameState.json",
+}
 
-def load_pairs():
+
+def load_halves():
     sweep = {}
     with open(os.path.join(REPO, "results/gsr/sweep30s_all_matches.csv")) as f:
         for r in csv.DictReader(f):
-            sweep[(r["match"], r["half"])] = (float(r["gshota_official"]),
-                                              float(r["gshota_attrs_off"]))
-    full = {}
+            sweep[(r["match"], r["half"])] = float(r["gshota_official"])
+    full, frames = {}, {}
     with open(os.path.join(REPO, "results/gsr/full_table_all_matches.csv")) as f:
         for r in csv.DictReader(f):
-            if r["chosen"] == "True":
-                full[(r["match"], r["half"])] = (float(r["hota"]), float(r["off_hota"]))
+            if r["chosen"] != "True":
+                continue
+            k = (r["match"], r["half"])
+            full[k] = float(r["hota"])
+            if r["source"] == "local":
+                with open(LOCAL_GT[k]) as g:
+                    frames[k] = len(json.load(g)["images"])
+            else:
+                p = r["path"].replace("/mnt/storage/SoccerTrack-v2/gsr-cloud-results/",
+                                      os.path.join(REPO, "results/gsr/cloud/"))
+                summ = open(os.path.join(os.path.dirname(p), "summary.txt")).read()
+                frames[k] = int(re.search(r"frames=(\d+)", summ).group(1))
     keys = sorted(full)
     assert len(keys) == 20 and all(k in sweep for k in keys), "need all twenty halves"
-    return [(k, sweep[k], full[k]) for k in keys]
+    return [(k, sweep[k], full[k], frames[k] / FPS / 60.0) for k in keys]
 
 
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(5.15, 2.35),
-                             gridspec_kw={"width_ratios": [1.0, 1.15]})
+halves = load_halves()
+mean30 = sum(h[1] for h in halves) / 20
+meanfull = sum(h[2] for h in halves) / 20
+meanlen = sum(h[3] for h in halves) / 20
+assert all(h[2] < h[1] for h in halves), "every half must fall"
 
-# ---------------------------------------------------------------- (a)
-pairs = load_pairs()
-lim = 82
-ax.plot([0, lim], [0, lim], color=MUTED, linewidth=0.6, linestyle=(0, (4, 3)), zorder=1)
-ax.text(lim - 1, lim - 4, "equal", color=MUTED, fontsize=6.0, ha="right", va="top")
-for factor, va, dy in ((2, "bottom", 0.8), (4, "top", -0.8)):
-    ax.plot([0, lim], [0, lim / factor], color=GRID, linewidth=0.6, zorder=1)
-    ax.text(lim - 1, lim / factor + dy, f"1/{factor}", color=MUTED, fontsize=6.0,
-            ha="right", va=va)
+# Supplementary Table tab:gsr_length: length (min), GS-HOTA. The 30 s value is
+# the raw scorer output 37.1549 rounded once (37.15) so that the figure agrees
+# with tab:gsr_results; the length-sweep CSV stores 37.155.
+prefix_len = [0.5, 1, 2, 5, 10, 67625 / FPS / 60.0]
+prefix_gs = [37.15, 47.59, 39.88, 30.97, 25.60, 18.09]
 
-for (m, h), (s30, s30off), (sf, sfoff) in pairs:
-    color = RED if m in WEAK else BLUE
-    marker = "s" if m in TEST else "o"
-    ax.scatter([s30], [sf], s=16, marker=marker, facecolor=color, edgecolor=color,
-               linewidth=0.6, zorder=3)
-    ax.scatter([s30off], [sfoff], s=16, marker=marker, facecolor="white",
-               edgecolor=color, linewidth=0.8, zorder=3)
+fig, ax = plt.subplots(figsize=(5.15, 2.7))
 
-ax.set_xlim(0, lim)
-ax.set_ylim(0, lim)
-ax.set_aspect("equal")
-ax.set_xticks([0, 20, 40, 60, 80])
-ax.set_yticks([0, 20, 40, 60, 80])
-ax.set_xlabel("GS-HOTA, opening 30 s")
-ax.set_ylabel("GS-HOTA, whole half")
+ax.axvline(0.5, color=RED, linestyle=(0, (4, 3)), linewidth=0.7, zorder=1)
+ax.text(0.53, 59.5, "existing GSR benchmark clips (30 s)", color=RED,
+        fontsize=6.2, ha="left", va="top")
+
+for (m, h), s30, sf, ln in halves:
+    ax.plot([0.5, ln], [s30, sf], color=HALF_LINE, linewidth=0.6, alpha=0.8,
+            zorder=2, solid_capstyle="round")
+
+ax.plot([0.5, meanlen], [mean30, meanfull], color=INK, linewidth=1.8,
+        marker="o", markersize=3.6, zorder=4, clip_on=False)
+ax.annotate(f"{mean30:.2f}", (0.5, mean30), textcoords="offset points",
+            xytext=(-6, 0), ha="right", va="center", fontsize=6.2, color=INK,
+            fontweight="bold")
+ax.annotate(f"{meanfull:.2f}", (meanlen, meanfull), textcoords="offset points",
+            xytext=(7, 0), ha="left", va="center", fontsize=6.2, color=INK,
+            fontweight="bold")
+
+ax.plot(prefix_len, prefix_gs, color=BLUE, linewidth=1.2, marker="o",
+        markersize=3.2, zorder=5, clip_on=False)
+for x, y in zip(prefix_len, prefix_gs):
+    if x == 1:
+        ax.annotate(f"{y:.2f} (peak)", (x, y), textcoords="offset points",
+                    xytext=(0, 5), ha="center", fontsize=6.2, color=BLUE,
+                    fontweight="bold")
+    elif x == 0.5:
+        ax.annotate(f"{y:.2f}", (x, y), textcoords="offset points",
+                    xytext=(-6, 0), ha="right", va="center", fontsize=6.2, color=BLUE)
+    elif x > 40:
+        ax.annotate(f"{y:.2f}", (x, y), textcoords="offset points",
+                    xytext=(7, 0), ha="left", va="center", fontsize=6.2, color=BLUE)
+    else:
+        ax.annotate(f"{y:.2f}", (x, y), textcoords="offset points",
+                    xytext=(0, 5), ha="center", fontsize=6.2, color=BLUE)
+
+from matplotlib.lines import Line2D
+handles = [
+    Line2D([], [], color=BLUE, linewidth=1.2, marker="o", markersize=3.2,
+           label="128057, first half, nested prefixes"),
+    Line2D([], [], color=INK, linewidth=1.8, marker="o", markersize=3.6,
+           label="mean of the twenty halves"),
+    Line2D([], [], color=HALF_LINE, linewidth=0.8,
+           label="one line per half, 30 s to whole half"),
+]
+ax.legend(handles=handles, loc="upper right", fontsize=6.2, frameon=False,
+          handlelength=2.2, handletextpad=0.6, borderaxespad=0.4, labelspacing=0.5)
+
+ax.set_xscale("log")
+ticks = [0.5, 1, 2, 5, 10, 45]
+ax.set_xticks(ticks)
+ax.set_xticklabels(["30 s", "1 min", "2 min", "5 min", "10 min", "whole half\n(45 to 49 min)"])
+ax.minorticks_off()
+ax.set_xlim(0.42, 62)
+ax.set_ylim(0, 60)
+ax.set_xlabel("sequence length (log scale)")
+ax.set_ylabel("GS-HOTA (official)")
 ax.spines[["top", "right"]].set_visible(False)
 
-handles = [
-    Line2D([], [], marker="o", color=BLUE, linestyle="none", markersize=4,
-           label="seven other matches"),
-    Line2D([], [], marker="o", color=RED, linestyle="none", markersize=4,
-           label="117092, 132831, 132877"),
-    Line2D([], [], marker="s", color=INK, linestyle="none", markersize=4,
-           markerfacecolor="none", label="test split"),
-    Line2D([], [], marker="o", color=INK, linestyle="none", markersize=4,
-           label="official"),
-    Line2D([], [], marker="o", color=INK, linestyle="none", markersize=4,
-           markerfacecolor="white", label="attributes off"),
-]
-ax.legend(handles=handles, loc="upper left", fontsize=5.8, frameon=False,
-          handletextpad=0.3, borderaxespad=0.2, labelspacing=0.35)
-ax.text(-0.22, 1.02, "a", transform=ax.transAxes, fontsize=8, fontweight="bold")
-
-# ---------------------------------------------------------------- (b)
-# Table tab:gsr_length: length (min), GS-HOTA. The 30 s value is the raw
-# scorer output 37.1549 (score_30s_128057_1st.json) rounded once, 37.15, so
-# that the figure agrees with tab:gsr_results and tab:gsr_length; the
-# length-sweep CSV stores 37.155, which re-rounds to 37.16.
-lengths = [0.5, 1, 2, 5, 10, 45]
-gshota = [37.15, 47.59, 39.88, 30.97, 25.60, 18.09]
-tick_labels = ["30 s", "1 min", "2 min", "5 min", "10 min", "45 min\n(whole half)"]
-
-bx.axvline(0.5, color=RED, linestyle=(0, (4, 3)), linewidth=0.7, zorder=1)
-bx.text(0.53, 4.0, "existing GSR\nbenchmark clips (30 s)", color=RED,
-        fontsize=6.0, ha="left", va="bottom")
-bx.plot(lengths, gshota, color=BLUE, linewidth=1.2, marker="o",
-        markersize=3.2, zorder=3, clip_on=False)
-for x, y in zip(lengths, gshota):
-    if x == 1:
-        bx.annotate(f"{y:.2f} (peak)", (x, y), textcoords="offset points",
-                    xytext=(0, 5), ha="center", fontsize=6.2, color=INK,
-                    fontweight="bold")
-    elif x == 45:
-        bx.annotate(f"{y:.2f}\n(38% of peak)", (x, y),
-                    textcoords="offset points", xytext=(0, 6), ha="center",
-                    fontsize=6.2, color=INK)
-    elif x == 0.5:
-        bx.annotate(f"{y:.2f}", (x, y), textcoords="offset points",
-                    xytext=(7, -9), ha="left", fontsize=6.2, color=MUTED)
-    else:
-        bx.annotate(f"{y:.2f}", (x, y), textcoords="offset points",
-                    xytext=(0, 5), ha="center", fontsize=6.2, color=MUTED)
-bx.set_xscale("log")
-bx.set_xticks(lengths)
-bx.set_xticklabels(tick_labels)
-bx.minorticks_off()
-bx.set_xlim(0.42, 54)
-bx.set_ylim(0, 55)
-bx.set_xlabel("nested prefixes of 128057, first half (log scale)")
-bx.set_ylabel("GS-HOTA")
-bx.spines[["top", "right"]].set_visible(False)
-bx.text(-0.16, 1.02, "b", transform=bx.transAxes, fontsize=8, fontweight="bold")
-
-fig.tight_layout(pad=0.3, w_pad=1.2)
+fig.tight_layout(pad=0.3)
 out = os.path.join(OUT_DIR, "fig5_gsr_length.pdf")
 fig.savefig(out)
-print("wrote", out)
+print("wrote", out, f"mean30={mean30:.2f} meanfull={meanfull:.2f} meanlen={meanlen:.1f} min")
