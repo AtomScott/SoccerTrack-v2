@@ -23,7 +23,7 @@ Both regenerate with one command whenever a score file changes:
 
 30 s scores come from results/gsr/sweep30s_all_matches.csv (first 750 frames
 of every half, one configuration: the adapted pipeline with the weights the
-baseline ships, per-detection team assignment) and, for the attrs-off
+published weights, per-detection team assignment) and, for the attrs-off
 components, from results/gsr/score_30s_<match>_<half>.json. Full-half scores
 are collected with the same source preference as compile_full_table.py
 (fleet1 > fleet2 > gsr4 > local); the cloud halves are read from the versioned
@@ -266,8 +266,8 @@ def emit_combined(sweep, full):
         r"\caption{Game state reconstruction on all " + words(n_all) + " halves,"
         " each run and scored over the whole half and, independently, on its"
         " opening 30 seconds, the clip length of the SoccerNet-GSR benchmark:"
-        " the SoccerNet"
-        r" pipeline of Section~\ref{subsec:methods_gsr}, adapted by the authors"
+        " the game state reconstruction"
+        r" pipeline of Section~\ref{subsec:methods_gsr}, configured by the authors"
         " on released footage that includes a test-split half, with no"
         " component's weights trained on SoccerTrack v2, run end to end under"
         " one configuration, the per-detection team assignment. GS-HOTA is the"
