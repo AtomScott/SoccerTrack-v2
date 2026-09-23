@@ -180,7 +180,10 @@ def pitch_lines(ax, lw=0.5, color="white", alpha=0.85):
 
 pitch_lines(ax_c)
 ax_c.set_xlim(*XR)
-ax_c.set_ylim(*YR)
+# Axis inverted, data untouched: +y (the touchline nearer the camera) is drawn
+# at the bottom, the Methods convention shared with Fig. 2(b) and Fig. 5(c).
+# imshow's extent keeps every cell at its own (x, y); only the view flips.
+ax_c.set_ylim(YR[1], YR[0])
 ax_c.set_xticks([-52.5, 0, 52.5])
 ax_c.set_yticks([-34, 0, 34])
 ax_c.set_xlabel("x (m)", labelpad=1.5)

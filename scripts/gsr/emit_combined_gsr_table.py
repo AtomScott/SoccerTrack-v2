@@ -268,17 +268,16 @@ def emit_combined(sweep, full):
         " opening 30 seconds, the clip length of the SoccerNet-GSR benchmark:"
         " the game state reconstruction"
         r" pipeline of Section~\ref{subsec:methods_gsr}, configured by the authors"
-        " on released footage that includes a test-split half, with no"
-        " component's weights trained on SoccerTrack v2, run end to end under"
-        " one configuration, the per-detection team assignment. GS-HOTA is the"
+        " on released footage that includes a test-split half and run end to"
+        " end under one configuration, the per-detection team assignment. GS-HOTA is the"
         " official metric, which classes detections by (role, team, jersey);"
         " DetA, AssA and LocA are its detection, association and localisation"
         r" components; \emph{Attrs off} rescores the same predictions with"
         " attribute matching disabled, so that only geometry and association"
         " count (components in Supplementary"
         r" Table~\ref{tab:gsr_attrs_off}). The test split of the released"
-        r" match-level split is marked $\dagger$. Means are per column,"
-        " computed from unrounded scores.}")
+        r" match-level split is marked $\dagger$. Means are unweighted means of"
+        " the per-half scores in each column, computed from unrounded scores.}")
     # hardware_sentence(full, rows) is kept for the console record: the
     # caption no longer carries it (reviewer request, 2026-09-14), Methods does.
     print("hardware: " + hardware_sentence(full, rows))
