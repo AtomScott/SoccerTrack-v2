@@ -39,7 +39,12 @@ def main():
         tracking_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_filtered_pitch_plane_coordinates.csv'
         output_video_path = f'data/interim/event_visualization/{match_id}/{match_id}_event_tracking.mp4'
         output_json_path = f'data/interim/event_detection_tracking/{match_id}/{match_id}_{num_class}_class_events_detection.json'
-        output_ball_dis_path = "data/interim/pitch_plane_coordinates/117093/117093_all_players_distance_to_ball.csv"
+        # FIX (2026-08-14): this path was HARDCODED to match 117093 while every other
+        # output path is per-match. The ball-to-player distance table is the input to all
+        # possession detection, and it is cached, so the second and every later match in a
+        # run silently reloaded the FIRST match's distances. Symptom: matches processed
+        # after the first emitted 0-17 predictions instead of ~2,200. Made per-match.
+        output_ball_dis_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_all_players_distance_to_ball.csv'
         output_ball_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_ball_player.json'
         output_possession_group_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_possession_group.json'
         output_player_to_player_path = f'data/interim/pitch_plane_coordinates/{match_id}/{match_id}_player_to_player.json'
@@ -560,15 +565,28 @@ def ball_dis(tracking_df, output_ball_dis_path, fps=25):
         pd.DataFrame: DataFrame with distances of all players to the ball for each match time.
     """
     # 攻める向きも初期位置から取得し返す
-    first_players_position = tracking_df[tracking_df['match_time'] == 0.0][['teamId', 'x', 'y']].reset_index(drop=True)
-    if first_players_position.loc[0, 'teamId'] != None:
-        first_player_teamId = first_players_position.loc[0, 'teamId']
-    else:
-        first_player_teamId = first_players_position.loc[1, 'teamId']
+    # COMPATIBILITY FIX (2026-08-14). This selected the frame at match_time == 0.0 exactly.
+    # No match's clock lands on zero: the recorded first frame is at -33, 40 or 520 ms
+    # depending on the match, and the clock advances in 40 ms steps, so the selection was
+    # empty and `.loc[0]` raised KeyError on every match. Use the earliest available frame
+    # instead; the block only needs a kickoff configuration to infer attacking direction.
+    _t0 = tracking_df['match_time'].min()
+    first_players_position = tracking_df[(tracking_df['match_time'] == _t0)
+                                         & (tracking_df['id'] != 'ball')][
+        ['teamId', 'x', 'y']].reset_index(drop=True)
+    if len(first_players_position) == 0:
+        raise ValueError('no player rows at the first frame; check the tracking CSV')
+    first_player_teamId = first_players_position.loc[0, 'teamId']
     one_side_team_players_position = first_players_position[first_players_position['teamId'] == first_player_teamId]
     centroid_x = one_side_team_players_position['x'].mean()
+    # ALSO A FIX: plus_team_id was only bound when centroid_x < 52.5, so the other half of
+    # the time it raised UnboundLocalError further down. Bind it in both branches.
     if centroid_x < 52.5:
         plus_team_id = first_player_teamId
+    else:
+        plus_team_id = [t for t in tracking_df['teamId'].dropna().unique()
+                        if t and t != first_player_teamId]
+        plus_team_id = plus_team_id[0] if plus_team_id else first_player_teamId
 
     # キャッシュファイルが存在する場合は読み込み
     if os.path.exists(output_ball_dis_path):

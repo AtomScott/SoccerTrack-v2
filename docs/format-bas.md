@@ -77,9 +77,67 @@ Labels are strings matching this table exactly (case and spacing). Consumers mus
 
 ## Time alignment
 
-- `position` is in **milliseconds from the kickoff of the half specified in `gameTime`**, not from the start of the match.
-- Video frame rate for alignment: **25 fps**. Frame index within the corresponding half video is `round(int(position) / 40)`.
-- Cross-referencing a BAS event to GSR: pick the half file indicated by `gameTime`, then look up GSR records with `image_id == round(int(position) / 40)`. Expect some events (headers, blocks) to show ball contact ±1 frame from the annotated `position`.
+> **The three struck-through bullets below are WRONG about the released data.** They describe
+> the format as designed; the files diverge from it. Which side gets corrected is a dataset
+> decision that has not been taken. Until it is, follow "What the released files actually do"
+> and use `src.data_utils.bas_periods`, which implements it.
+
+- ~~`position` is in **milliseconds from the kickoff of the half specified in `gameTime`**, not from the start of the match.~~
+- ~~Frame index within the corresponding half video is `round(int(position) / 40)`.~~
+- ~~Cross-referencing a BAS event to GSR: look up GSR records with `image_id == round(int(position) / 40)`.~~
+
+Frame rate is indeed **25 fps**, and ball contact does sit within ±1 frame of `position` for
+headers and blocks.
+
+## What the released files actually do
+
+Measured across all ten matches. Evidence in [`bas-findings.md`](bas-findings.md);
+reproduce with [`../scripts/bas/audit_annotations.py`](../scripts/bas/audit_annotations.py).
+
+**1. `position` is ABSOLUTE from the start of the match, not from the half's kickoff.**
+Verified on 117093, whose half-2 events run 2,700,760–5,506,280 ms rather than restarting
+near zero. `round(position / 40)` therefore lands **67,500 frames — 45 minutes — late for
+every second-half event.** `gameTime`'s `mm:ss` is on the same absolute clock, so a
+second-half event reads `"2 - 45:00"` at kickoff, not `"2 - 00:00"`.
+
+**2. The event array is keyed `actions`, not `annotations`.**
+
+**3. Labels are UPPER CASE in the files** (`"HIGH PASS"`), Title Case in this document. The
+label *set* is identical; `src.data_utils.soccertrack_v2` canonicalises on read.
+
+**4. Three matches have a THIRD 45-minute period, and nothing was filmed or tracked for it.**
+117092, 132831 and 132877 were played as three periods — 132831 and 132877 declare
+`matchFullTime="8100000"`, and 117092 carries an `EXTRA_FIRST_HALF` period element with a
+real frame range. **2,231 events (9.4% of the 23,663 annotated) fall in that period, and the
+release contains only `_1st` and `_2nd` videos and GSR files**, so those events have no
+imagery and no tracks. Test match 132831 alone has 722 of them, 22.8% of its annotations.
+
+**5. The `gameTime` period prefix is unreliable, and `position` alone cannot replace it.**
+Of those 2,231 events, 2,129 carry no prefix at all and **102 carry a prefix of `1` or `2`
+beside a clock past 90 minutes** — e.g. `{"gameTime": "1 - 135:27", "position": "8127120"}`.
+And `position` cannot simply be divided into periods, because periods **overlap on the
+nominal clock**: 118576's first half runs to 48:29 while its second half starts at 45:00.
+
+Take the prefix as a hypothesis and accept it only when the resulting frame lands inside
+that period's annotated GSR frame range:
+
+```python
+from src.data_utils.bas_periods import load_table, period_and_frame
+
+periods = load_table()["128057"]["periods"]        # configs/bas_periods.json
+period, frame = period_and_frame(ev["gameTime"], int(ev["position"]), periods)
+# period == 3 means "no imagery and no tracks"; frame is then None
+```
+
+**6. The event-to-frame mapping is `frame = 1 + (position - t0_ms) / 40`**, with `t0_ms` the
+match-clock time of GSR GameState frame 1, tabulated per match and period in
+`configs/bas_periods.json`. GameState frame 1 corresponds to raw tracking frame 251 — which
+was measured against an independent source, not derived: the obvious "frame 1 is the period's
+first frame" mapping is off by exactly one frame.
+
+**7. `visibility` is never populated.** The field documented below as `"visible"` /
+`"not shown"` is absent from all 23,663 events, so a pipeline that filters on it filters
+nothing.
 
 ## Evaluation
 
@@ -94,10 +152,20 @@ import json
 from pathlib import Path
 
 data = json.loads(Path("bas/117093/117093_12_class_events.json").read_text())
-for ev in data["annotations"]:
-    half, clock = ev["gameTime"].split(" - ")
-    t_ms = int(ev["position"])
-    print(half, clock, t_ms, ev["label"], ev["team"])
+for ev in data["actions"]:                     # NOT "annotations" -- see above
+    half, clock = ev["gameTime"].split(" - ")  # raises on the 2,129 prefix-less events
+    t_ms = int(ev["position"])                 # ABSOLUTE match time, not per-half
+    print(half, clock, t_ms, ev["label"].title(), ev["team"])
+```
+
+That snippet still crashes on 117092, 132831 and 132877, whose third-period events have no
+`" - "` in `gameTime`. Prefer the loader, which handles all of it:
+
+```python
+from src.data_utils.soccertrack_v2 import load_match
+
+for ev in load_match("/data/share/SoccerTrack-v2/data/production", "117093").bas_events():
+    print(ev.half, ev.clock, ev.t_ms, ev.label, ev.team)
 ```
 
 ## Known edge cases

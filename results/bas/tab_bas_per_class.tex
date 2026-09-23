@@ -1,0 +1,24 @@
+\begin{table}[t]
+  \centering
+  \caption{Per-class average precision at $\tau = 1\,$s, pooled over the five cross-match folds and therefore over all ten matches. $n$ is the number of ground-truth events across the benchmark. Rows marked $\dagger$ have $n < 100$. Classes are ordered by support.}
+  \label{tab:bas_per_class}
+  \small
+  \begin{tabular}{lrccc}
+    \toprule
+    Class & $n$ & chance & trajectory & {+}ball \\
+    \midrule
+    Pass & 9319 & 0.042 & 0.286 & 0.853 \\
+    Drive & 8255 & 0.036 & 0.227 & 0.830 \\
+    High Pass & 1157 & 0.007 & 0.320 & 0.745 \\
+    Out & 771 & 0.004 & 0.147 & 0.364 \\
+    Cross & 394 & 0.001 & 0.327 & 0.794 \\
+    Throw In & 385 & 0.006 & 0.254 & 0.910 \\
+    Ball Player Block & 353 & 0.000 & 0.069 & 0.181 \\
+    Player Successful Tackle & 307 & 0.002 & 0.046 & 0.121 \\
+    Shot & 266 & 0.002 & 0.317 & 0.735 \\
+    Free Kick & 150 & 0.001 & 0.171 & 0.700 \\
+    Goal$^\dagger$ & 44 & 0.000 & 0.336 & 0.718 \\
+    Header$^\dagger$ & 31 & 0.000 & 0.189 & 0.347 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

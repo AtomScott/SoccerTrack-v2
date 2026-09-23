@@ -1,0 +1,26 @@
+OVERALL  (mean over 3 seeds, [min-max])
+
+input                  match                mAP@1s            mAPw@1s             mAP@5s            mAPw@5s
+trajectory             128057                0.503              0.516              0.642              0.749
+trajectory             132831                0.369              0.456              0.539              0.722
+trajectory             Pooled   0.412 [0.405-0.418] 0.476 [0.470-0.479] 0.565 [0.563-0.567] 0.728 [0.719-0.737]
+trajectory + ball      128057                0.775              0.854              0.798              0.873
+trajectory + ball      132831                0.336              0.621              0.433              0.752
+trajectory + ball      Pooled   0.487 [0.464-0.519] 0.721 [0.695-0.734] 0.550 [0.531-0.577] 0.788 [0.780-0.794]
+uniform cadence        Pooled                0.025              0.106              0.094              0.405
+
+PER CLASS
+
+class                          n  chance@1s    traj@1s    +ball@1s  chance@5s    traj@5s    +ball@5s
+Pass                        1928      0.154      0.508       0.816      0.488      0.747       0.855
+Drive                       1703      0.093      0.482       0.737      0.472      0.790       0.830
+High Pass                    226      0.008      0.400       0.459      0.068      0.564       0.490
+Out                          161      0.006      0.426       0.455      0.038      0.629       0.678
+Throw In                      83      0.023      0.461       0.580      0.023      0.694       0.621
+Ball Player Block             62      0.000      0.067       0.136      0.004      0.118       0.185
+Shot                          57      0.005      0.453       0.661      0.007      0.574       0.708
+Cross                         56      0.000      0.527       0.520      0.005      0.615       0.619
+Player Successful Tackle      50      0.011      0.117       0.104      0.023      0.158       0.140
+Free Kick                     31      0.003      0.308       0.206      0.003      0.574       0.293
+Goal                          10      0.000      0.740       0.726      0.000      0.869       0.731   (n<30, not a measurement)
+Header                         5      0.000      0.450       0.448      0.000      0.452       0.456   (n<30, not a measurement)
