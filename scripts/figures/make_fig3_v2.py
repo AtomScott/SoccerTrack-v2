@@ -58,17 +58,24 @@ plt.rcParams.update({
 })
 
 # ------------------------------------------------------------- BAS panel data
-BAS_COUNTS = [
-    ("Pass", 9319), ("Drive", 8255), ("High Pass", 1157), ("Out", 771),
-    ("Cross", 394), ("Throw In", 385), ("Ball Player Block", 353),
-    ("Player Successful Tackle", 307), ("Shot", 266), ("Free Kick", 150),
-    ("Goal", 44), ("Header", 31),
-]
-EVENTS_PER_MATCH = {
-    "117092": 2086, "117093": 2252, "118575": 2117, "118576": 2131,
-    "118577": 1946, "118578": 2106, "128057": 1932, "128058": 2144,
-    "132831": 2440, "132877": 2278,
-}
+# Counted from the released ball action annotations (release v1.1: two halves
+# per match, positions on each half's video clock), so the figure cannot drift
+# from the data. Override the location with SOCCERTRACK_BAS.
+BAS_DIR = os.environ.get("SOCCERTRACK_BAS", "/data/share/SoccerTrack-v2/release_v1_1/bas")
+_CLASS_ORDER = ["Pass", "Drive", "High Pass", "Out", "Cross", "Throw In",
+                "Ball Player Block", "Player Successful Tackle", "Shot",
+                "Free Kick", "Goal", "Header"]
+_class_n = {c: 0 for c in _CLASS_ORDER}
+EVENTS_PER_MATCH = {}
+for _f in sorted(glob.glob(os.path.join(BAS_DIR, "*", "*_12_class_events.json"))):
+    with open(_f) as _fh:
+        _d = json.load(_fh)
+    EVENTS_PER_MATCH[_d["match_id"]] = len(_d["actions"])
+    for _a in _d["actions"]:
+        _class_n[_a["label"].title()] += 1
+assert len(EVENTS_PER_MATCH) == 10, EVENTS_PER_MATCH
+BAS_COUNTS = sorted(_class_n.items(), key=lambda kv: -kv[1])
+print("BAS events:", sum(EVENTS_PER_MATCH.values()), dict(BAS_COUNTS))
 CLAMPED = {"132831", "132877"}
 
 # ------------------------------------------------------------- GSR panel data
