@@ -20,6 +20,14 @@ When both fleets have a half, the first finisher is reported and the
 fleet1-vs-fleet2 GS-HOTA delta is recorded in the CSV (fp16 was validated
 score-identical on the 30 s smoke; this is the production check).
 
+Release v1.2 rescoring: results/gsr/rescore_v1_2/CLPD-<M>-<H>.json, when
+present, is score_one.py run on the saved predictions of one source (named in
+the file's "source" key) against the release v1.2 labels, with no frame shift
+and no id rename. Its values replace that source's scores; the source tag is
+kept, since it records where the run was made. Release v1.2 re-synchronised
+M10 (132877) with its video, so only M10's two halves carry such a file; the
+other eighteen score identically against v1.2 (spot-checked 2026-09-24).
+
 Outputs (default under results/gsr/):
   full_table_all_matches.csv   one row per half per source, plus chosen flag
   full_table_rows.tex          LaTeX body rows in the tab:gsr_results format
@@ -87,6 +95,22 @@ def overlay_full_precision(match, half, score):
     return score
 
 
+RELEASE_RESCORING_DIR = LOCAL_DIR / "rescore_v1_2"
+
+
+def overlay_release_rescoring(match, half, source, score):
+    """Replace a source's scores with its predictions rescored against the
+    release v1.2 labels, when such a rescoring exists for that source."""
+    p = RELEASE_RESCORING_DIR / f"CLPD-{match}-{half}.json"
+    if not p.exists():
+        return score
+    if json.loads(p.read_text()).get("source") != source:
+        return score
+    s = load_score(p)
+    return dict(score, **{k: s[k] for k in METRICS}, dropped=s["dropped"],
+                precision="release v1.2 rescoring", path=s["path"])
+
+
 def find_in_dir(dirpath):
     if not dirpath.is_dir():
         return None
@@ -107,12 +131,14 @@ def collect(match, half):
     for name, (repo_sub, mount_sub) in FLEETS.items():
         s = find_in_dir(CLOUD_LOCAL / repo_sub / seq) or find_in_dir(CLOUD_ROOT / mount_sub / seq)
         if s:
-            out[name] = overlay_full_precision(match, half, s)
+            out[name] = overlay_release_rescoring(
+                match, half, name, overlay_full_precision(match, half, s))
     p = LOCAL_DIR / f"score_45min_{match}_{half}.json"
     if p.exists():
         s = load_score(p)
         if s:
-            out["local"] = overlay_full_precision(match, half, s)
+            out["local"] = overlay_release_rescoring(
+                match, half, "local", overlay_full_precision(match, half, s))
     return out
 
 

@@ -1,0 +1,31 @@
+{
+  "seq": "CLPD-132877-2nd",
+  "scores": {
+    "attributes ON (official GS-HOTA)": {
+      "HOTA": 13.640018064940582,
+      "DetA": 8.067538494918477,
+      "AssA": 23.06734577059882,
+      "LocA": 86.18129253573179,
+      "ids": 201,
+      "gt_ids": 35,
+      "dets": 1449240,
+      "gt_dets": 1525309
+    },
+    "attributes OFF (geometry + association)": {
+      "HOTA": 25.399946630594954,
+      "DetA": 45.55256850545118,
+      "AssA": 14.309034296724722,
+      "LocA": 84.1440059392491,
+      "ids": 201,
+      "gt_ids": 35,
+      "dets": 1449240,
+      "gt_dets": 1525309
+    }
+  },
+  "dropped_non_finite": 8544,
+  "n_object_predictions": 1457784,
+  "source": "fleet2",
+  "gt": "release_v1_2/gsr/132877/132877_2nd.json",
+  "pred": "/mnt/storage/SoccerTrack-v2/gsr-cloud-results/gsr2/CLPD-132877-2nd/pred.json",
+  "note": "Rescored 2026-09-24 against the release v1.2 labels, which re-synchronise M10 (132877) with its video (v1.2 frame k = v1.0 frame k-10 in the 1st half, k+2 in the 2nd; v1.0/v1.1 used k+16 and k+30). Saved predictions unchanged, no frame shift, ids as saved (= v1.2 ids)."
+}

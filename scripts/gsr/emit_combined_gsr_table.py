@@ -22,12 +22,14 @@ Both regenerate with one command whenever a score file changes:
     python3 scripts/gsr/emit_combined_gsr_table.py
 
 30 s scores come from results/gsr/sweep30s_all_matches.csv (first 750 frames
-of every half, one configuration: the adapted pipeline with the weights the
-published weights, per-detection team assignment) and, for the attrs-off
+of every half, one configuration: the adapted pipeline with per-detection
+team assignment) and, for the attrs-off
 components, from results/gsr/score_30s_<match>_<half>.json. Full-half scores
 are collected with the same source preference as compile_full_table.py
 (fleet1 > fleet2 > gsr4 > local); the cloud halves are read from the versioned
-copies under results/gsr/cloud/ so that every input is in the repo. All
+copies under results/gsr/cloud/ so that every input is in the repo, and a
+half with a release v1.2 rescoring (results/gsr/rescore_v1_2/, M10 only)
+takes its values from that file. All
 twenty halves are required to be present: the table has no dash cells (the
 author's decision of 2026-09-08 is that a gapped table "looks unfinished").
 
@@ -168,8 +170,16 @@ def tracklets(row):
     """(predicted tracklets, annotated identities) of a full-half run: the
     scorer's ids / gt_ids for a local score JSON, or the "N predicted
     tracklets vs M real players" line of the score.log beside a cloud
-    zscore.json."""
+    zscore.json. A score JSON that carries the scorer's ids itself (a local
+    run, or a release v1.2 rescoring of a cloud run, whose path then points
+    at the rescoring) is read directly."""
     path = Path(row["path"])
+    try:
+        on = json.loads(path.read_text())["scores"][ON_KEY]
+        if "ids" in on:
+            return int(on["ids"]), int(on["gt_ids"])
+    except (OSError, KeyError, ValueError):
+        pass
     if row["source"] == "local":
         with open(path) as f:
             on = json.load(f)["scores"][ON_KEY]

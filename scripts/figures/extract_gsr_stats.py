@@ -15,7 +15,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 
-DATA = os.environ.get("SOCCERTRACK_GSR", "/data/share/SoccerTrack-v2/release_v1_1/gsr")
+DATA = os.environ.get("SOCCERTRACK_GSR", "/data/share/SoccerTrack-v2/release_v1_2/gsr")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gsr_stats")
 
 # Histogram: pitch is 105 x 68 m centred on (0,0). GT positions are

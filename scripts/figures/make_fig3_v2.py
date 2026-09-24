@@ -61,7 +61,7 @@ plt.rcParams.update({
 # Counted from the released ball action annotations (release v1.1: two halves
 # per match, positions on each half's video clock), so the figure cannot drift
 # from the data. Override the location with SOCCERTRACK_BAS.
-BAS_DIR = os.environ.get("SOCCERTRACK_BAS", "/data/share/SoccerTrack-v2/release_v1_1/bas")
+BAS_DIR = os.environ.get("SOCCERTRACK_BAS", "/data/share/SoccerTrack-v2/release_v1_2/bas")
 _CLASS_ORDER = ["Pass", "Drive", "High Pass", "Out", "Cross", "Throw In",
                 "Ball Player Block", "Player Successful Tackle", "Shot",
                 "Free Kick", "Goal", "Header"]
