@@ -37,7 +37,7 @@ import argparse
 import json
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 # --------------------------------------------------------------------------- #
 # SoccerTrack v2 -> SoccerNet GSR format conversion                            #
@@ -47,17 +47,70 @@ from typing import Optional
 # Roles map onto a single "person"-like category with a `role` attribute in
 # SoccerNet's schema; we expose explicit ids so the conversion is self-describing
 # and round-trippable.
+# These ids mirror the categories block of the RELEASED ground truth
+# (verified against $DATA/production/gsr/*/*.json): 1 player, 2 goalkeeper,
+# 3 referee, 4 ball. An earlier version of this list had 4=other and 5=ball,
+# which disagreed with every real file. Pitch-space GS-HOTA keys off
+# attributes.role rather than category_id, so the mismatch never changed a score
+# — but predictions should still describe themselves the way the GT does.
 _SN_CATEGORIES = [
-    {"id": 1, "name": "player", "supercategory": "person"},
-    {"id": 2, "name": "goalkeeper", "supercategory": "person"},
-    {"id": 3, "name": "referee", "supercategory": "person"},
-    {"id": 4, "name": "other", "supercategory": "person"},
-    {"id": 5, "name": "ball", "supercategory": "ball"},
+    {"id": 1, "name": "player", "supercategory": "object"},
+    {"id": 2, "name": "goalkeeper", "supercategory": "object"},
+    {"id": 3, "name": "referee", "supercategory": "object"},
+    {"id": 4, "name": "ball", "supercategory": "object"},
 ]
 _ROLE_TO_CATEGORY_ID = {c["name"]: c["id"] for c in _SN_CATEGORIES}
+# Unknown/other roles fall back to "player". The released GSR ground truth only
+# ever contains player and goalkeeper, so this is the safe default.
+_ROLE_TO_CATEGORY_ID["other"] = 1
 
 # SoccerNet uses centre-origin metric pitch coordinates, same frame as
 # SoccerTrack v2's GSR format (docs/format-gsr.md), so x/y pass through unchanged.
+
+# The released convention: image_id is a STRING — "3" followed by the 1-based
+# frame number zero-padded to six digits — so SoccerTrack frame 0 (0-based) maps
+# to "3000001". The leading digit is SoccerNet's split id (test == 3). Sequences
+# staged for TrackLab instead use the full 10-character form (split id +
+# 3-digit sequence id + 6-digit frame), which is why callers should pass a
+# mapping derived from the ground truth whenever they have one.
+_RELEASED_SPLIT_ID = "3"
+
+
+def _default_image_id_for_frame(frame: int) -> str:
+    """0-based SoccerTrack frame index -> released-convention string image_id."""
+    return f"{_RELEASED_SPLIT_ID}{frame + 1:06d}"
+
+
+def image_id_mapper_from_gt(gt_labels_path: Path) -> Callable[[int], str]:
+    """Build a frame -> image_id mapping from a ground-truth GameState file.
+
+    Prefer this over the default: it cannot drift from what the ground truth
+    actually uses. The 0-based SoccerTrack frame index selects positionally from
+    the frame-ordered id list, which matches the alignment verified for this
+    dataset (image_id "3{N:06d}" is 1-based frame N of the panorama video).
+
+    Only the ``images`` block is needed, but these files are ~2.7 GB so this
+    still costs a full parse and roughly 15 GB of peak memory.
+    """
+    data = json.loads(Path(gt_labels_path).read_text())
+    # Order frames exactly the way the scorer does, so positional lookup here and
+    # timestep assignment there cannot disagree:
+    #   soccernet_gs.py: get_frame_number = int(image['image_id'].split('_')[-1])
+    ids = sorted(
+        (im["image_id"] for im in data["images"]),
+        key=lambda s: int(str(s).split("_")[-1]),
+    )
+    del data
+
+    def _map(frame: int) -> str:
+        if 0 <= frame < len(ids):
+            return ids[frame]
+        # Out of range: return the fallback form rather than raising, so a
+        # prediction running past the annotated range is skipped by the scorer
+        # instead of aborting the whole evaluation.
+        return _default_image_id_for_frame(frame)
+
+    return _map
 
 
 def _half_suffix(half: int) -> str:
@@ -73,34 +126,53 @@ def _sequence_name(match_id: str, half: int) -> str:
     return f"{match_id}-{_half_suffix(half)}"
 
 
-def soccertrack_records_to_gs(records: list[dict], seq_name: str) -> dict:
+def soccertrack_records_to_gs(
+    records: list[dict],
+    seq_name: str,
+    image_id_for_frame: Optional[Callable[[int], str]] = None,
+) -> dict:
     """Convert one half's flat SoccerTrack GSR records to a SoccerNet GS dict.
 
-    SoccerTrack record fields (docs/format-gsr.md): ``image_id``, ``track_id``,
+    Record fields: ``image_id`` (0-based panoramic frame index), ``track_id``,
     ``player_id``, ``role``, ``jersey_number``, ``team_side`` ("left"/"right"),
     ``x``, ``y`` (centre-origin metres), ``bbox_image`` ``[x,y,w,h]``,
     ``bbox_pitch`` ``[x,y,w,h]``.
 
-    SoccerNet ``Labels-GameState.json`` is a COCO-style dict with ``info``,
-    ``images``, ``annotations``, ``categories``. Each annotation carries
-    ``image_id``, ``track_id``, ``category_id``, ``bbox_image``
-    (``{x,y,w,h}`` dict), ``bbox_pitch`` (``{x_bottom_middle, y_bottom_middle,
-    ...}``), and an ``attributes`` block with ``role``, ``team`` ("left"/"right"),
-    ``jersey``.
+    This flat layout is what *predictions* look like. It is NOT what the released
+    ground truth looks like — those files are already SoccerNet GameState; see
+    ``_is_already_gamestate`` and docs/format-gsr.md.
+
+    ``image_id_for_frame`` maps a 0-based frame index to the string ``image_id``
+    the ground truth uses. This matters because the upstream scorer builds its
+    frame index ONLY from the ground truth's ``images`` list, so a prediction
+    whose ``image_id`` is absent from it matches nothing and is silently dropped.
+    Two further traps in the same code path: given an integer ``image_id`` the
+    scorer's unmatched-id branch calls ``len()`` on an int and raises TypeError,
+    and only 10-character ids take its clean skip path.
+
+    The default reproduces the released convention (see
+    ``_default_image_id_for_frame``), measured to cover 67,625 of 67,625
+    prediction frames for 128057's first half. Prefer
+    ``image_id_mapper_from_gt`` when a ground-truth file is at hand; the default
+    is a documented fallback, not an authority.
 
     This is a pure function (no I/O) and is the unit-tested core of the adapter.
     """
-    images: dict[int, dict] = {}
+    if image_id_for_frame is None:
+        image_id_for_frame = _default_image_id_for_frame
+
+    images: dict[str, dict] = {}
     annotations: list[dict] = []
 
     for i, r in enumerate(records):
-        image_id = int(r["image_id"])
+        frame = int(r["image_id"])            # 0-based SoccerTrack frame index
+        image_id = image_id_for_frame(frame)
         if image_id not in images:
             images[image_id] = {
                 "image_id": image_id,
-                "file_name": f"{image_id:06d}.jpg",
-                # SoccerTrack panoramic frame index doubles as the frame number.
-                "frame_idx": image_id,
+                # SoccerNet file names are 1-based: frame 0 -> 000001.jpg.
+                "file_name": f"{frame + 1:06d}.jpg",
+                "frame_idx": frame,
             }
 
         role = r.get("role", "player")
@@ -134,9 +206,19 @@ def soccertrack_records_to_gs(records: list[dict], seq_name: str) -> dict:
         # Pitch position: SoccerNet keys the localisation similarity off the
         # bottom-middle pitch point. SoccerTrack `x`/`y` are exactly that
         # (centre-origin metres, the player's feet — see docs/format-gsr.md).
+        #
+        # All SIX keys are required. With EVAL_SPACE='pitch' the scorer reads
+        # x/y_bottom_left, x/y_bottom_middle and x/y_bottom_right unconditionally
+        # (trackeval/datasets/soccernet_gs.py) and raises KeyError on a subset.
+        # In the released ground truth these three points are DEGENERATE — all
+        # three hold identical values and only the middle is informative — so
+        # replicating the middle point across all three is faithful to how the GT
+        # is built, not an invention on our part.
+        _px, _py = float(r["x"]), float(r["y"])
         ann["bbox_pitch"] = {
-            "x_bottom_middle": float(r["x"]),
-            "y_bottom_middle": float(r["y"]),
+            "x_bottom_left": _px, "y_bottom_left": _py,
+            "x_bottom_middle": _px, "y_bottom_middle": _py,
+            "x_bottom_right": _px, "y_bottom_right": _py,
         }
         bp = r.get("bbox_pitch")
         if bp is not None:

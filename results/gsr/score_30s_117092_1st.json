@@ -1,0 +1,27 @@
+{
+  "seq": "CLPD-117092-1st",
+  "scores": {
+    "attributes ON (official GS-HOTA)": {
+      "HOTA": 23.096290354640438,
+      "DetA": 12.394604759590628,
+      "AssA": 43.5050386720327,
+      "LocA": 74.12054699765511,
+      "ids": 24,
+      "gt_ids": 22,
+      "dets": 16218,
+      "gt_dets": 16478
+    },
+    "attributes OFF (geometry + association)": {
+      "HOTA": 27.367054095968697,
+      "DetA": 21.59777230100901,
+      "AssA": 35.38786869143458,
+      "LocA": 73.0458262327011,
+      "ids": 24,
+      "gt_ids": 22,
+      "dets": 16218,
+      "gt_dets": 16478
+    }
+  },
+  "dropped_non_finite": 0,
+  "n_object_predictions": 16218
+}

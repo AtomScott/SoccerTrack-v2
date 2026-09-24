@@ -1,0 +1,20 @@
+GSR full-sweep status  (updated 2026-09-08 01:25:01 JST)  [18 halves: 16 Tokyo + 2 Seoul]
+HALF             STATUS                   GS-HOTA    HEARTBEAT
+117092-1st       RUNNING/TERMINATED                  2026-08-31T11:33:54Z diskfreeG=181 Prtreid:  18%|█▊        | 3822/21640 [29:10<28:27:46,  5.75s/it][A
+117092-2nd       SCORING/TERMINATED                  2026-08-31T14:51:46Z diskfreeG=158 frame #58: <unknown function> + 0x108e (0x57f7e3d2108e in .venv/bin/python)
+117093-1st       SCORING/TERMINATED                  2026-08-31T14:51:59Z diskfreeG=80 frame #40: <unknown function> + 0x108e (0x5d42f0d5708e in .venv/bin/python)
+117093-2nd       SCORING/TERMINATED                  2026-08-31T14:48:36Z diskfreeG=76 frame #58: <unknown function> + 0x108e (0x5a0f910f508e in .venv/bin/python)
+118575-1st       SCORING/TERMINATED                  2026-08-31T14:49:39Z diskfreeG=69 frame #58: <unknown function> + 0x108e (0x612eeb74908e in .venv/bin/python)
+118575-2nd       SCORING/TERMINATED                  2026-08-31T14:49:55Z diskfreeG=66 frame #40: <unknown function> + 0x108e (0x614bcea2c08e in .venv/bin/python)
+118576-1st       SCORING/TERMINATED                  2026-08-31T14:50:07Z diskfreeG=74 frame #40: <unknown function> + 0x108e (0x5e9ca32c308e in .venv/bin/python)
+118576-2nd       SCORING/TERMINATED                  2026-08-31T14:55:21Z diskfreeG=71 frame #40: <unknown function> + 0x108e (0x6260210f708e in .venv/bin/python)
+118577-1st       SCORING/TERMINATED                  2026-08-31T14:44:54Z diskfreeG=72 frame #58: <unknown function> + 0x108e (0x5dbba7afb08e in .venv/bin/python)
+118577-2nd       FAIL_NO_PRED                        results pulled
+118578-1st       SCORING/TERMINATED                  2026-08-31T14:56:33Z diskfreeG=126 frame #40: <unknown function> + 0x108e (0x573cc329b08e in .venv/bin/python)
+118578-2nd       SCORING/TERMINATED                  2026-08-31T15:11:48Z diskfreeG=125 frame #40: <unknown function> + 0x108e (0x5ca54787f08e in .venv/bin/python)
+128058-1st       FAIL_NO_PRED                        results pulled
+128058-2nd       SCORING/TERMINATED                  2026-08-31T13:04:25Z diskfreeG=115 Prtreid:  12%|█▏        | 2633/22071 [51:57<3085:53:39, 571.52s/it][A
+132877-1st       RUNNING/TERMINATED                  2026-08-31T12:03:49Z diskfreeG=115 Prtreid:  11%|█         | 2401/22474 [19:04<56:50:39, 10.19s/it][A
+132877-2nd       RUNNING/TERMINATED                  2026-08-31T12:24:41Z diskfreeG=104 Prtreid:  10%|▉         | 2227/22911 [18:38<34:46:48,  6.05s/it][A
+132831-1st       SCORING/TERMINATED                  2026-08-31T14:43:38Z diskfreeG=90 frame #40: <unknown function> + 0x108e (0x643b57acf08e in .venv/bin/python)
+132831-2nd       SCORING/TERMINATED                  2026-08-31T14:43:54Z diskfreeG=97 frame #40: <unknown function> + 0x108e (0x61e240e0b08e in .venv/bin/python)

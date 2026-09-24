@@ -122,3 +122,23 @@ Both permit commercial use. Please cite the paper if you use the dataset in rese
 ## Contact
 
 Atom Scott — <atom.james.scott@gmail.com> — Nagoya University / [Playbox](https://playbox.co.jp/).
+
+## Match labels
+
+The paper labels the ten matches M1 to M10 in ascending order of the provider identifier used by the release files. The per-match counts below were moved here from the paper (frames and coordinates are the annotated video frames of each match and the player-frame records over them; boxes are the human-annotated boxes of the curated four-minute tracking clip of each match).
+
+| Label | Provider id | Frames | Duration (min) | Coordinates | Events | Boxes |
+|---|---|---|---|---|---|---|
+| M1 | 117092 | 134,951 | 90 | 2,967,629 | 2,086 | 132,000 |
+| M2 | 117093 | 138,125 | 92 | 3,038,640 | 2,252 | 131,472 |
+| M3 | 118575 | 145,777 | 97 | 3,198,454 | 2,117 | 132,000 |
+| M4 | 118576 | 146,152 | 97 | 3,212,350 | 2,131 | 131,450 |
+| M5 | 118577 | 145,427 | 97 | 3,193,894 | 1,946 | 132,000 |
+| M6 | 118578 | 141,851 | 95 | 3,120,655 | 2,106 | 132,000 |
+| M7 | 128057 | 138,025 | 92 | 3,036,550 | 1,932 | 131,472 |
+| M8 | 128058 | 137,276 | 92 | 3,020,403 | 2,144 | 131,582 |
+| M9 | 132831 | 136,151 | 91 | 2,996,079 | 2,440 | 131,472 |
+| M10 | 132877 | 137,039 | 91 | 3,015,913 | 2,278 | 131,076 |
+| Total | | 1,400,774 | 934 | 30,800,567 | 21,432 | 1,316,524 |
+
+The ball track is clamped to the pitch rectangle in M9 and M10. The released match-level test split is M7 and M9 (the SoccerTrack Challenge 2025 pair).
