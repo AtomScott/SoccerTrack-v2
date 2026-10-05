@@ -39,7 +39,7 @@ Paper tasks live in the private companion repo [`AtomScott/soccertrack-v2-paper`
 
 - [ ] Confirm GitHub Pages is enabled on the **public** `AtomScott/SoccerTrack-v2` repo and that `https://atomscott.github.io/SoccerTrack-v2/` serves the current `docs/`.
 - [x] Promote Hugging Face as primary, Google Drive as mirror; added `scripts/download.sh` snippet (EN + JA).
-- [ ] Replace arXiv badge link with the published DOI badge once PAA accepts.
+- [ ] Replace arXiv badge link with the published DOI badge once npj Artificial Intelligence accepts (arXiv v2 with the journal-version title submitted 2026-10-05).
 - [ ] Confirm `assets/og-image.jpg` matches the v2 brand (currently a 117 KB JPG).
 - [ ] Sanity-check JA translations against the latest EN copy (drift will accumulate as we update).
 - [x] Add a "Cite" widget with copy-to-clipboard BibTeX (both EN + JA pages).

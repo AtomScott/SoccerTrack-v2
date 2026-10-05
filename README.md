@@ -102,7 +102,7 @@ If you use SoccerTrack v2 in your research, please cite:
 
 ```bibtex
 @article{scott2025soccertrackv2,
-  title   = {{SoccerTrack v2}: A Full-Pitch Multi-View Soccer Dataset for Game State Reconstruction},
+  title   = {{SoccerTrack v2}: A Full-Pitch Panoramic Video Dataset for Game State Reconstruction and Ball Action Spotting},
   author  = {Scott, Atom and Uchida, Ikuma and Kuroda, Kento and Kim, Yufi and Fujii, Keisuke},
   journal = {arXiv preprint arXiv:2508.01802},
   year    = {2025},
