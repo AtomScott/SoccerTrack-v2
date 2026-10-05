@@ -1,0 +1,20 @@
+{
+ "seq": "CLPD-132831-1st",
+ "scores": {
+  "attributes ON (official GS-HOTA)": {
+   "HOTA": 9.921,
+   "DetA": 9.694,
+   "AssA": 10.157,
+   "LocA": 79.037
+  },
+  "attributes OFF (geometry + association)": {
+   "HOTA": 16.151,
+   "DetA": 37.531,
+   "AssA": 6.972,
+   "LocA": 78.139
+  }
+ },
+ "source": "score.log",
+ "dropped_non_finite": 10223,
+ "n_object_predictions": 1316517
+}

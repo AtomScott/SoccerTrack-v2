@@ -193,3 +193,26 @@ Enclosing structure:
   `len(images)`. Do not rely on them.
 * **GS-HOTA is scored in pitch space only.** SoccerTrack v2 has no ground-truth detections, so
   image-space evaluation is not possible and `bbox_image` must not be used for scoring.
+
+## Sample object annotation (as shipped)
+
+Match 128057 (M7), first half, first annotated frame; `video_id` and the `bbox_pitch_raw` duplicate omitted, pitch coordinates printed to two decimals. `image_id` is a one-digit sequence prefix followed by the six-digit, 1-based frame index of the annotated period; the annotated period begins 0 to 30 frames before the first frame of the released half video (see the offsets CSV in results/gsr/).
+
+```json
+{
+  "id": "300000001",
+  "image_id": "3000001",
+  "track_id": 1,
+  "supercategory": "object",
+  "category_id": 1,
+  "attributes": {"role": "player", "jersey": "15",
+                 "team": "right", "player_id": 506459},
+  "bbox_image": {"x": 2082, "y": 142, "w": 45, "h": 40,
+                 "x_center": 2104.5, "y_center": 162.0},
+  "bbox_pitch": {"x_bottom_left": 3.15, "y_bottom_left": -20.40,
+                 "x_bottom_middle": 3.15, "y_bottom_middle": -20.40,
+                 "x_bottom_right": 3.15, "y_bottom_right": -20.40}
+}
+```
+
+Top-level keys of each file: `info`, `images`, `annotations`, `categories`. Object records carry `bbox_image` (x, y, w, h, x_center, y_center in pixels) and `bbox_pitch` in the six-key SoccerNet form; the release annotates a point at the player's feet, so the three points coincide and `x_bottom_middle`, `y_bottom_middle` carry the position. `jersey` is a string or null. A second record kind (`supercategory` `pitch`) carries the normalised pitch-line points of each frame. The released GS-HOTA tool also accepts predictions as a flat list of records.

@@ -53,9 +53,28 @@ def score_many(
 
 
 def _map_per_class(pred: list[Event], gt: list[Event], tol_ms: int) -> dict[str, float]:
+    """Per-class tolerant AP.
+
+    Predictions are ranked by DESCENDING CONFIDENCE, which is what average precision requires.
+    This used to sort by ``(half, t_ms)`` -- by time -- which silently discarded any ranking the
+    caller had applied, in direct contradiction of the contract stated inside
+    ``_ap_tolerant``. The result was not average precision but a time-ordered precision-recall
+    traversal: a detector that ranked its output perfectly gained nothing, and one that emitted
+    a flood of low-confidence spots was not penalised.
+
+    tests/test_bas_map_identity.py could not catch it, because scoring ground truth against
+    itself makes every prediction a true positive and AP is 1.0 in any order. The discriminating
+    test is in tests/test_bas_map_ranking.py.
+
+    Ground truth has no scores; ties (including all-None) fall back to time order so the result
+    stays deterministic.
+    """
     result: dict[str, float] = {}
     for label in BAS_LABELS:
-        p = sorted((e for e in pred if e.label == label), key=lambda e: (e.half, e.t_ms))
+        p = sorted(
+            (e for e in pred if e.label == label),
+            key=lambda e: (-(e.score if e.score is not None else 0.0), e.half, e.t_ms),
+        )
         g = sorted((e for e in gt if e.label == label), key=lambda e: (e.half, e.t_ms))
         result[label] = _ap_tolerant(p, g, tol_ms=tol_ms) if g else float("nan")
     return result
@@ -68,8 +87,9 @@ def _ap_tolerant(pred: list[Event], gt: list[Event], tol_ms: int) -> float:
         return float("nan")
     matched = [False] * len(gt)
     tp_fp: list[int] = []
-    # Predictions with scores could be sorted by score; we have no scores here,
-    # so we treat input order as ranked (callers: sort by confidence desc).
+    # `pred` MUST already be ranked best-first; _map_per_class sorts by descending Event.score.
+    # Do not re-sort here, and do not sort by time anywhere upstream: average precision is
+    # defined over a confidence-ranked list.
     for p in pred:
         best_j = -1
         best_dt = tol_ms + 1

@@ -1,0 +1,7 @@
+label,frames,gs_hota,wall_s,mode
+30s,750,37.155,212,tail
+1min,1500,47.589,694,tail
+2min,3000,39.882,2194,tail
+5min,7500,30.974,9406,tail
+10min,15000,25.604,19672,full
+45min,67625,18.094,132480,full (two-stage)

@@ -1,0 +1,7 @@
+seq=CLPD-132877-2nd
+offset=30
+nframes=69346
+pipeline_exit=1
+wall_seconds=242819
+score_exit=0
+gshota=none

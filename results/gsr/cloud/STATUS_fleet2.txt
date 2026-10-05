@@ -1,0 +1,20 @@
+GSR fp16 fleet-2 status  (updated 2026-09-08 01:27:15 JST)  [18 halves: 14 Seoul + 4 us-central1]
+HALF             STATUS                   GS-HOTA    HEARTBEAT
+117092-1st       SCORING/TERMINATED                  2026-08-31T14:36:52Z diskfreeG=157 frame #40: <unknown function> + 0x108e (0x622cd9b7008e in .venv/bin/python)
+117092-2nd       SCORING/TERMINATED                  2026-09-01T03:37:06Z diskfreeG=158 frame #58: <unknown function> + 0x108e (0x58245654008e in .venv/bin/python)
+117093-1st       FAIL_NO_PRED                        results pulled
+117093-2nd       FAIL_NO_PRED                        results pulled
+118575-1st       DONE_PASS_16.591         16.591     results pulled
+118575-2nd       DONE_PASS_12.209         12.209     results pulled
+118576-1st       RUNNING/TERMINATED                  2026-08-31T15:09:03Z diskfreeG=98 Prtreid:  10%|▉         | 2270/23856 [1:42:48<9084:06:43, 1515.00s/it][A
+118576-2nd       RUNNING/TERMINATED                  2026-08-31T16:23:33Z diskfreeG=96 Prtreid:   8%|▊         | 1931/23522 [15:41<51:26:02,  8.58s/it][A
+118577-1st       SCORING/TERMINATED                  2026-08-31T14:02:54Z diskfreeG=72 Prtreid:  10%|█         | 2337/23223 [18:32<33:29:48,  5.77s/it][A
+118577-2nd       SCORING/TERMINATED                  2026-08-31T14:50:28Z diskfreeG=68 frame #40: <unknown function> + 0x108e (0x615f39f8308e in .venv/bin/python)
+118578-1st       DONE_PASS_13.360         13.360     results pulled
+118578-2nd       FAIL_NO_PRED                        results pulled
+128058-1st       DONE_PASS_12.730         12.730     results pulled
+128058-2nd       SCORING/TERMINATED                  2026-09-02T10:51:39Z diskfreeG=114 frame #56: <unknown function> + 0x108e (0x5b862929408e in .venv/bin/python)
+132831-1st       RUNNING/TERMINATED                  2026-08-31T11:11:42Z diskfreeG=114 Prtreid:  14%|█▍        | 2915/20783 [23:52<137:28:42, 27.70s/it][A
+132831-2nd       FAIL_SCORING             none       results pulled
+132877-1st       RUNNING/TERMINATED                  2026-08-31T13:08:32Z diskfreeG=115 Prtreid:  10%|▉         | 2237/22474 [19:38<242:15:34, 43.10s/it][A
+132877-2nd       FAIL_SCORING             none       results pulled

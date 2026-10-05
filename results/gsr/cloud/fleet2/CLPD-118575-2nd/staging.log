@@ -1,0 +1,9 @@
+CLPD-118575-2nd: video 4096x1080 73425 frames
+loading GT...
+GT images 73676  declared 3840x1504 (stale)
+START OFFSET 1 frames (0.04 s) from --frame-offset
+  -> video frame k carries GT frame k+1; staging video frames 1..73425 (73425)
+  NOTE: GT annotates 251 frames beyond the video; trimmed.
+wrote Labels-GameState.json: 73425 images, 1680220 annotations, 1516 MB
+extracting 73425 frames -> /home/atom/SoccerNetGS/test/CLPD-118575-2nd/img1 ...
+extracted 73425 JPEGs, 130.9 GB  (1.78 MB/frame)

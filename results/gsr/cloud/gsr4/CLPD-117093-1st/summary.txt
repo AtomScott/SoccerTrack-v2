@@ -1,0 +1,8 @@
+seq=CLPD-117093-1st
+offset=25
+nframes=67625
+pipeline_exit=0
+wall_seconds=199195
+score_exit=0
+gshota=14.284
+resumes=1
